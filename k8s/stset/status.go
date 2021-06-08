@@ -3,8 +3,8 @@ package stset
 import (
 	"context"
 
-	"code.cloudfoundry.org/eirini/api"
-	eiriniv1 "code.cloudfoundry.org/eirini/pkg/apis/eirini/v1"
+	"code.cloudfoundry.org/eirini-controller/api"
+	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
 	"code.cloudfoundry.org/lager"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"

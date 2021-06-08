@@ -3,10 +3,10 @@ package event
 import (
 	"context"
 
-	"code.cloudfoundry.org/eirini/events"
-	"code.cloudfoundry.org/eirini/k8s"
-	"code.cloudfoundry.org/eirini/k8s/stset"
-	"code.cloudfoundry.org/eirini/util"
+	"code.cloudfoundry.org/eirini-controller/k8s"
+	"code.cloudfoundry.org/eirini-controller/k8s/reconciler"
+	"code.cloudfoundry.org/eirini-controller/k8s/stset"
+	"code.cloudfoundry.org/eirini-controller/util"
 	"code.cloudfoundry.org/lager"
 	"code.cloudfoundry.org/runtimeschema/cc_messages"
 	v1 "k8s.io/api/core/v1"
@@ -24,7 +24,7 @@ func NewDefaultCrashEventGenerator(eventsClient k8s.EventsClient) DefaultCrashEv
 	}
 }
 
-func (g DefaultCrashEventGenerator) Generate(ctx context.Context, pod *v1.Pod, logger lager.Logger) (events.CrashEvent, bool) {
+func (g DefaultCrashEventGenerator) Generate(ctx context.Context, pod *v1.Pod, logger lager.Logger) (reconciler.CrashEvent, bool) {
 	logger = logger.Session("generate-crash-event",
 		lager.Data{
 			"pod-name": pod.Name,
@@ -36,20 +36,20 @@ func (g DefaultCrashEventGenerator) Generate(ctx context.Context, pod *v1.Pod, l
 	if len(statuses) == 0 {
 		logger.Debug("skipping-empty-container-statuseses")
 
-		return events.CrashEvent{}, false
+		return reconciler.CrashEvent{}, false
 	}
 
 	if pod.Labels[stset.LabelSourceType] != stset.AppSourceType {
 		logger.Debug("skipping-non-eirini-pod")
 
-		return events.CrashEvent{}, false
+		return reconciler.CrashEvent{}, false
 	}
 
 	appStatus := getApplicationContainerStatus(pod.Status.ContainerStatuses)
 	if appStatus == nil {
 		logger.Debug("skipping-eirini-pod-has-no-opi-container-statuses")
 
-		return events.CrashEvent{}, false
+		return reconciler.CrashEvent{}, false
 	}
 
 	if appStatus.State.Terminated != nil {
@@ -66,21 +66,21 @@ func (g DefaultCrashEventGenerator) Generate(ctx context.Context, pod *v1.Pod, l
 
 	logger.Debug("skipping-pod-healthy")
 
-	return events.CrashEvent{}, false
+	return reconciler.CrashEvent{}, false
 }
 
-func (g DefaultCrashEventGenerator) generateReportForTerminatedPod(ctx context.Context, pod *v1.Pod, status *v1.ContainerStatus, logger lager.Logger) (events.CrashEvent, bool) {
+func (g DefaultCrashEventGenerator) generateReportForTerminatedPod(ctx context.Context, pod *v1.Pod, status *v1.ContainerStatus, logger lager.Logger) (reconciler.CrashEvent, bool) {
 	podEvents, err := g.eventsClient.GetByPod(ctx, *pod)
 	if err != nil {
 		logger.Error("skipping-failed-to-get-k8s-events", err)
 
-		return events.CrashEvent{}, false
+		return reconciler.CrashEvent{}, false
 	}
 
 	if isStopped(podEvents) {
 		logger.Debug("skipping-pod-stopped")
 
-		return events.CrashEvent{}, false
+		return reconciler.CrashEvent{}, false
 	}
 
 	terminated := status.State.Terminated
@@ -95,10 +95,10 @@ func generateReport(
 	exitDescription string,
 	crashTimestamp int64,
 	restartCount int,
-) events.CrashEvent {
+) reconciler.CrashEvent {
 	index, _ := util.ParseAppIndex(pod.Name)
 
-	return events.CrashEvent{
+	return reconciler.CrashEvent{
 		ProcessGUID: pod.Annotations[stset.AnnotationProcessGUID],
 		AppCrashedRequest: cc_messages.AppCrashedRequest{
 			Reason:          reason,

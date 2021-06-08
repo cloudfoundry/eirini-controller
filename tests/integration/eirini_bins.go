@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"code.cloudfoundry.org/eirini"
-	"code.cloudfoundry.org/eirini/tests"
+	eirinictrl "code.cloudfoundry.org/eirini-controller"
+	"code.cloudfoundry.org/eirini-controller/tests"
 	"github.com/gofrs/flock"
 
 	// nolint:golint,stylecheck,revive
@@ -22,16 +22,12 @@ import (
 )
 
 type EiriniBinaries struct {
-	API                      Binary `json:"api"`
-	EventsReporter           Binary `json:"events_reporter"`
-	TaskReporter             Binary `json:"task_reporter"`
-	EiriniController         Binary `json:"eirini_controller"`
-	InstanceIndexEnvInjector Binary `json:"instance_index_env_injector"`
-	Migration                Binary `json:"migration"`
-	ResourceValidator        Binary `json:"resource_validator"`
-	ExternalBinsPath         bool
-	BinsPath                 string
-	CertsPath                string
+	EiriniController  Binary `json:"eirini_controller"`
+	Migration         Binary `json:"migration"`
+	ResourceValidator Binary `json:"resource_validator"`
+	ExternalBinsPath  bool
+	BinsPath          string
+	CertsPath         string
 }
 
 func NewEiriniBinaries() EiriniBinaries {
@@ -40,13 +36,9 @@ func NewEiriniBinaries() EiriniBinaries {
 	bins.CertsPath, _ = tests.GenerateKeyPairDir("tls", "localhost")
 
 	bins.setBinsPath()
-	bins.API = NewBinary("code.cloudfoundry.org/eirini/cmd/api", bins.BinsPath, bins.CertsPath)
-	bins.EventsReporter = NewBinary("code.cloudfoundry.org/eirini/cmd/event-reporter", bins.BinsPath, bins.CertsPath)
-	bins.TaskReporter = NewBinary("code.cloudfoundry.org/eirini/cmd/task-reporter", bins.BinsPath, bins.CertsPath)
-	bins.EiriniController = NewBinary("code.cloudfoundry.org/eirini/cmd/eirini-controller", bins.BinsPath, bins.CertsPath)
-	bins.InstanceIndexEnvInjector = NewBinary("code.cloudfoundry.org/eirini/cmd/instance-index-env-injector", bins.BinsPath, bins.CertsPath)
-	bins.Migration = NewBinary("code.cloudfoundry.org/eirini/cmd/migration", bins.BinsPath, bins.CertsPath)
-	bins.ResourceValidator = NewBinary("code.cloudfoundry.org/eirini/cmd/resource-validator", bins.BinsPath, bins.CertsPath)
+	bins.EiriniController = NewBinary("code.cloudfoundry.org/eirini-controller/cmd/eirini-controller", bins.BinsPath, bins.CertsPath)
+	bins.Migration = NewBinary("code.cloudfoundry.org/eirini-controller/cmd/migration", bins.BinsPath, bins.CertsPath)
+	bins.ResourceValidator = NewBinary("code.cloudfoundry.org/eirini-controller/cmd/resource-validator", bins.BinsPath, bins.CertsPath)
 
 	return bins
 }
@@ -105,8 +97,8 @@ func (b *Binary) Run(config interface{}, envVars ...string) (*gexec.Session, str
 	}
 
 	env := []string{
-		fmt.Sprintf("%s=%s", eirini.EnvCCCertDir, b.CertsPath),
-		fmt.Sprintf("%s=%s", eirini.EnvServerCertDir, b.CertsPath),
+		fmt.Sprintf("%s=%s", eirinictrl.EnvCCCertDir, b.CertsPath),
+		fmt.Sprintf("%s=%s", eirinictrl.EnvServerCertDir, b.CertsPath),
 	}
 	env = append(env, envVars...)
 

@@ -1,9 +1,9 @@
 package integration_test
 
 import (
-	"code.cloudfoundry.org/eirini/events"
-	"code.cloudfoundry.org/eirini/k8s/client"
-	"code.cloudfoundry.org/eirini/tests"
+	"code.cloudfoundry.org/eirini-controller/k8s/client"
+	"code.cloudfoundry.org/eirini-controller/k8s/reconciler"
+	"code.cloudfoundry.org/eirini-controller/tests"
 	"code.cloudfoundry.org/runtimeschema/cc_messages"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -65,21 +65,21 @@ var _ = Describe("Events", func() {
 				Kind:      "the-kind",
 			}
 
-			createCrashEvent(fixture.Namespace, "the-crash-event", ownerRef, events.CrashEvent{
+			createCrashEvent(fixture.Namespace, "the-crash-event", ownerRef, reconciler.CrashEvent{
 				AppCrashedRequest: cc_messages.AppCrashedRequest{
 					Index:  42,
 					Reason: "the-reason",
 				},
 			})
 
-			createCrashEvent(fixture.Namespace, "another-crash-event", ownerRef, events.CrashEvent{
+			createCrashEvent(fixture.Namespace, "another-crash-event", ownerRef, reconciler.CrashEvent{
 				AppCrashedRequest: cc_messages.AppCrashedRequest{
 					Index:  43,
 					Reason: "the-reason",
 				},
 			})
 
-			createCrashEvent(fixture.Namespace, "yet-another-crash-event", ownerRef, events.CrashEvent{
+			createCrashEvent(fixture.Namespace, "yet-another-crash-event", ownerRef, reconciler.CrashEvent{
 				AppCrashedRequest: cc_messages.AppCrashedRequest{
 					Index:  42,
 					Reason: "another-reason",

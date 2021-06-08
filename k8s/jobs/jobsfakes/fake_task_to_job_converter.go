@@ -4,8 +4,8 @@ package jobsfakes
 import (
 	"sync"
 
-	"code.cloudfoundry.org/eirini/api"
-	"code.cloudfoundry.org/eirini/k8s/jobs"
+	"code.cloudfoundry.org/eirini-controller/api"
+	"code.cloudfoundry.org/eirini-controller/k8s/jobs"
 	v1 "k8s.io/api/batch/v1"
 	v1a "k8s.io/api/core/v1"
 )

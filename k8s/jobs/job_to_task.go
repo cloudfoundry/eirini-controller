@@ -1,7 +1,7 @@
 package jobs
 
 import (
-	"code.cloudfoundry.org/eirini/api"
+	"code.cloudfoundry.org/eirini-controller/api"
 	batch "k8s.io/api/batch/v1"
 )
 

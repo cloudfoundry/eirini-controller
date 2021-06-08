@@ -1,8 +1,8 @@
 package migrations_test
 
 import (
-	"code.cloudfoundry.org/eirini/migrations"
-	"code.cloudfoundry.org/eirini/migrations/migrationsfakes"
+	"code.cloudfoundry.org/eirini-controller/migrations"
+	"code.cloudfoundry.org/eirini-controller/migrations/migrationsfakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

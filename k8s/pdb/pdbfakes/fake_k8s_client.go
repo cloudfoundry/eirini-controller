@@ -5,7 +5,7 @@ import (
 	"context"
 	"sync"
 
-	"code.cloudfoundry.org/eirini/k8s/pdb"
+	"code.cloudfoundry.org/eirini-controller/k8s/pdb"
 	"k8s.io/api/policy/v1beta1"
 )
 

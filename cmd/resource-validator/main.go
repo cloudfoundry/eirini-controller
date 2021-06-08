@@ -3,10 +3,10 @@ package main
 import (
 	"os"
 
-	"code.cloudfoundry.org/eirini"
-	cmdcommons "code.cloudfoundry.org/eirini/cmd"
-	"code.cloudfoundry.org/eirini/k8s/webhook"
-	"code.cloudfoundry.org/eirini/util"
+	eirinictrl "code.cloudfoundry.org/eirini-controller"
+	cmdcommons "code.cloudfoundry.org/eirini-controller/cmd"
+	"code.cloudfoundry.org/eirini-controller/k8s/webhook"
+	"code.cloudfoundry.org/eirini-controller/util"
 	"code.cloudfoundry.org/lager"
 	"github.com/jessevdk/go-flags"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -25,7 +25,7 @@ func main() {
 	_, err := flags.ParseArgs(&opts, os.Args)
 	cmdcommons.ExitfIfError(err, "Failed to parse args")
 
-	var cfg eirini.ResourceValidatorConfig
+	var cfg eirinictrl.ResourceValidatorConfig
 	err = cmdcommons.ReadConfigFile(opts.ConfigFile, &cfg)
 	cmdcommons.ExitfIfError(err, "Failed to read config file")
 
@@ -39,8 +39,8 @@ func main() {
 	ctrl.SetLogger(logr)
 
 	certDir := cmdcommons.GetEnvOrDefault(
-		eirini.EnvResourceValidatorCertDir,
-		eirini.ResourceValidatorCertDir,
+		eirinictrl.EnvResourceValidatorCertDir,
+		eirinictrl.ResourceValidatorCertDir,
 	)
 
 	mgr, err := manager.New(kubeConfig, manager.Options{

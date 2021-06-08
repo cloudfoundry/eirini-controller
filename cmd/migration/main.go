@@ -4,10 +4,10 @@ import (
 	"context"
 	"os"
 
-	"code.cloudfoundry.org/eirini"
-	cmdcommons "code.cloudfoundry.org/eirini/cmd"
-	"code.cloudfoundry.org/eirini/k8s/client"
-	"code.cloudfoundry.org/eirini/migrations"
+	eirinictrl "code.cloudfoundry.org/eirini-controller"
+	cmdcommons "code.cloudfoundry.org/eirini-controller/cmd"
+	"code.cloudfoundry.org/eirini-controller/k8s/client"
+	"code.cloudfoundry.org/eirini-controller/migrations"
 	"code.cloudfoundry.org/lager"
 	"github.com/jessevdk/go-flags"
 )
@@ -21,7 +21,7 @@ func main() {
 	_, err := flags.ParseArgs(&opts, os.Args)
 	cmdcommons.ExitfIfError(err, "Failed to parse args")
 
-	var cfg eirini.MigrationConfig
+	var cfg eirinictrl.MigrationConfig
 	err = cmdcommons.ReadConfigFile(opts.ConfigFile, &cfg)
 	cmdcommons.ExitfIfError(err, "Failed to read config file")
 

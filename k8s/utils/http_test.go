@@ -3,7 +3,7 @@ package utils_test
 import (
 	"net/http"
 
-	"code.cloudfoundry.org/eirini/k8s/utils"
+	"code.cloudfoundry.org/eirini-controller/k8s/utils"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/ghttp"

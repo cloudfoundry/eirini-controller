@@ -3,7 +3,7 @@ package migrations
 import (
 	"sort"
 
-	"code.cloudfoundry.org/eirini/k8s/client"
+	"code.cloudfoundry.org/eirini-controller/k8s/client"
 )
 
 type ObjectType string

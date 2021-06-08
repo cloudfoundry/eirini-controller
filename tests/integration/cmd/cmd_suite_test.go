@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"code.cloudfoundry.org/eirini/tests"
-	"code.cloudfoundry.org/eirini/tests/integration"
+	"code.cloudfoundry.org/eirini-controller/tests"
+	"code.cloudfoundry.org/eirini-controller/tests/integration"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"

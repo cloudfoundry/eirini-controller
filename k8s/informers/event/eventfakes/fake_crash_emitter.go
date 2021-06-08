@@ -4,15 +4,15 @@ package eventfakes
 import (
 	"sync"
 
-	"code.cloudfoundry.org/eirini/events"
-	"code.cloudfoundry.org/eirini/k8s/informers/event"
+	"code.cloudfoundry.org/eirini-controller/k8s/informers/event"
+	"code.cloudfoundry.org/eirini-controller/k8s/reconciler"
 )
 
 type FakeCrashEmitter struct {
-	EmitStub        func(events.CrashEvent) error
+	EmitStub        func(reconciler.CrashEvent) error
 	emitMutex       sync.RWMutex
 	emitArgsForCall []struct {
-		arg1 events.CrashEvent
+		arg1 reconciler.CrashEvent
 	}
 	emitReturns struct {
 		result1 error
@@ -24,11 +24,11 @@ type FakeCrashEmitter struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeCrashEmitter) Emit(arg1 events.CrashEvent) error {
+func (fake *FakeCrashEmitter) Emit(arg1 reconciler.CrashEvent) error {
 	fake.emitMutex.Lock()
 	ret, specificReturn := fake.emitReturnsOnCall[len(fake.emitArgsForCall)]
 	fake.emitArgsForCall = append(fake.emitArgsForCall, struct {
-		arg1 events.CrashEvent
+		arg1 reconciler.CrashEvent
 	}{arg1})
 	stub := fake.EmitStub
 	fakeReturns := fake.emitReturns
@@ -49,13 +49,13 @@ func (fake *FakeCrashEmitter) EmitCallCount() int {
 	return len(fake.emitArgsForCall)
 }
 
-func (fake *FakeCrashEmitter) EmitCalls(stub func(events.CrashEvent) error) {
+func (fake *FakeCrashEmitter) EmitCalls(stub func(reconciler.CrashEvent) error) {
 	fake.emitMutex.Lock()
 	defer fake.emitMutex.Unlock()
 	fake.EmitStub = stub
 }
 
-func (fake *FakeCrashEmitter) EmitArgsForCall(i int) events.CrashEvent {
+func (fake *FakeCrashEmitter) EmitArgsForCall(i int) reconciler.CrashEvent {
 	fake.emitMutex.RLock()
 	defer fake.emitMutex.RUnlock()
 	argsForCall := fake.emitArgsForCall[i]

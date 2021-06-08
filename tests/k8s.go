@@ -8,7 +8,7 @@ import (
 	"os"
 	"time"
 
-	"code.cloudfoundry.org/eirini/k8s/stset"
+	"code.cloudfoundry.org/eirini-controller/k8s/stset"
 
 	//nolint:revive
 	. "github.com/onsi/ginkgo"

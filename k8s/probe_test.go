@@ -1,8 +1,8 @@
 package k8s_test
 
 import (
-	"code.cloudfoundry.org/eirini/api"
-	. "code.cloudfoundry.org/eirini/k8s"
+	"code.cloudfoundry.org/eirini-controller/api"
+	. "code.cloudfoundry.org/eirini-controller/k8s"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	v1 "k8s.io/api/core/v1"

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"code.cloudfoundry.org/eirini/k8s/webhook/diff"
-	eiriniv1 "code.cloudfoundry.org/eirini/pkg/apis/eirini/v1"
+	"code.cloudfoundry.org/eirini-controller/k8s/webhook/diff"
+	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
 	"code.cloudfoundry.org/lager"
 	admissionv1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

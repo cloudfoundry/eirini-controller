@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"code.cloudfoundry.org/eirini"
-	"code.cloudfoundry.org/eirini/tests"
-	"code.cloudfoundry.org/eirini/tests/integration"
+	eirinictrl "code.cloudfoundry.org/eirini-controller"
+	"code.cloudfoundry.org/eirini-controller/tests"
+	"code.cloudfoundry.org/eirini-controller/tests/integration"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
@@ -25,7 +25,7 @@ var (
 	fixture        *tests.Fixture
 	configFilePath string
 	session        *gexec.Session
-	config         *eirini.ControllerConfig
+	config         *eirinictrl.ControllerConfig
 )
 
 var _ = SynchronizedBeforeSuite(func() []byte {

@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"code.cloudfoundry.org/eirini/migrations"
-	"code.cloudfoundry.org/eirini/migrations/migrationsfakes"
+	"code.cloudfoundry.org/eirini-controller/migrations"
+	"code.cloudfoundry.org/eirini-controller/migrations/migrationsfakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"

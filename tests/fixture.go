@@ -10,8 +10,8 @@ import (
 	"os"
 	"sync"
 
-	eiriniclient "code.cloudfoundry.org/eirini/pkg/generated/clientset/versioned"
-	eirinischeme "code.cloudfoundry.org/eirini/pkg/generated/clientset/versioned/scheme"
+	eiriniclient "code.cloudfoundry.org/eirini-controller/pkg/generated/clientset/versioned"
+	eirinischeme "code.cloudfoundry.org/eirini-controller/pkg/generated/clientset/versioned/scheme"
 	"github.com/hashicorp/go-multierror"
 
 	// nolint:golint,stylecheck,revive

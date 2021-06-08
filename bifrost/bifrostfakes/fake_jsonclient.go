@@ -5,7 +5,7 @@ import (
 	"context"
 	"sync"
 
-	"code.cloudfoundry.org/eirini/bifrost"
+	"code.cloudfoundry.org/eirini-controller/bifrost"
 )
 
 type FakeJSONClient struct {

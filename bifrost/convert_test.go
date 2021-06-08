@@ -3,10 +3,10 @@ package bifrost_test
 import (
 	"encoding/json"
 
-	"code.cloudfoundry.org/eirini"
-	"code.cloudfoundry.org/eirini/api"
-	"code.cloudfoundry.org/eirini/bifrost"
-	"code.cloudfoundry.org/eirini/models/cf"
+	eirinictrl "code.cloudfoundry.org/eirini-controller"
+	"code.cloudfoundry.org/eirini-controller/api"
+	"code.cloudfoundry.org/eirini-controller/bifrost"
+	"code.cloudfoundry.org/eirini-controller/models/cf"
 	"code.cloudfoundry.org/lager/lagertest"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -162,9 +162,9 @@ var _ = Describe("API Converter", func() {
 		})
 
 		It("should set CF_INSTANCE_* env variables", func() {
-			Expect(lrp.Env).To(HaveKeyWithValue(eirini.EnvCFInstanceAddr, "0.0.0.0:8000"))
-			Expect(lrp.Env).To(HaveKeyWithValue(eirini.EnvCFInstancePort, "8000"))
-			Expect(lrp.Env).To(HaveKeyWithValue(eirini.EnvCFInstancePorts, MatchJSON(`[{"external": 8000, "internal": 8000}]`)))
+			Expect(lrp.Env).To(HaveKeyWithValue(eirinictrl.EnvCFInstanceAddr, "0.0.0.0:8000"))
+			Expect(lrp.Env).To(HaveKeyWithValue(eirinictrl.EnvCFInstancePort, "8000"))
+			Expect(lrp.Env).To(HaveKeyWithValue(eirinictrl.EnvCFInstancePorts, MatchJSON(`[{"external": 8000, "internal": 8000}]`)))
 		})
 
 		It("should set LANG env variable", func() {
@@ -206,9 +206,9 @@ var _ = Describe("API Converter", func() {
 			})
 
 			It("should not set the port-dependent env vars", func() {
-				Expect(lrp.Env).NotTo(HaveKey(eirini.EnvCFInstanceAddr))
-				Expect(lrp.Env).NotTo(HaveKey(eirini.EnvCFInstancePort))
-				Expect(lrp.Env).NotTo(HaveKey(eirini.EnvCFInstancePorts))
+				Expect(lrp.Env).NotTo(HaveKey(eirinictrl.EnvCFInstanceAddr))
+				Expect(lrp.Env).NotTo(HaveKey(eirinictrl.EnvCFInstancePort))
+				Expect(lrp.Env).NotTo(HaveKey(eirinictrl.EnvCFInstancePorts))
 			})
 
 			It("defaults the healthcheck port to 0", func() {

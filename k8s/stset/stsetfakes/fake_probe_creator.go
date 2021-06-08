@@ -4,8 +4,8 @@ package stsetfakes
 import (
 	"sync"
 
-	"code.cloudfoundry.org/eirini/api"
-	"code.cloudfoundry.org/eirini/k8s/stset"
+	"code.cloudfoundry.org/eirini-controller/api"
+	"code.cloudfoundry.org/eirini-controller/k8s/stset"
 	v1 "k8s.io/api/core/v1"
 )
 

@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	"code.cloudfoundry.org/eirini/k8s/jobs"
+	"code.cloudfoundry.org/eirini-controller/k8s/jobs"
 	"code.cloudfoundry.org/lager"
 	"github.com/pkg/errors"
 	batchv1 "k8s.io/api/batch/v1"
@@ -226,4 +226,15 @@ func jobOwnedByTask(job batchv1.Job) bool {
 	}
 
 	return false
+}
+
+func getTaskContainerStatus(pod *corev1.Pod) (corev1.ContainerStatus, bool) {
+	taskContainerName := pod.Annotations[jobs.AnnotationTaskContainerName]
+	for _, status := range pod.Status.ContainerStatuses {
+		if status.Name == taskContainerName {
+			return status, true
+		}
+	}
+
+	return corev1.ContainerStatus{}, false
 }

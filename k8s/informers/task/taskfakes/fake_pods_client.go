@@ -5,7 +5,7 @@ import (
 	"context"
 	"sync"
 
-	"code.cloudfoundry.org/eirini/k8s/informers/task"
+	"code.cloudfoundry.org/eirini-controller/k8s/informers/task"
 	v1 "k8s.io/api/core/v1"
 )
 

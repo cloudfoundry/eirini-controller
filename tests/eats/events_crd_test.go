@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	eiriniv1 "code.cloudfoundry.org/eirini/pkg/apis/eirini/v1"
-	"code.cloudfoundry.org/eirini/tests"
+	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
+	"code.cloudfoundry.org/eirini-controller/tests"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"

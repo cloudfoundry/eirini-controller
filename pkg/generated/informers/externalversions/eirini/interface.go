@@ -19,8 +19,8 @@ limitations under the License.
 package eirini
 
 import (
-	v1 "code.cloudfoundry.org/eirini/pkg/generated/informers/externalversions/eirini/v1"
-	internalinterfaces "code.cloudfoundry.org/eirini/pkg/generated/informers/externalversions/internalinterfaces"
+	v1 "code.cloudfoundry.org/eirini-controller/pkg/generated/informers/externalversions/eirini/v1"
+	internalinterfaces "code.cloudfoundry.org/eirini-controller/pkg/generated/informers/externalversions/internalinterfaces"
 )
 
 // Interface provides access to each of this group's versions.

@@ -4,11 +4,11 @@ import (
 	"encoding/base64"
 	"fmt"
 
-	"code.cloudfoundry.org/eirini"
-	"code.cloudfoundry.org/eirini/api"
-	"code.cloudfoundry.org/eirini/k8s/jobs"
-	"code.cloudfoundry.org/eirini/k8s/jobs/jobsfakes"
-	"code.cloudfoundry.org/eirini/k8s/shared/sharedfakes"
+	eirinictrl "code.cloudfoundry.org/eirini-controller"
+	"code.cloudfoundry.org/eirini-controller/api"
+	"code.cloudfoundry.org/eirini-controller/k8s/jobs"
+	"code.cloudfoundry.org/eirini-controller/k8s/jobs/jobsfakes"
+	"code.cloudfoundry.org/eirini-controller/k8s/shared/sharedfakes"
 	"code.cloudfoundry.org/lager/lagertest"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -74,9 +74,9 @@ var _ = Describe("Desire", func() {
 			OrgGUID:            "org-id",
 			GUID:               taskGUID,
 			Env: map[string]string{
-				eirini.EnvDownloadURL:      "example.com/download",
-				eirini.EnvDropletUploadURL: "example.com/upload",
-				eirini.EnvAppID:            "env-app-id",
+				eirinictrl.EnvDownloadURL:      "example.com/download",
+				eirinictrl.EnvDropletUploadURL: "example.com/upload",
+				eirinictrl.EnvAppID:            "env-app-id",
 			},
 			MemoryMB:  1,
 			CPUWeight: 2,

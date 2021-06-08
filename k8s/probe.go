@@ -1,7 +1,7 @@
 package k8s
 
 import (
-	"code.cloudfoundry.org/eirini/api"
+	"code.cloudfoundry.org/eirini-controller/api"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )

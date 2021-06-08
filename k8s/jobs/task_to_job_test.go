@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"strconv"
 
-	"code.cloudfoundry.org/eirini"
-	"code.cloudfoundry.org/eirini/api"
-	"code.cloudfoundry.org/eirini/k8s/jobs"
-	"code.cloudfoundry.org/eirini/k8s/shared"
+	eirinictrl "code.cloudfoundry.org/eirini-controller"
+	"code.cloudfoundry.org/eirini-controller/api"
+	"code.cloudfoundry.org/eirini-controller/k8s/jobs"
+	"code.cloudfoundry.org/eirini-controller/k8s/shared"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
@@ -45,16 +45,16 @@ var _ = Describe("TaskToJob", func() {
 		Expect(container.ImagePullPolicy).To(Equal(corev1.PullAlways))
 
 		Expect(container.Env).To(ContainElements(
-			corev1.EnvVar{Name: eirini.EnvDownloadURL, Value: "example.com/download"},
-			corev1.EnvVar{Name: eirini.EnvDropletUploadURL, Value: "example.com/upload"},
-			corev1.EnvVar{Name: eirini.EnvAppID, Value: "env-app-id"},
-			corev1.EnvVar{Name: eirini.EnvCFInstanceGUID, ValueFrom: expectedValFrom("metadata.uid")},
-			corev1.EnvVar{Name: eirini.EnvCFInstanceInternalIP, ValueFrom: expectedValFrom("status.podIP")},
-			corev1.EnvVar{Name: eirini.EnvCFInstanceIP, ValueFrom: expectedValFrom("status.hostIP")},
-			corev1.EnvVar{Name: eirini.EnvPodName, ValueFrom: expectedValFrom("metadata.name")},
-			corev1.EnvVar{Name: eirini.EnvCFInstanceAddr, Value: ""},
-			corev1.EnvVar{Name: eirini.EnvCFInstancePort, Value: ""},
-			corev1.EnvVar{Name: eirini.EnvCFInstancePorts, Value: "[]"},
+			corev1.EnvVar{Name: eirinictrl.EnvDownloadURL, Value: "example.com/download"},
+			corev1.EnvVar{Name: eirinictrl.EnvDropletUploadURL, Value: "example.com/upload"},
+			corev1.EnvVar{Name: eirinictrl.EnvAppID, Value: "env-app-id"},
+			corev1.EnvVar{Name: eirinictrl.EnvCFInstanceGUID, ValueFrom: expectedValFrom("metadata.uid")},
+			corev1.EnvVar{Name: eirinictrl.EnvCFInstanceInternalIP, ValueFrom: expectedValFrom("status.podIP")},
+			corev1.EnvVar{Name: eirinictrl.EnvCFInstanceIP, ValueFrom: expectedValFrom("status.hostIP")},
+			corev1.EnvVar{Name: eirinictrl.EnvPodName, ValueFrom: expectedValFrom("metadata.name")},
+			corev1.EnvVar{Name: eirinictrl.EnvCFInstanceAddr, Value: ""},
+			corev1.EnvVar{Name: eirinictrl.EnvCFInstancePort, Value: ""},
+			corev1.EnvVar{Name: eirinictrl.EnvCFInstancePorts, Value: "[]"},
 		))
 	}
 
@@ -75,9 +75,9 @@ var _ = Describe("TaskToJob", func() {
 			OrgGUID:            "org-id",
 			GUID:               taskGUID,
 			Env: map[string]string{
-				eirini.EnvDownloadURL:      "example.com/download",
-				eirini.EnvDropletUploadURL: "example.com/upload",
-				eirini.EnvAppID:            "env-app-id",
+				eirinictrl.EnvDownloadURL:      "example.com/download",
+				eirinictrl.EnvDropletUploadURL: "example.com/upload",
+				eirinictrl.EnvAppID:            "env-app-id",
 			},
 			MemoryMB:  1,
 			CPUWeight: 2,

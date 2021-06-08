@@ -19,7 +19,7 @@ limitations under the License.
 package fake
 
 import (
-	v1 "code.cloudfoundry.org/eirini/pkg/generated/clientset/versioned/typed/eirini/v1"
+	v1 "code.cloudfoundry.org/eirini-controller/pkg/generated/clientset/versioned/typed/eirini/v1"
 	rest "k8s.io/client-go/rest"
 	testing "k8s.io/client-go/testing"
 )

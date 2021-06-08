@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"code.cloudfoundry.org/eirini/k8s/stset"
+	"code.cloudfoundry.org/eirini-controller/k8s/stset"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"

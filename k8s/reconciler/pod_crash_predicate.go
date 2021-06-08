@@ -1,7 +1,7 @@
 package reconciler
 
 import (
-	"code.cloudfoundry.org/eirini/k8s/stset"
+	"code.cloudfoundry.org/eirini-controller/k8s/stset"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 )
 

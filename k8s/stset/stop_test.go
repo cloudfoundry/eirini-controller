@@ -1,10 +1,10 @@
 package stset_test
 
 import (
-	"code.cloudfoundry.org/eirini"
-	"code.cloudfoundry.org/eirini/api"
-	"code.cloudfoundry.org/eirini/k8s/stset"
-	"code.cloudfoundry.org/eirini/k8s/stset/stsetfakes"
+	eirinictrl "code.cloudfoundry.org/eirini-controller"
+	"code.cloudfoundry.org/eirini-controller/api"
+	"code.cloudfoundry.org/eirini-controller/k8s/stset"
+	"code.cloudfoundry.org/eirini-controller/k8s/stset/stsetfakes"
 	"code.cloudfoundry.org/lager"
 	"code.cloudfoundry.org/lager/lagertest"
 	. "github.com/onsi/ginkgo"
@@ -154,7 +154,7 @@ var _ = Describe("Stop", func() {
 			It("returns an error", func() {
 				podDeleter.DeleteReturns(errors.New("boom"))
 				Expect(stopper.StopInstance(ctx, api.LRPIdentifier{GUID: "guid_1234", Version: "version_1234"}, 42)).
-					To(MatchError(eirini.ErrInvalidInstanceIndex))
+					To(MatchError(eirinictrl.ErrInvalidInstanceIndex))
 			})
 		})
 

@@ -1,8 +1,8 @@
 package stset_test
 
 import (
-	"code.cloudfoundry.org/eirini/k8s/stset"
-	"code.cloudfoundry.org/eirini/k8s/stset/stsetfakes"
+	"code.cloudfoundry.org/eirini-controller/k8s/stset"
+	"code.cloudfoundry.org/eirini-controller/k8s/stset/stsetfakes"
 	"code.cloudfoundry.org/lager"
 	"code.cloudfoundry.org/lager/lagertest"
 	. "github.com/onsi/ginkgo"

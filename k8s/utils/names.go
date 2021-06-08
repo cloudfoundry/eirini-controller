@@ -5,8 +5,8 @@ import (
 	"regexp"
 	"strings"
 
-	"code.cloudfoundry.org/eirini/api"
-	"code.cloudfoundry.org/eirini/util"
+	"code.cloudfoundry.org/eirini-controller/api"
+	"code.cloudfoundry.org/eirini-controller/util"
 	"github.com/pkg/errors"
 )
 

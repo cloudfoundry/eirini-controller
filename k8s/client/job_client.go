@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"code.cloudfoundry.org/eirini/k8s/jobs"
-	"code.cloudfoundry.org/eirini/k8s/patching"
+	"code.cloudfoundry.org/eirini-controller/k8s/jobs"
+	"code.cloudfoundry.org/eirini-controller/k8s/patching"
 	"github.com/pkg/errors"
 	batchv1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

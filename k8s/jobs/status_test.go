@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"code.cloudfoundry.org/eirini/k8s/jobs"
-	"code.cloudfoundry.org/eirini/k8s/jobs/jobsfakes"
-	eiriniv1 "code.cloudfoundry.org/eirini/pkg/apis/eirini/v1"
+	"code.cloudfoundry.org/eirini-controller/k8s/jobs"
+	"code.cloudfoundry.org/eirini-controller/k8s/jobs/jobsfakes"
+	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
 	"code.cloudfoundry.org/lager/lagertest"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

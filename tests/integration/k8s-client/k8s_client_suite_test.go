@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"code.cloudfoundry.org/eirini/events"
-	"code.cloudfoundry.org/eirini/k8s/jobs"
-	"code.cloudfoundry.org/eirini/k8s/stset"
-	"code.cloudfoundry.org/eirini/tests"
+	"code.cloudfoundry.org/eirini-controller/k8s/jobs"
+	"code.cloudfoundry.org/eirini-controller/k8s/reconciler"
+	"code.cloudfoundry.org/eirini-controller/k8s/stset"
+	"code.cloudfoundry.org/eirini-controller/tests"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
@@ -219,7 +219,7 @@ func createEvent(ns, name string, involvedObject corev1.ObjectReference) *corev1
 	return event
 }
 
-func createCrashEvent(ns, name string, involvedObject corev1.ObjectReference, crash events.CrashEvent) *corev1.Event {
+func createCrashEvent(ns, name string, involvedObject corev1.ObjectReference, crash reconciler.CrashEvent) *corev1.Event {
 	event, err := fixture.Clientset.CoreV1().Events(ns).Create(context.Background(), &corev1.Event{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,

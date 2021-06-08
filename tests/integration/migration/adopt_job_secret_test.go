@@ -4,9 +4,9 @@ import (
 	"context"
 	"strconv"
 
-	"code.cloudfoundry.org/eirini/k8s/jobs"
-	"code.cloudfoundry.org/eirini/k8s/shared"
-	"code.cloudfoundry.org/eirini/migrations"
+	"code.cloudfoundry.org/eirini-controller/k8s/jobs"
+	"code.cloudfoundry.org/eirini-controller/k8s/shared"
+	"code.cloudfoundry.org/eirini-controller/migrations"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	batchv1 "k8s.io/api/batch/v1"

@@ -3,8 +3,8 @@ package shared_test
 import (
 	"errors"
 
-	"code.cloudfoundry.org/eirini/k8s/shared"
-	"code.cloudfoundry.org/eirini/k8s/shared/sharedfakes"
+	"code.cloudfoundry.org/eirini-controller/k8s/shared"
+	"code.cloudfoundry.org/eirini-controller/k8s/shared/sharedfakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

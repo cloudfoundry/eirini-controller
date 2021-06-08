@@ -6,7 +6,7 @@ import (
 	"math/big"
 	"testing"
 
-	"code.cloudfoundry.org/eirini/api"
+	"code.cloudfoundry.org/eirini-controller/api"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

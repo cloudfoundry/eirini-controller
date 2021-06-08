@@ -3,8 +3,8 @@ package jobs
 import (
 	"context"
 
-	"code.cloudfoundry.org/eirini"
-	"code.cloudfoundry.org/eirini/api"
+	eirinictrl "code.cloudfoundry.org/eirini-controller"
+	"code.cloudfoundry.org/eirini-controller/api"
 	"github.com/pkg/errors"
 	batchv1 "k8s.io/api/batch/v1"
 )
@@ -44,7 +44,7 @@ func (g *Getter) Get(ctx context.Context, taskGUID string) (*api.Task, error) {
 func getSingleJob(jobs []batchv1.Job) (batchv1.Job, error) {
 	switch len(jobs) {
 	case 0:
-		return batchv1.Job{}, eirini.ErrNotFound
+		return batchv1.Job{}, eirinictrl.ErrNotFound
 	case 1:
 		return jobs[0], nil
 	default:

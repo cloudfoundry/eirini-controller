@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"reflect"
 
-	"code.cloudfoundry.org/eirini/k8s/webhook"
-	eiriniv1 "code.cloudfoundry.org/eirini/pkg/apis/eirini/v1"
+	"code.cloudfoundry.org/eirini-controller/k8s/webhook"
+	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
 	"code.cloudfoundry.org/lager"
 	"code.cloudfoundry.org/lager/lagertest"
 	. "github.com/onsi/ginkgo"

@@ -1,7 +1,7 @@
 package integration_test
 
 import (
-	"code.cloudfoundry.org/eirini/k8s/client"
+	"code.cloudfoundry.org/eirini-controller/k8s/client"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"

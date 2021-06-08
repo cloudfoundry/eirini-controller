@@ -1,7 +1,7 @@
 package jobs
 
 import (
-	"code.cloudfoundry.org/eirini/k8s/stset"
+	"code.cloudfoundry.org/eirini-controller/k8s/stset"
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate

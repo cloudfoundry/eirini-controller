@@ -1,7 +1,7 @@
 package stset
 
 import (
-	"code.cloudfoundry.org/eirini/api"
+	"code.cloudfoundry.org/eirini-controller/api"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 )

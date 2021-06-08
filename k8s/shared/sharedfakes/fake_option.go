@@ -4,7 +4,7 @@ package sharedfakes
 import (
 	"sync"
 
-	"code.cloudfoundry.org/eirini/k8s/shared"
+	"code.cloudfoundry.org/eirini-controller/k8s/shared"
 )
 
 type FakeOption struct {

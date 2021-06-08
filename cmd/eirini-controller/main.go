@@ -4,20 +4,20 @@ import (
 	"fmt"
 	"os"
 
-	"code.cloudfoundry.org/eirini"
-	cmdcommons "code.cloudfoundry.org/eirini/cmd"
-	"code.cloudfoundry.org/eirini/k8s"
-	"code.cloudfoundry.org/eirini/k8s/client"
-	"code.cloudfoundry.org/eirini/k8s/crclient"
-	eirinievent "code.cloudfoundry.org/eirini/k8s/informers/event"
-	"code.cloudfoundry.org/eirini/k8s/jobs"
-	"code.cloudfoundry.org/eirini/k8s/pdb"
-	"code.cloudfoundry.org/eirini/k8s/reconciler"
-	"code.cloudfoundry.org/eirini/k8s/stset"
-	eiriniv1 "code.cloudfoundry.org/eirini/pkg/apis/eirini/v1"
-	eirinischeme "code.cloudfoundry.org/eirini/pkg/generated/clientset/versioned/scheme"
-	"code.cloudfoundry.org/eirini/prometheus"
-	"code.cloudfoundry.org/eirini/util"
+	eirinictrl "code.cloudfoundry.org/eirini-controller"
+	cmdcommons "code.cloudfoundry.org/eirini-controller/cmd"
+	"code.cloudfoundry.org/eirini-controller/k8s"
+	"code.cloudfoundry.org/eirini-controller/k8s/client"
+	"code.cloudfoundry.org/eirini-controller/k8s/crclient"
+	eirinievent "code.cloudfoundry.org/eirini-controller/k8s/informers/event"
+	"code.cloudfoundry.org/eirini-controller/k8s/jobs"
+	"code.cloudfoundry.org/eirini-controller/k8s/pdb"
+	"code.cloudfoundry.org/eirini-controller/k8s/reconciler"
+	"code.cloudfoundry.org/eirini-controller/k8s/stset"
+	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
+	eirinischeme "code.cloudfoundry.org/eirini-controller/pkg/generated/clientset/versioned/scheme"
+	"code.cloudfoundry.org/eirini-controller/prometheus"
+	"code.cloudfoundry.org/eirini-controller/util"
 	"code.cloudfoundry.org/lager"
 	"github.com/jessevdk/go-flags"
 	appsv1 "k8s.io/api/apps/v1"
@@ -49,7 +49,7 @@ func main() {
 	_, err := flags.ParseArgs(&opts, os.Args)
 	cmdcommons.ExitfIfError(err, "Failed to parse args")
 
-	var cfg eirini.ControllerConfig
+	var cfg eirinictrl.ControllerConfig
 	err = cmdcommons.ReadConfigFile(opts.ConfigFile, &cfg)
 	cmdcommons.ExitfIfError(err, "Failed to read config file")
 
@@ -123,7 +123,7 @@ func createLRPReconciler(
 	logger lager.Logger,
 	controllerClient ctrlruntimeclient.Client,
 	clientset kubernetes.Interface,
-	cfg eirini.ControllerConfig,
+	cfg eirinictrl.ControllerConfig,
 	scheme *runtime.Scheme,
 	latestMigration int,
 ) (*reconciler.LRP, error) {
@@ -167,7 +167,7 @@ func createTaskReconciler(
 	logger lager.Logger,
 	controllerClient ctrlruntimeclient.Client,
 	clientset kubernetes.Interface,
-	cfg eirini.ControllerConfig,
+	cfg eirinictrl.ControllerConfig,
 	scheme *runtime.Scheme,
 	latestMigrationIndex int,
 ) *reconciler.Task {

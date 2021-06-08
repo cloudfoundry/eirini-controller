@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"strconv"
 
-	"code.cloudfoundry.org/eirini"
-	"code.cloudfoundry.org/eirini/api"
-	"code.cloudfoundry.org/eirini/k8s/shared"
-	"code.cloudfoundry.org/eirini/k8s/utils"
+	eirinictrl "code.cloudfoundry.org/eirini-controller"
+	"code.cloudfoundry.org/eirini-controller/api"
+	"code.cloudfoundry.org/eirini-controller/k8s/shared"
+	"code.cloudfoundry.org/eirini-controller/k8s/utils"
 	batch "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -135,7 +135,7 @@ func getEnvs(task *api.Task) []corev1.EnvVar {
 	envs := shared.MapToEnvVar(task.Env)
 	fieldEnvs := []corev1.EnvVar{
 		{
-			Name: eirini.EnvPodName,
+			Name: eirinictrl.EnvPodName,
 			ValueFrom: &corev1.EnvVarSource{
 				FieldRef: &corev1.ObjectFieldSelector{
 					FieldPath: "metadata.name",
@@ -143,7 +143,7 @@ func getEnvs(task *api.Task) []corev1.EnvVar {
 			},
 		},
 		{
-			Name: eirini.EnvCFInstanceGUID,
+			Name: eirinictrl.EnvCFInstanceGUID,
 			ValueFrom: &corev1.EnvVarSource{
 				FieldRef: &corev1.ObjectFieldSelector{
 					FieldPath: "metadata.uid",
@@ -151,7 +151,7 @@ func getEnvs(task *api.Task) []corev1.EnvVar {
 			},
 		},
 		{
-			Name: eirini.EnvCFInstanceIP,
+			Name: eirinictrl.EnvCFInstanceIP,
 			ValueFrom: &corev1.EnvVarSource{
 				FieldRef: &corev1.ObjectFieldSelector{
 					FieldPath: "status.hostIP",
@@ -159,16 +159,16 @@ func getEnvs(task *api.Task) []corev1.EnvVar {
 			},
 		},
 		{
-			Name: eirini.EnvCFInstanceInternalIP,
+			Name: eirinictrl.EnvCFInstanceInternalIP,
 			ValueFrom: &corev1.EnvVarSource{
 				FieldRef: &corev1.ObjectFieldSelector{
 					FieldPath: "status.podIP",
 				},
 			},
 		},
-		{Name: eirini.EnvCFInstanceAddr, Value: ""},
-		{Name: eirini.EnvCFInstancePort, Value: ""},
-		{Name: eirini.EnvCFInstancePorts, Value: "[]"},
+		{Name: eirinictrl.EnvCFInstanceAddr, Value: ""},
+		{Name: eirinictrl.EnvCFInstancePort, Value: ""},
+		{Name: eirinictrl.EnvCFInstancePorts, Value: "[]"},
 	}
 
 	envs = append(envs, fieldEnvs...)

@@ -12,12 +12,12 @@ import (
 	"strings"
 
 	"code.cloudfoundry.org/cfhttp/v2"
-	"code.cloudfoundry.org/eirini"
-	"code.cloudfoundry.org/eirini/k8s/jobs"
-	"code.cloudfoundry.org/eirini/k8s/stset"
-	eiriniv1 "code.cloudfoundry.org/eirini/pkg/apis/eirini/v1"
-	eiriniclient "code.cloudfoundry.org/eirini/pkg/generated/clientset/versioned"
-	"code.cloudfoundry.org/eirini/tests"
+	eirinictrl "code.cloudfoundry.org/eirini-controller"
+	"code.cloudfoundry.org/eirini-controller/k8s/jobs"
+	"code.cloudfoundry.org/eirini-controller/k8s/stset"
+	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
+	eiriniclient "code.cloudfoundry.org/eirini-controller/pkg/generated/clientset/versioned"
+	"code.cloudfoundry.org/eirini-controller/tests"
 	"code.cloudfoundry.org/tlsconfig"
 	"github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -117,10 +117,10 @@ func MakeTestHTTPClient(certsPath string) (*http.Client, error) {
 	return httpClient, nil
 }
 
-func DefaultAPIConfig(namespace string, tlsPort int) *eirini.APIConfig {
-	return &eirini.APIConfig{
-		CommonConfig: eirini.CommonConfig{
-			KubeConfig: eirini.KubeConfig{
+func DefaultAPIConfig(namespace string, tlsPort int) *eirinictrl.APIConfig {
+	return &eirinictrl.APIConfig{
+		CommonConfig: eirinictrl.CommonConfig{
+			KubeConfig: eirinictrl.KubeConfig{
 				ConfigPath: tests.GetKubeconfig(),
 			},
 
@@ -133,10 +133,10 @@ func DefaultAPIConfig(namespace string, tlsPort int) *eirini.APIConfig {
 	}
 }
 
-func DefaultControllerConfig(namespace string) *eirini.ControllerConfig {
-	return &eirini.ControllerConfig{
-		CommonConfig: eirini.CommonConfig{
-			KubeConfig: eirini.KubeConfig{
+func DefaultControllerConfig(namespace string) *eirinictrl.ControllerConfig {
+	return &eirinictrl.ControllerConfig{
+		CommonConfig: eirinictrl.CommonConfig{
+			KubeConfig: eirinictrl.KubeConfig{
 				ConfigPath: tests.GetKubeconfig(),
 			},
 			ApplicationServiceAccount: tests.GetApplicationServiceAccount(),

@@ -3,7 +3,7 @@ package stset
 import (
 	"context"
 
-	"code.cloudfoundry.org/eirini/api"
+	"code.cloudfoundry.org/eirini-controller/api"
 	"code.cloudfoundry.org/lager"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"

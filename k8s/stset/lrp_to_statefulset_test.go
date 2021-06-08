@@ -1,11 +1,11 @@
 package stset_test
 
 import (
-	"code.cloudfoundry.org/eirini"
-	"code.cloudfoundry.org/eirini/api"
-	"code.cloudfoundry.org/eirini/k8s/shared"
-	"code.cloudfoundry.org/eirini/k8s/stset"
-	"code.cloudfoundry.org/eirini/k8s/stset/stsetfakes"
+	eirinictrl "code.cloudfoundry.org/eirini-controller"
+	"code.cloudfoundry.org/eirini-controller/api"
+	"code.cloudfoundry.org/eirini-controller/k8s/shared"
+	"code.cloudfoundry.org/eirini-controller/k8s/stset"
+	"code.cloudfoundry.org/eirini-controller/k8s/stset/stsetfakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
@@ -246,10 +246,10 @@ var _ = Describe("LRP to StatefulSet Converter", func() {
 		Expect(statefulSet.Spec.Template.Spec.Containers).To(HaveLen(1))
 		container := statefulSet.Spec.Template.Spec.Containers[0]
 		Expect(container.Env).To(ContainElements(
-			corev1.EnvVar{Name: eirini.EnvPodName, ValueFrom: expectedValFrom("metadata.name")},
-			corev1.EnvVar{Name: eirini.EnvCFInstanceGUID, ValueFrom: expectedValFrom("metadata.uid")},
-			corev1.EnvVar{Name: eirini.EnvCFInstanceInternalIP, ValueFrom: expectedValFrom("status.podIP")},
-			corev1.EnvVar{Name: eirini.EnvCFInstanceIP, ValueFrom: expectedValFrom("status.hostIP")},
+			corev1.EnvVar{Name: eirinictrl.EnvPodName, ValueFrom: expectedValFrom("metadata.name")},
+			corev1.EnvVar{Name: eirinictrl.EnvCFInstanceGUID, ValueFrom: expectedValFrom("metadata.uid")},
+			corev1.EnvVar{Name: eirinictrl.EnvCFInstanceInternalIP, ValueFrom: expectedValFrom("status.podIP")},
+			corev1.EnvVar{Name: eirinictrl.EnvCFInstanceIP, ValueFrom: expectedValFrom("status.hostIP")},
 		))
 	})
 

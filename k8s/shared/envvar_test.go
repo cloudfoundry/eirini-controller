@@ -1,7 +1,7 @@
 package shared_test
 
 import (
-	"code.cloudfoundry.org/eirini/k8s/shared"
+	"code.cloudfoundry.org/eirini-controller/k8s/shared"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	v1 "k8s.io/api/core/v1"

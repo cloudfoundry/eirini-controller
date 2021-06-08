@@ -1,7 +1,7 @@
 package util_test
 
 import (
-	"code.cloudfoundry.org/eirini/util"
+	"code.cloudfoundry.org/eirini-controller/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

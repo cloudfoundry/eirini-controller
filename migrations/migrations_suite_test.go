@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	"code.cloudfoundry.org/eirini/migrations"
+	"code.cloudfoundry.org/eirini-controller/migrations"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"

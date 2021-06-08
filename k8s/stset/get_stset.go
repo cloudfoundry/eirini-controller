@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"code.cloudfoundry.org/eirini"
-	"code.cloudfoundry.org/eirini/api"
+	eirinictrl "code.cloudfoundry.org/eirini-controller"
+	"code.cloudfoundry.org/eirini-controller/api"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 )
@@ -27,7 +27,7 @@ func newGetStatefulSetFunc(stSetGetter StatefulSetByLRPIdentifierGetter) getStat
 
 		switch len(statefulSets) {
 		case 0:
-			return nil, eirini.ErrNotFound
+			return nil, eirinictrl.ErrNotFound
 		case 1:
 			return &statefulSets[0], nil
 		default:

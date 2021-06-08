@@ -3,7 +3,7 @@ package client
 import (
 	"context"
 
-	"code.cloudfoundry.org/eirini/k8s/patching"
+	"code.cloudfoundry.org/eirini-controller/k8s/patching"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	policyv1beta1 "k8s.io/api/policy/v1beta1"

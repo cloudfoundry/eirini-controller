@@ -1,16 +1,16 @@
-IMAGES = api event-reporter eirini-controller task-reporter instance-index-env-injector migration resource-validator
+IMAGES = eirini-controller migration resource-validator
 
 TAG ?= latest
 DOCKER_DIR := ${CURDIR}
-EIRINI_DIR := ${DOCKER_DIR}/..
-REVISION := $(shell git -C $(EIRINI_DIR) rev-parse HEAD)
+EIRINI_CONTROLLER_DIR := ${DOCKER_DIR}/..
+REVISION := $(shell git -C $(EIRINI_CONTROLLER_DIR) rev-parse HEAD)
 
 .PHONY: $(IMAGES)
 
 all: $(IMAGES)
 
 $(IMAGES):
-	DOCKER_BUILDKIT=1 docker build $(EIRINI_DIR) \
+	DOCKER_BUILDKIT=1 docker build $(EIRINI_CONTROLLER_DIR) \
 		--file "$(DOCKER_DIR)/$@/Dockerfile" \
 		--build-arg GIT_SHA=$(REVISION) \
 		--tag "eirini/$@:$(TAG)"

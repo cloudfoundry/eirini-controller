@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"time"
 
-	"code.cloudfoundry.org/eirini/events"
-	"code.cloudfoundry.org/eirini/k8s/client"
-	"code.cloudfoundry.org/eirini/k8s/informers/event"
-	"code.cloudfoundry.org/eirini/k8s/stset"
+	"code.cloudfoundry.org/eirini-controller/k8s/client"
+	"code.cloudfoundry.org/eirini-controller/k8s/informers/event"
+	"code.cloudfoundry.org/eirini-controller/k8s/reconciler"
+	"code.cloudfoundry.org/eirini-controller/k8s/stset"
 	"code.cloudfoundry.org/lager/lagertest"
 	"code.cloudfoundry.org/runtimeschema/cc_messages"
 	. "github.com/onsi/ginkgo"
@@ -47,7 +47,7 @@ var _ = Describe("CrashEventGenerator", func() {
 			It("should generate a crashed report", func() {
 				report, returned := generator.Generate(ctx, pod, logger)
 				Expect(returned).To(BeTrue())
-				Expect(report).To(Equal(events.CrashEvent{
+				Expect(report).To(Equal(reconciler.CrashEvent{
 					ProcessGUID: "test-pod-anno",
 					AppCrashedRequest: cc_messages.AppCrashedRequest{
 						Reason:          "better luck next time",
@@ -233,7 +233,7 @@ var _ = Describe("CrashEventGenerator", func() {
 		It("should return a crashed report", func() {
 			report, returned := generator.Generate(ctx, pod, logger)
 			Expect(returned).To(BeTrue())
-			Expect(report).To(Equal(events.CrashEvent{
+			Expect(report).To(Equal(reconciler.CrashEvent{
 				ProcessGUID: "test-pod-anno",
 				AppCrashedRequest: cc_messages.AppCrashedRequest{
 					Reason:          "better luck next time",

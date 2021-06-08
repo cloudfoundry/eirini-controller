@@ -5,7 +5,7 @@ import (
 	"context"
 	"sync"
 
-	"code.cloudfoundry.org/eirini/migrations"
+	"code.cloudfoundry.org/eirini-controller/migrations"
 	v1 "k8s.io/api/apps/v1"
 	"k8s.io/api/policy/v1beta1"
 )

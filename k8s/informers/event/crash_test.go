@@ -6,11 +6,11 @@ import (
 	"strconv"
 	"time"
 
-	"code.cloudfoundry.org/eirini/events"
-	"code.cloudfoundry.org/eirini/k8s/informers/event"
-	"code.cloudfoundry.org/eirini/k8s/informers/event/eventfakes"
-	"code.cloudfoundry.org/eirini/k8s/reconciler/reconcilerfakes"
-	"code.cloudfoundry.org/eirini/k8s/stset"
+	"code.cloudfoundry.org/eirini-controller/k8s/informers/event"
+	"code.cloudfoundry.org/eirini-controller/k8s/informers/event/eventfakes"
+	"code.cloudfoundry.org/eirini-controller/k8s/reconciler"
+	"code.cloudfoundry.org/eirini-controller/k8s/reconciler/reconcilerfakes"
+	"code.cloudfoundry.org/eirini-controller/k8s/stset"
 	"code.cloudfoundry.org/lager/lagertest"
 	"code.cloudfoundry.org/runtimeschema/cc_messages"
 	. "github.com/onsi/ginkgo"
@@ -33,7 +33,7 @@ var _ = Describe("Event", func() {
 		controllerClient *reconcilerfakes.FakeClient
 		pod              *corev1.Pod
 		getPodError      error
-		crashEvent       events.CrashEvent
+		crashEvent       reconciler.CrashEvent
 		result           reconcile.Result
 		err              error
 	)
@@ -50,7 +50,7 @@ var _ = Describe("Event", func() {
 		}
 		getPodError = nil
 
-		crashEvent = events.CrashEvent{
+		crashEvent = reconciler.CrashEvent{
 			ProcessGUID: "blahblah",
 			AppCrashedRequest: cc_messages.AppCrashedRequest{
 				CrashTimestamp: time.Now().Unix(),

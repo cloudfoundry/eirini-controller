@@ -3,7 +3,7 @@ package k8s
 import (
 	"context"
 
-	"code.cloudfoundry.org/eirini/k8s/jobs"
+	"code.cloudfoundry.org/eirini-controller/k8s/jobs"
 	"code.cloudfoundry.org/lager"
 	batch "k8s.io/api/batch/v1"
 )

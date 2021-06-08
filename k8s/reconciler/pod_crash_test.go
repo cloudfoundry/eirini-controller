@@ -5,10 +5,9 @@ import (
 	"strconv"
 	"time"
 
-	"code.cloudfoundry.org/eirini/events"
-	"code.cloudfoundry.org/eirini/k8s/reconciler"
-	"code.cloudfoundry.org/eirini/k8s/reconciler/reconcilerfakes"
-	"code.cloudfoundry.org/eirini/k8s/stset"
+	"code.cloudfoundry.org/eirini-controller/k8s/reconciler"
+	"code.cloudfoundry.org/eirini-controller/k8s/reconciler/reconcilerfakes"
+	"code.cloudfoundry.org/eirini-controller/k8s/stset"
 	"code.cloudfoundry.org/lager/lagertest"
 	"code.cloudfoundry.org/runtimeschema/cc_messages"
 	. "github.com/onsi/ginkgo"
@@ -117,7 +116,7 @@ var _ = Describe("K8s/Reconciler/AppCrash", func() {
 
 	When("no crash is generated", func() {
 		BeforeEach(func() {
-			crashEventGenerator.GenerateReturns(events.CrashEvent{}, false)
+			crashEventGenerator.GenerateReturns(reconciler.CrashEvent{}, false)
 		})
 
 		It("does not create a k8s event", func() {
@@ -130,7 +129,7 @@ var _ = Describe("K8s/Reconciler/AppCrash", func() {
 
 		BeforeEach(func() {
 			timestamp = time.Unix(time.Now().Unix(), 0)
-			crashEventGenerator.GenerateReturns(events.CrashEvent{
+			crashEventGenerator.GenerateReturns(reconciler.CrashEvent{
 				ProcessGUID: "process-guid",
 				AppCrashedRequest: cc_messages.AppCrashedRequest{
 					Instance:        "instance-name",
@@ -278,7 +277,7 @@ var _ = Describe("K8s/Reconciler/AppCrash", func() {
 			timestampFirst = time.Unix(time.Now().Unix(), 0)
 			timestampSecond = timestampFirst.Add(10 * time.Second)
 
-			crashEventGenerator.GenerateReturns(events.CrashEvent{
+			crashEventGenerator.GenerateReturns(reconciler.CrashEvent{
 				ProcessGUID: "process-guid",
 				AppCrashedRequest: cc_messages.AppCrashedRequest{
 					Instance:        "instance-name",
@@ -290,7 +289,7 @@ var _ = Describe("K8s/Reconciler/AppCrash", func() {
 				},
 			}, true)
 
-			crashEventGenerator.GenerateReturnsOnCall(1, events.CrashEvent{
+			crashEventGenerator.GenerateReturnsOnCall(1, reconciler.CrashEvent{
 				ProcessGUID: "process-guid",
 				AppCrashedRequest: cc_messages.AppCrashedRequest{
 					Instance:        "instance-name",

@@ -10,8 +10,8 @@ import (
 	"os"
 
 	"code.cloudfoundry.org/cfhttp/v2"
-	"code.cloudfoundry.org/eirini"
-	"code.cloudfoundry.org/eirini/tests/eats/wiremock"
+	eirinictrl "code.cloudfoundry.org/eirini-controller"
+	"code.cloudfoundry.org/eirini-controller/tests/eats/wiremock"
 
 	// nolint:golint,stylecheck,revive
 	. "github.com/onsi/ginkgo"
@@ -140,7 +140,7 @@ func (f *EATSFixture) GetEiriniWorkloadsNamespace() string {
 	Expect(err).NotTo(HaveOccurred())
 
 	apiYml := cm.Data["api.yml"]
-	config := eirini.APIConfig{}
+	config := eirinictrl.APIConfig{}
 
 	Expect(yaml.Unmarshal([]byte(apiYml), &config)).To(Succeed())
 

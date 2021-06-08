@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"code.cloudfoundry.org/eirini/util"
+	"code.cloudfoundry.org/eirini-controller/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/ghttp"

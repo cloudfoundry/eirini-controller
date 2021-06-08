@@ -5,10 +5,10 @@ import (
 	"context"
 	"sync"
 
-	"code.cloudfoundry.org/eirini/api"
-	"code.cloudfoundry.org/eirini/k8s/reconciler"
-	"code.cloudfoundry.org/eirini/k8s/shared"
-	v1 "code.cloudfoundry.org/eirini/pkg/apis/eirini/v1"
+	"code.cloudfoundry.org/eirini-controller/api"
+	"code.cloudfoundry.org/eirini-controller/k8s/reconciler"
+	"code.cloudfoundry.org/eirini-controller/k8s/shared"
+	v1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
 )
 
 type FakeLRPWorkloadCLient struct {

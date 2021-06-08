@@ -1,7 +1,7 @@
 package v1
 
 import (
-	eirini "code.cloudfoundry.org/eirini/pkg/apis/eirini"
+	eirini "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"

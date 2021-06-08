@@ -5,9 +5,9 @@ import (
 	"context"
 	"sync"
 
-	"code.cloudfoundry.org/eirini/api"
-	"code.cloudfoundry.org/eirini/bifrost"
-	"code.cloudfoundry.org/eirini/k8s/shared"
+	"code.cloudfoundry.org/eirini-controller/api"
+	"code.cloudfoundry.org/eirini-controller/bifrost"
+	"code.cloudfoundry.org/eirini-controller/k8s/shared"
 )
 
 type FakeLRPClient struct {

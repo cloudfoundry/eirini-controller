@@ -19,7 +19,7 @@ limitations under the License.
 package v1
 
 import (
-	internalinterfaces "code.cloudfoundry.org/eirini/pkg/generated/informers/externalversions/internalinterfaces"
+	internalinterfaces "code.cloudfoundry.org/eirini-controller/pkg/generated/informers/externalversions/internalinterfaces"
 )
 
 // Interface provides access to all the informers in this group version.

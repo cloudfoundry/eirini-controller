@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"code.cloudfoundry.org/eirini"
-	"code.cloudfoundry.org/eirini/api"
+	eirinictrl "code.cloudfoundry.org/eirini-controller"
+	"code.cloudfoundry.org/eirini-controller/api"
 	"code.cloudfoundry.org/lager"
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -56,7 +56,7 @@ func (s *Stopper) stop(ctx context.Context, identifier api.LRPIdentifier) error 
 	logger := s.logger.Session("stop", lager.Data{"guid": identifier.GUID, "version": identifier.Version})
 	statefulSet, err := s.getStatefulSet(ctx, identifier)
 
-	if errors.Is(err, eirini.ErrNotFound) {
+	if errors.Is(err, eirinictrl.ErrNotFound) {
 		logger.Debug("statefulset-does-not-exist")
 
 		return nil
@@ -81,7 +81,7 @@ func (s *Stopper) StopInstance(ctx context.Context, identifier api.LRPIdentifier
 	logger := s.logger.Session("stopInstance", lager.Data{"guid": identifier.GUID, "version": identifier.Version, "index": index})
 	statefulset, err := s.getStatefulSet(ctx, identifier)
 
-	if errors.Is(err, eirini.ErrNotFound) {
+	if errors.Is(err, eirinictrl.ErrNotFound) {
 		logger.Debug("statefulset-does-not-exist")
 
 		return nil
@@ -94,7 +94,7 @@ func (s *Stopper) StopInstance(ctx context.Context, identifier api.LRPIdentifier
 	}
 
 	if int32(index) >= *statefulset.Spec.Replicas {
-		return eirini.ErrInvalidInstanceIndex
+		return eirinictrl.ErrInvalidInstanceIndex
 	}
 
 	err = s.podDeleter.Delete(ctx, statefulset.Namespace, fmt.Sprintf("%s-%d", statefulset.Name, index))

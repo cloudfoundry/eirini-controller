@@ -3,8 +3,8 @@ package util_test
 import (
 	"errors"
 
-	"code.cloudfoundry.org/eirini/util"
-	"code.cloudfoundry.org/eirini/util/utilfakes"
+	"code.cloudfoundry.org/eirini-controller/util"
+	"code.cloudfoundry.org/eirini-controller/util/utilfakes"
 	"code.cloudfoundry.org/lager"
 	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"

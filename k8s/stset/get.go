@@ -4,10 +4,10 @@ import (
 	"context"
 	"strings"
 
-	"code.cloudfoundry.org/eirini"
-	"code.cloudfoundry.org/eirini/api"
-	"code.cloudfoundry.org/eirini/k8s/utils"
-	"code.cloudfoundry.org/eirini/util"
+	eirinictrl "code.cloudfoundry.org/eirini-controller"
+	"code.cloudfoundry.org/eirini-controller/api"
+	"code.cloudfoundry.org/eirini-controller/k8s/utils"
+	"code.cloudfoundry.org/eirini-controller/util"
 	"code.cloudfoundry.org/lager"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -62,7 +62,7 @@ func (g *Getter) Get(ctx context.Context, identifier api.LRPIdentifier) (*api.LR
 
 func (g *Getter) GetInstances(ctx context.Context, identifier api.LRPIdentifier) ([]*api.Instance, error) {
 	logger := g.logger.Session("get-instance", lager.Data{"guid": identifier.GUID, "version": identifier.Version})
-	if _, err := g.getLRP(ctx, logger, identifier); errors.Is(err, eirini.ErrNotFound) {
+	if _, err := g.getLRP(ctx, logger, identifier); errors.Is(err, eirinictrl.ErrNotFound) {
 		return nil, err
 	}
 

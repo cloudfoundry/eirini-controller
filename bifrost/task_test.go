@@ -3,10 +3,10 @@ package bifrost_test
 import (
 	"context"
 
-	"code.cloudfoundry.org/eirini/api"
-	"code.cloudfoundry.org/eirini/bifrost"
-	"code.cloudfoundry.org/eirini/bifrost/bifrostfakes"
-	"code.cloudfoundry.org/eirini/models/cf"
+	"code.cloudfoundry.org/eirini-controller/api"
+	"code.cloudfoundry.org/eirini-controller/bifrost"
+	"code.cloudfoundry.org/eirini-controller/bifrost/bifrostfakes"
+	"code.cloudfoundry.org/eirini-controller/models/cf"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"

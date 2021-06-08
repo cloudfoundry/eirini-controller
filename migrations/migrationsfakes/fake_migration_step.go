@@ -5,7 +5,7 @@ import (
 	"context"
 	"sync"
 
-	"code.cloudfoundry.org/eirini/migrations"
+	"code.cloudfoundry.org/eirini-controller/migrations"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 

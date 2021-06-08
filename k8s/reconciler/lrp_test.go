@@ -3,12 +3,12 @@ package reconciler_test
 import (
 	"context"
 
-	"code.cloudfoundry.org/eirini"
-	"code.cloudfoundry.org/eirini/api"
-	"code.cloudfoundry.org/eirini/k8s/reconciler"
-	"code.cloudfoundry.org/eirini/k8s/reconciler/reconcilerfakes"
-	eiriniv1 "code.cloudfoundry.org/eirini/pkg/apis/eirini/v1"
-	eiriniv1scheme "code.cloudfoundry.org/eirini/pkg/generated/clientset/versioned/scheme"
+	eirinictrl "code.cloudfoundry.org/eirini-controller"
+	"code.cloudfoundry.org/eirini-controller/api"
+	"code.cloudfoundry.org/eirini-controller/k8s/reconciler"
+	"code.cloudfoundry.org/eirini-controller/k8s/reconciler/reconcilerfakes"
+	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
+	eiriniv1scheme "code.cloudfoundry.org/eirini-controller/pkg/generated/clientset/versioned/scheme"
 	"code.cloudfoundry.org/lager/lagertest"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -104,7 +104,7 @@ var _ = Describe("reconciler.LRP", func() {
 			},
 		}, nil)
 
-		workloadClient.GetReturns(nil, eirini.ErrNotFound)
+		workloadClient.GetReturns(nil, eirinictrl.ErrNotFound)
 	})
 
 	JustBeforeEach(func() {

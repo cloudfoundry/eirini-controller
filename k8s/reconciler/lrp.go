@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"code.cloudfoundry.org/eirini"
-	"code.cloudfoundry.org/eirini/api"
-	"code.cloudfoundry.org/eirini/k8s/shared"
-	eiriniv1 "code.cloudfoundry.org/eirini/pkg/apis/eirini/v1"
-	"code.cloudfoundry.org/eirini/util"
+	eirinictrl "code.cloudfoundry.org/eirini-controller"
+	"code.cloudfoundry.org/eirini-controller/api"
+	"code.cloudfoundry.org/eirini-controller/k8s/shared"
+	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
+	"code.cloudfoundry.org/eirini-controller/util"
 	"code.cloudfoundry.org/lager"
 	"github.com/hashicorp/go-multierror"
 	"github.com/jinzhu/copier"
@@ -86,7 +86,7 @@ func (r *LRP) do(ctx context.Context, lrp *eiriniv1.LRP) error {
 		GUID:    lrp.Spec.GUID,
 		Version: lrp.Spec.Version,
 	})
-	if errors.Is(err, eirini.ErrNotFound) {
+	if errors.Is(err, eirinictrl.ErrNotFound) {
 		appLRP, parseErr := toAPILrp(lrp)
 		if parseErr != nil {
 			return errors.Wrap(parseErr, "failed to parse the crd spec to the lrp model")

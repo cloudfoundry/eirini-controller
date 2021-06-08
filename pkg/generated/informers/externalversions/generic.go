@@ -21,7 +21,7 @@ package externalversions
 import (
 	"fmt"
 
-	v1 "code.cloudfoundry.org/eirini/pkg/apis/eirini/v1"
+	v1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"
 )

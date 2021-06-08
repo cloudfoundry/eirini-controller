@@ -23,9 +23,9 @@ import (
 	sync "sync"
 	time "time"
 
-	versioned "code.cloudfoundry.org/eirini/pkg/generated/clientset/versioned"
-	eirini "code.cloudfoundry.org/eirini/pkg/generated/informers/externalversions/eirini"
-	internalinterfaces "code.cloudfoundry.org/eirini/pkg/generated/informers/externalversions/internalinterfaces"
+	versioned "code.cloudfoundry.org/eirini-controller/pkg/generated/clientset/versioned"
+	eirini "code.cloudfoundry.org/eirini-controller/pkg/generated/informers/externalversions/eirini"
+	internalinterfaces "code.cloudfoundry.org/eirini-controller/pkg/generated/informers/externalversions/internalinterfaces"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

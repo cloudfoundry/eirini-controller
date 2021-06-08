@@ -4,7 +4,7 @@ package migrationsfakes
 import (
 	"sync"
 
-	"code.cloudfoundry.org/eirini/migrations"
+	"code.cloudfoundry.org/eirini-controller/migrations"
 )
 
 type FakeMigrationProvider struct {

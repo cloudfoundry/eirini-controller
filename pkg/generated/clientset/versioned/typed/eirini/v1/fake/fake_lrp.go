@@ -21,7 +21,7 @@ package fake
 import (
 	"context"
 
-	eiriniv1 "code.cloudfoundry.org/eirini/pkg/apis/eirini/v1"
+	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

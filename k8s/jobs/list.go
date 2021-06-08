@@ -3,7 +3,7 @@ package jobs
 import (
 	"context"
 
-	"code.cloudfoundry.org/eirini/api"
+	"code.cloudfoundry.org/eirini-controller/api"
 	"github.com/pkg/errors"
 	batch "k8s.io/api/batch/v1"
 )

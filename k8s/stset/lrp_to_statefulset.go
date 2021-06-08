@@ -3,9 +3,9 @@ package stset
 import (
 	"strconv"
 
-	"code.cloudfoundry.org/eirini"
-	"code.cloudfoundry.org/eirini/api"
-	"code.cloudfoundry.org/eirini/k8s/shared"
+	eirinictrl "code.cloudfoundry.org/eirini-controller"
+	"code.cloudfoundry.org/eirini-controller/api"
+	"code.cloudfoundry.org/eirini-controller/k8s/shared"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -52,7 +52,7 @@ func (c *LRPToStatefulSet) Convert(statefulSetName string, lrp *api.LRP, private
 	envs := shared.MapToEnvVar(lrp.Env)
 	fieldEnvs := []corev1.EnvVar{
 		{
-			Name: eirini.EnvPodName,
+			Name: eirinictrl.EnvPodName,
 			ValueFrom: &corev1.EnvVarSource{
 				FieldRef: &corev1.ObjectFieldSelector{
 					FieldPath: "metadata.name",
@@ -60,7 +60,7 @@ func (c *LRPToStatefulSet) Convert(statefulSetName string, lrp *api.LRP, private
 			},
 		},
 		{
-			Name: eirini.EnvCFInstanceGUID,
+			Name: eirinictrl.EnvCFInstanceGUID,
 			ValueFrom: &corev1.EnvVarSource{
 				FieldRef: &corev1.ObjectFieldSelector{
 					FieldPath: "metadata.uid",
@@ -68,7 +68,7 @@ func (c *LRPToStatefulSet) Convert(statefulSetName string, lrp *api.LRP, private
 			},
 		},
 		{
-			Name: eirini.EnvCFInstanceIP,
+			Name: eirinictrl.EnvCFInstanceIP,
 			ValueFrom: &corev1.EnvVarSource{
 				FieldRef: &corev1.ObjectFieldSelector{
 					FieldPath: "status.hostIP",
@@ -76,7 +76,7 @@ func (c *LRPToStatefulSet) Convert(statefulSetName string, lrp *api.LRP, private
 			},
 		},
 		{
-			Name: eirini.EnvCFInstanceInternalIP,
+			Name: eirinictrl.EnvCFInstanceInternalIP,
 			ValueFrom: &corev1.EnvVarSource{
 				FieldRef: &corev1.ObjectFieldSelector{
 					FieldPath: "status.podIP",

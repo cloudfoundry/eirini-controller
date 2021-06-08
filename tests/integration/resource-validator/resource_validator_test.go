@@ -3,8 +3,8 @@ package resource_validator_test
 import (
 	"context"
 
-	eiriniv1 "code.cloudfoundry.org/eirini/pkg/apis/eirini/v1"
-	"code.cloudfoundry.org/eirini/tests"
+	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
+	"code.cloudfoundry.org/eirini-controller/tests"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

@@ -19,8 +19,8 @@ limitations under the License.
 package v1
 
 import (
-	v1 "code.cloudfoundry.org/eirini/pkg/apis/eirini/v1"
-	"code.cloudfoundry.org/eirini/pkg/generated/clientset/versioned/scheme"
+	v1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
+	"code.cloudfoundry.org/eirini-controller/pkg/generated/clientset/versioned/scheme"
 	rest "k8s.io/client-go/rest"
 )
 

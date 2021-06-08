@@ -3,9 +3,9 @@ package eirini_controller_test
 import (
 	"context"
 
-	eiriniv1 "code.cloudfoundry.org/eirini/pkg/apis/eirini/v1"
-	"code.cloudfoundry.org/eirini/tests"
-	"code.cloudfoundry.org/eirini/tests/integration"
+	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
+	"code.cloudfoundry.org/eirini-controller/tests"
+	"code.cloudfoundry.org/eirini-controller/tests/integration"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

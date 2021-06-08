@@ -6,8 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"code.cloudfoundry.org/eirini"
-	"code.cloudfoundry.org/eirini/migrations"
+	eirinictrl "code.cloudfoundry.org/eirini-controller"
+	"code.cloudfoundry.org/eirini-controller/migrations"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 	"k8s.io/client-go/kubernetes"
@@ -94,13 +94,13 @@ func GetExistingEnvFile(envVar, defaultPath, name string) string {
 func GetCertPaths(envVar, defaultPath, name string) (string, string, string) {
 	crtDir := GetEnvOrDefault(envVar, defaultPath)
 
-	crtPath := filepath.Join(crtDir, eirini.TLSSecretCert)
+	crtPath := filepath.Join(crtDir, eirinictrl.TLSSecretCert)
 	VerifyFileExists(crtPath, fmt.Sprintf("%s Cert", name))
 
-	keyPath := filepath.Join(crtDir, eirini.TLSSecretKey)
+	keyPath := filepath.Join(crtDir, eirinictrl.TLSSecretKey)
 	VerifyFileExists(keyPath, fmt.Sprintf("%s Key", name))
 
-	caPath := filepath.Join(crtDir, eirini.TLSSecretCA)
+	caPath := filepath.Join(crtDir, eirinictrl.TLSSecretCA)
 	VerifyFileExists(caPath, fmt.Sprintf("%s CA", name))
 
 	return crtPath, keyPath, caPath

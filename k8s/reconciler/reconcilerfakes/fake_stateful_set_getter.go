@@ -5,7 +5,7 @@ import (
 	"context"
 	"sync"
 
-	"code.cloudfoundry.org/eirini/k8s/reconciler"
+	"code.cloudfoundry.org/eirini-controller/k8s/reconciler"
 	v1 "k8s.io/api/apps/v1"
 )
 

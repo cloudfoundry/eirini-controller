@@ -5,8 +5,8 @@ import (
 	"context"
 	"sync"
 
-	"code.cloudfoundry.org/eirini/k8s/reconciler"
-	v1 "code.cloudfoundry.org/eirini/pkg/apis/eirini/v1"
+	"code.cloudfoundry.org/eirini-controller/k8s/reconciler"
+	v1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
 )
 
 type FakeTasksCrClient struct {

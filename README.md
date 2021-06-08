@@ -1,3 +1,5 @@
+# **This is a copy of the Eirini README, should be updated with with the eirini controller is all about**
+
 <h1 align="center">
   <img src="logo.jpg" alt="Eirini">
 </h1>

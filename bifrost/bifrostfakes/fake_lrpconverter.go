@@ -4,9 +4,9 @@ package bifrostfakes
 import (
 	"sync"
 
-	"code.cloudfoundry.org/eirini/api"
-	"code.cloudfoundry.org/eirini/bifrost"
-	"code.cloudfoundry.org/eirini/models/cf"
+	"code.cloudfoundry.org/eirini-controller/api"
+	"code.cloudfoundry.org/eirini-controller/bifrost"
+	"code.cloudfoundry.org/eirini-controller/models/cf"
 )
 
 type FakeLRPConverter struct {

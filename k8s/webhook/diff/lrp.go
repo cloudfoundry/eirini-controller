@@ -3,7 +3,7 @@ package diff
 import (
 	"strings"
 
-	eiriniv1 "code.cloudfoundry.org/eirini/pkg/apis/eirini/v1"
+	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 )

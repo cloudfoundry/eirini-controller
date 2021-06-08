@@ -3,10 +3,10 @@ package stset
 import (
 	"context"
 
-	"code.cloudfoundry.org/eirini/api"
-	"code.cloudfoundry.org/eirini/k8s/shared"
-	"code.cloudfoundry.org/eirini/k8s/utils"
-	"code.cloudfoundry.org/eirini/k8s/utils/dockerutils"
+	"code.cloudfoundry.org/eirini-controller/api"
+	"code.cloudfoundry.org/eirini-controller/k8s/shared"
+	"code.cloudfoundry.org/eirini-controller/k8s/utils"
+	"code.cloudfoundry.org/eirini-controller/k8s/utils/dockerutils"
 	"code.cloudfoundry.org/lager"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"

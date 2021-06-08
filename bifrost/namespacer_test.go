@@ -1,7 +1,7 @@
 package bifrost_test
 
 import (
-	"code.cloudfoundry.org/eirini/bifrost"
+	"code.cloudfoundry.org/eirini-controller/bifrost"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

@@ -5,9 +5,9 @@ import (
 	"os"
 	"testing"
 
-	"code.cloudfoundry.org/eirini"
-	"code.cloudfoundry.org/eirini/tests"
-	"code.cloudfoundry.org/eirini/tests/integration"
+	eirinictrl "code.cloudfoundry.org/eirini-controller"
+	"code.cloudfoundry.org/eirini-controller/tests"
+	"code.cloudfoundry.org/eirini-controller/tests/integration"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
@@ -50,9 +50,9 @@ var _ = BeforeEach(func() {
 })
 
 var _ = JustBeforeEach(func() {
-	migrationConfig := eirini.MigrationConfig{
+	migrationConfig := eirinictrl.MigrationConfig{
 		WorkloadsNamespace: fixture.Namespace,
-		KubeConfig: eirini.KubeConfig{
+		KubeConfig: eirinictrl.KubeConfig{
 			ConfigPath: tests.GetKubeconfig(),
 		},
 	}

@@ -4,7 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 
-	"code.cloudfoundry.org/eirini/k8s/utils/dockerutils"
+	"code.cloudfoundry.org/eirini-controller/k8s/utils/dockerutils"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

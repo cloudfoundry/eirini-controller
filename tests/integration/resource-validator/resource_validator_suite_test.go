@@ -8,9 +8,9 @@ import (
 	"os"
 	"testing"
 
-	"code.cloudfoundry.org/eirini"
-	"code.cloudfoundry.org/eirini/tests"
-	"code.cloudfoundry.org/eirini/tests/integration"
+	eirinictrl "code.cloudfoundry.org/eirini-controller"
+	"code.cloudfoundry.org/eirini-controller/tests"
+	"code.cloudfoundry.org/eirini-controller/tests/integration"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
@@ -27,7 +27,7 @@ func TestResourceValidator(t *testing.T) {
 var (
 	fixture        *tests.Fixture
 	eiriniBins     integration.EiriniBinaries
-	config         *eirini.ResourceValidatorConfig
+	config         *eirinictrl.ResourceValidatorConfig
 	configFilePath string
 	fingerprint    string
 	certDir        string
@@ -84,13 +84,13 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		}, metav1.CreateOptions{})
 	Expect(err).NotTo(HaveOccurred())
 
-	config = &eirini.ResourceValidatorConfig{
+	config = &eirinictrl.ResourceValidatorConfig{
 		Port: port,
-		KubeConfig: eirini.KubeConfig{
+		KubeConfig: eirinictrl.KubeConfig{
 			ConfigPath: fixture.KubeConfigPath,
 		},
 	}
-	env := fmt.Sprintf("%s=%s", eirini.EnvResourceValidatorCertDir, certDir)
+	env := fmt.Sprintf("%s=%s", eirinictrl.EnvResourceValidatorCertDir, certDir)
 	hookSession, configFilePath = eiriniBins.ResourceValidator.Run(config, env)
 
 	tr := &http.Transport{

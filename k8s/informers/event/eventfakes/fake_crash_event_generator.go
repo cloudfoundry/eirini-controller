@@ -5,14 +5,14 @@ import (
 	"context"
 	"sync"
 
-	"code.cloudfoundry.org/eirini/events"
-	"code.cloudfoundry.org/eirini/k8s/informers/event"
+	"code.cloudfoundry.org/eirini-controller/k8s/informers/event"
+	"code.cloudfoundry.org/eirini-controller/k8s/reconciler"
 	"code.cloudfoundry.org/lager"
 	v1 "k8s.io/api/core/v1"
 )
 
 type FakeCrashEventGenerator struct {
-	GenerateStub        func(context.Context, *v1.Pod, lager.Logger) (events.CrashEvent, bool)
+	GenerateStub        func(context.Context, *v1.Pod, lager.Logger) (reconciler.CrashEvent, bool)
 	generateMutex       sync.RWMutex
 	generateArgsForCall []struct {
 		arg1 context.Context
@@ -20,18 +20,18 @@ type FakeCrashEventGenerator struct {
 		arg3 lager.Logger
 	}
 	generateReturns struct {
-		result1 events.CrashEvent
+		result1 reconciler.CrashEvent
 		result2 bool
 	}
 	generateReturnsOnCall map[int]struct {
-		result1 events.CrashEvent
+		result1 reconciler.CrashEvent
 		result2 bool
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeCrashEventGenerator) Generate(arg1 context.Context, arg2 *v1.Pod, arg3 lager.Logger) (events.CrashEvent, bool) {
+func (fake *FakeCrashEventGenerator) Generate(arg1 context.Context, arg2 *v1.Pod, arg3 lager.Logger) (reconciler.CrashEvent, bool) {
 	fake.generateMutex.Lock()
 	ret, specificReturn := fake.generateReturnsOnCall[len(fake.generateArgsForCall)]
 	fake.generateArgsForCall = append(fake.generateArgsForCall, struct {
@@ -58,7 +58,7 @@ func (fake *FakeCrashEventGenerator) GenerateCallCount() int {
 	return len(fake.generateArgsForCall)
 }
 
-func (fake *FakeCrashEventGenerator) GenerateCalls(stub func(context.Context, *v1.Pod, lager.Logger) (events.CrashEvent, bool)) {
+func (fake *FakeCrashEventGenerator) GenerateCalls(stub func(context.Context, *v1.Pod, lager.Logger) (reconciler.CrashEvent, bool)) {
 	fake.generateMutex.Lock()
 	defer fake.generateMutex.Unlock()
 	fake.GenerateStub = stub
@@ -71,28 +71,28 @@ func (fake *FakeCrashEventGenerator) GenerateArgsForCall(i int) (context.Context
 	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
 }
 
-func (fake *FakeCrashEventGenerator) GenerateReturns(result1 events.CrashEvent, result2 bool) {
+func (fake *FakeCrashEventGenerator) GenerateReturns(result1 reconciler.CrashEvent, result2 bool) {
 	fake.generateMutex.Lock()
 	defer fake.generateMutex.Unlock()
 	fake.GenerateStub = nil
 	fake.generateReturns = struct {
-		result1 events.CrashEvent
+		result1 reconciler.CrashEvent
 		result2 bool
 	}{result1, result2}
 }
 
-func (fake *FakeCrashEventGenerator) GenerateReturnsOnCall(i int, result1 events.CrashEvent, result2 bool) {
+func (fake *FakeCrashEventGenerator) GenerateReturnsOnCall(i int, result1 reconciler.CrashEvent, result2 bool) {
 	fake.generateMutex.Lock()
 	defer fake.generateMutex.Unlock()
 	fake.GenerateStub = nil
 	if fake.generateReturnsOnCall == nil {
 		fake.generateReturnsOnCall = make(map[int]struct {
-			result1 events.CrashEvent
+			result1 reconciler.CrashEvent
 			result2 bool
 		})
 	}
 	fake.generateReturnsOnCall[i] = struct {
-		result1 events.CrashEvent
+		result1 reconciler.CrashEvent
 		result2 bool
 	}{result1, result2}
 }

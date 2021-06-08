@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"code.cloudfoundry.org/eirini/models/cf"
-	"code.cloudfoundry.org/eirini/tests"
+	"code.cloudfoundry.org/eirini-controller/models/cf"
+	"code.cloudfoundry.org/eirini-controller/tests"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"k8s.io/client-go/dynamic"

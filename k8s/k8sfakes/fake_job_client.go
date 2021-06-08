@@ -5,7 +5,7 @@ import (
 	"context"
 	"sync"
 
-	"code.cloudfoundry.org/eirini/k8s"
+	"code.cloudfoundry.org/eirini-controller/k8s"
 	v1 "k8s.io/api/batch/v1"
 )
 

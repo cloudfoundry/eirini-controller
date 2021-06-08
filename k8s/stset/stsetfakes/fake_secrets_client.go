@@ -5,7 +5,7 @@ import (
 	"context"
 	"sync"
 
-	"code.cloudfoundry.org/eirini/k8s/stset"
+	"code.cloudfoundry.org/eirini-controller/k8s/stset"
 	v1 "k8s.io/api/core/v1"
 	v1a "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

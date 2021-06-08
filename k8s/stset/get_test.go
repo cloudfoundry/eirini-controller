@@ -3,10 +3,10 @@ package stset_test
 import (
 	"fmt"
 
-	"code.cloudfoundry.org/eirini"
-	"code.cloudfoundry.org/eirini/api"
-	"code.cloudfoundry.org/eirini/k8s/stset"
-	"code.cloudfoundry.org/eirini/k8s/stset/stsetfakes"
+	eirinictrl "code.cloudfoundry.org/eirini-controller"
+	"code.cloudfoundry.org/eirini-controller/api"
+	"code.cloudfoundry.org/eirini-controller/k8s/stset"
+	"code.cloudfoundry.org/eirini-controller/k8s/stset/stsetfakes"
 	"code.cloudfoundry.org/lager"
 	"code.cloudfoundry.org/lager/lagertest"
 	. "github.com/onsi/ginkgo"
@@ -172,7 +172,7 @@ var _ = Describe("Get StatefulSet", func() {
 				statefulSetGetter.GetByLRPIdentifierReturns([]appsv1.StatefulSet{}, nil)
 
 				_, err := getter.GetInstances(ctx, api.LRPIdentifier{GUID: "does-not", Version: "exist"})
-				Expect(err).To(Equal(eirini.ErrNotFound))
+				Expect(err).To(Equal(eirinictrl.ErrNotFound))
 			})
 		})
 

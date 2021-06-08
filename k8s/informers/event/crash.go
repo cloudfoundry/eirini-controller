@@ -4,8 +4,8 @@ import (
 	"context"
 	"strconv"
 
-	"code.cloudfoundry.org/eirini/events"
-	"code.cloudfoundry.org/eirini/k8s/stset"
+	"code.cloudfoundry.org/eirini-controller/k8s/reconciler"
+	"code.cloudfoundry.org/eirini-controller/k8s/stset"
 	"code.cloudfoundry.org/lager"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -23,11 +23,11 @@ const (
 //counterfeiter:generate . CrashEmitter
 
 type CrashEventGenerator interface {
-	Generate(context.Context, *corev1.Pod, lager.Logger) (events.CrashEvent, bool)
+	Generate(context.Context, *corev1.Pod, lager.Logger) (reconciler.CrashEvent, bool)
 }
 
 type CrashEmitter interface {
-	Emit(events.CrashEvent) error
+	Emit(reconciler.CrashEvent) error
 }
 
 type CrashReconciler struct {

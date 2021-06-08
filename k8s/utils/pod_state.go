@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"code.cloudfoundry.org/eirini/api"
+	"code.cloudfoundry.org/eirini-controller/api"
 	corev1 "k8s.io/api/core/v1"
 )
 

@@ -3,8 +3,8 @@ package cmd_test
 import (
 	"os"
 
-	"code.cloudfoundry.org/eirini"
-	"code.cloudfoundry.org/eirini/tests/integration"
+	eirinictrl "code.cloudfoundry.org/eirini-controller"
+	"code.cloudfoundry.org/eirini-controller/tests/integration"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
@@ -12,7 +12,7 @@ import (
 
 var _ = Describe("EiriniController", func() {
 	var (
-		config         *eirini.ControllerConfig
+		config         *eirinictrl.ControllerConfig
 		configFilePath string
 		session        *gexec.Session
 	)

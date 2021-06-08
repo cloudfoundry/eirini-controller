@@ -1,4 +1,4 @@
-package eirini
+package eirinictrl
 
 import "errors"
 

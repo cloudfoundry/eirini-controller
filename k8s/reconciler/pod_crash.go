@@ -6,9 +6,9 @@ import (
 	"strconv"
 	"time"
 
-	"code.cloudfoundry.org/eirini/events"
-	"code.cloudfoundry.org/eirini/k8s/stset"
+	"code.cloudfoundry.org/eirini-controller/k8s/stset"
 	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/runtimeschema/cc_messages"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -30,7 +30,12 @@ const (
 //counterfeiter:generate . CrashEventGenerator
 
 type CrashEventGenerator interface {
-	Generate(context.Context, *corev1.Pod, lager.Logger) (events.CrashEvent, bool)
+	Generate(context.Context, *corev1.Pod, lager.Logger) (CrashEvent, bool)
+}
+
+type CrashEvent struct {
+	ProcessGUID string
+	cc_messages.AppCrashedRequest
 }
 
 //counterfeiter:generate . EventsClient
@@ -131,7 +136,7 @@ func (r PodCrash) Reconcile(ctx context.Context, request reconcile.Request) (rec
 }
 
 func (r PodCrash) setEvent(ctx context.Context, logger lager.Logger, kubeEvent *corev1.Event, lrpRef metav1.OwnerReference,
-	crashEvent events.CrashEvent, namespace string) error {
+	crashEvent CrashEvent, namespace string) error {
 	if kubeEvent != nil {
 		return r.updateEvent(ctx, logger, kubeEvent, crashEvent, namespace)
 	}
@@ -139,11 +144,11 @@ func (r PodCrash) setEvent(ctx context.Context, logger lager.Logger, kubeEvent *
 	return r.createEvent(ctx, logger, lrpRef, crashEvent, namespace)
 }
 
-func (r PodCrash) eventAlreadyEmitted(crashEvent events.CrashEvent, pod *corev1.Pod) bool {
+func (r PodCrash) eventAlreadyEmitted(crashEvent CrashEvent, pod *corev1.Pod) bool {
 	return strconv.FormatInt(crashEvent.CrashTimestamp, 10) == pod.Annotations[stset.AnnotationLastReportedLRPCrash]
 }
 
-func (r PodCrash) setCrashTimestampOnPod(ctx context.Context, logger lager.Logger, pod *corev1.Pod, crashEvent events.CrashEvent) {
+func (r PodCrash) setCrashTimestampOnPod(ctx context.Context, logger lager.Logger, pod *corev1.Pod, crashEvent CrashEvent) {
 	newPod := pod.DeepCopy()
 	if newPod.Annotations == nil {
 		newPod.Annotations = map[string]string{}
@@ -156,7 +161,7 @@ func (r PodCrash) setCrashTimestampOnPod(ctx context.Context, logger lager.Logge
 	}
 }
 
-func (r PodCrash) createEvent(ctx context.Context, logger lager.Logger, ownerRef metav1.OwnerReference, crashEvent events.CrashEvent, namespace string) error {
+func (r PodCrash) createEvent(ctx context.Context, logger lager.Logger, ownerRef metav1.OwnerReference, crashEvent CrashEvent, namespace string) error {
 	var err error
 
 	event := r.makeEvent(crashEvent, namespace, ownerRef)
@@ -171,7 +176,7 @@ func (r PodCrash) createEvent(ctx context.Context, logger lager.Logger, ownerRef
 	return nil
 }
 
-func (r PodCrash) updateEvent(ctx context.Context, logger lager.Logger, kubeEvent *corev1.Event, crashEvent events.CrashEvent, namespace string) error {
+func (r PodCrash) updateEvent(ctx context.Context, logger lager.Logger, kubeEvent *corev1.Event, crashEvent CrashEvent, namespace string) error {
 	kubeEvent.Count++
 	kubeEvent.LastTimestamp = metav1.NewTime(time.Unix(crashEvent.CrashTimestamp, 0))
 
@@ -186,7 +191,7 @@ func (r PodCrash) updateEvent(ctx context.Context, logger lager.Logger, kubeEven
 	return nil
 }
 
-func (r PodCrash) makeEvent(crashEvent events.CrashEvent, namespace string, involvedObjRef metav1.OwnerReference) *corev1.Event {
+func (r PodCrash) makeEvent(crashEvent CrashEvent, namespace string, involvedObjRef metav1.OwnerReference) *corev1.Event {
 	return &corev1.Event{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace:    namespace,
@@ -232,6 +237,6 @@ func (r PodCrash) getOwner(obj metav1.Object, kind string) (metav1.OwnerReferenc
 	return metav1.OwnerReference{}, fmt.Errorf("no owner of kind %q", kind)
 }
 
-func failureReason(crashEvent events.CrashEvent) string {
+func failureReason(crashEvent CrashEvent) string {
 	return fmt.Sprintf("Container: %s", crashEvent.Reason)
 }

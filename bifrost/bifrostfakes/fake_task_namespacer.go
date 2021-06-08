@@ -4,7 +4,7 @@ package bifrostfakes
 import (
 	"sync"
 
-	"code.cloudfoundry.org/eirini/bifrost"
+	"code.cloudfoundry.org/eirini-controller/bifrost"
 )
 
 type FakeTaskNamespacer struct {

@@ -3,10 +3,10 @@ package bifrost
 import (
 	"fmt"
 
-	"code.cloudfoundry.org/eirini"
-	"code.cloudfoundry.org/eirini/api"
-	"code.cloudfoundry.org/eirini/models/cf"
-	"code.cloudfoundry.org/eirini/util"
+	eirinictrl "code.cloudfoundry.org/eirini-controller"
+	"code.cloudfoundry.org/eirini-controller/api"
+	"code.cloudfoundry.org/eirini-controller/models/cf"
+	"code.cloudfoundry.org/eirini-controller/util"
 	"code.cloudfoundry.org/lager"
 	"github.com/pkg/errors"
 )
@@ -36,9 +36,9 @@ func (c *APIConverter) ConvertLRP(request cf.DesireLRPRequest) (api.LRP, error) 
 	var port int32
 	if len(request.Ports) != 0 {
 		port = request.Ports[0]
-		env[eirini.EnvCFInstanceAddr] = fmt.Sprintf("0.0.0.0:%d", port)
-		env[eirini.EnvCFInstancePort] = fmt.Sprintf("%d", port)
-		env[eirini.EnvCFInstancePorts] = fmt.Sprintf(`[{"external":%d,"internal":%d}]`, port, port)
+		env[eirinictrl.EnvCFInstanceAddr] = fmt.Sprintf("0.0.0.0:%d", port)
+		env[eirinictrl.EnvCFInstancePort] = fmt.Sprintf("%d", port)
+		env[eirinictrl.EnvCFInstancePorts] = fmt.Sprintf(`[{"external":%d,"internal":%d}]`, port, port)
 	}
 
 	healthcheck := api.Healthcheck{
