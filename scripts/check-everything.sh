@@ -4,8 +4,7 @@ set -euo pipefail
 IFS=$'\n\t'
 
 RUN_DIR="$(cd "$(dirname "$0")" && pwd)"
-EIRINI_DIR="$RUN_DIR/.."
-EIRINI_RELEASE_BASEDIR="$EIRINI_DIR/../eirini-release"
+EIRINI_CONTROLLER_DIR="$RUN_DIR/.."
 
 if [ -z ${EIRINIUSER_PASSWORD+x} ]; then
   EIRINIUSER_PASSWORD="$(pass eirini/docker-hub)"
@@ -59,12 +58,12 @@ run_integration_tests() {
 
   local src_dir
   src_dir=$(mktemp -d)
-  cp -a "$EIRINI_DIR" "$src_dir"
+  cp -a "$EIRINI_CONTROLLER_DIR" "$src_dir"
   cp "$KUBECONFIG" "$src_dir"
   trap "rm -rf $src_dir" EXIT
 
-  kubectl apply -f "$EIRINI_RELEASE_BASEDIR/helm/templates/core/lrp-crd.yml"
-  kubectl apply -f "$EIRINI_RELEASE_BASEDIR/helm/templates/core/task-crd.yml"
+  kubectl apply -f "$EIRINI_CONTROLLER_DIR/deployment/helm/templates/core/lrp-crd.yml"
+  kubectl apply -f "$EIRINI_CONTROLLER_DIR/deployment/helm/templates/core/task-crd.yml"
 
   telepresence \
     --method container \
@@ -98,9 +97,8 @@ run_eats() {
 
   if [[ "$redeploy" == "true" ]]; then
     regenerate_secrets
-    redeploy_wiremock
     redeploy_prometheus
-    redeploy_eirini
+    redeploy_eirini_controller
   fi
 
   local service_name
@@ -108,7 +106,7 @@ run_eats() {
 
   local src_dir
   src_dir=$(mktemp -d)
-  cp -a "$EIRINI_DIR" "$src_dir"
+  cp -a "$EIRINI_CONTROLLER_DIR" "$src_dir"
   cp "$KUBECONFIG" "$src_dir"
   trap "rm -rf $src_dir" EXIT
 
@@ -119,9 +117,7 @@ run_eats() {
     --rm \
     -v "$src_dir":/usr/src/app \
     -v "$HOME"/.cache:/root/.cache \
-    -e EIRINI_ADDRESS="https://eirini-api.eirini-core.svc.cluster.local:8085" \
-    -e EIRINI_TLS_SECRET=eirini-certs \
-    -e EIRINI_SYSTEM_NS=eirini-core \
+    -e EIRINI_SYSTEM_NS=eirini-controller \
     -e EIRINI_WORKLOADS_NS=eirini-workloads \
     -e EIRINIUSER_PASSWORD="$EIRINIUSER_PASSWORD" \
     -e INTEGRATION_KUBECONFIG="/usr/src/app/$(basename $KUBECONFIG)" \
@@ -130,36 +126,29 @@ run_eats() {
 }
 
 regenerate_secrets() {
-  wiremock_keystore_password=${WIREMOCK_KEYSTORE_PASSWORD:-$(pass eirini/ci/wiremock-keystore-password)}
-  "$EIRINI_RELEASE_BASEDIR/scripts/generate-secrets.sh" "*.eirini-core.svc" "$wiremock_keystore_password"
-
-}
-
-redeploy_wiremock() {
-  kapp -y delete -a wiremock
-  kapp -y deploy -a wiremock -f "$EIRINI_RELEASE_BASEDIR/scripts/assets/wiremock.yml"
+  "$EIRINI_CONTROLLER_DIR/deployment/scripts/generate-secrets.sh" "*.eirini-controller.svc"
 }
 
 redeploy_prometheus() {
   kapp -y delete -a prometheus
   helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
   helm repo update
-  helm -n eirini-core template prometheus prometheus-community/prometheus | kapp -y deploy -a prometheus -f -
+  helm -n eirini-controller template prometheus prometheus-community/prometheus | kapp -y deploy -a prometheus -f -
 }
 
-redeploy_eirini() {
+redeploy_eirini_controller() {
   render_dir=$(mktemp -d)
   trap "rm -rf $render_dir" EXIT
-  ca_bundle="$(kubectl get secret -n eirini-core eirini-instance-index-env-injector-certs -o jsonpath="{.data['tls\.ca']}")"
-  "$EIRINI_RELEASE_BASEDIR/scripts/render-templates.sh" eirini-core "$render_dir" \
-    --values "$EIRINI_RELEASE_BASEDIR/scripts/assets/value-overrides.yml" \
-    --set "webhook_ca_bundle=$ca_bundle,resource_validator_ca_bundle=$ca_bundle"
-  kbld -f "$render_dir" -f "$RUN_DIR/kbld-local-eirini.yml" >"$render_dir/rendered.yml"
+  ca_bundle="$(kubectl get secret -n eirini-controller eirini-resource-validator-certs -o jsonpath="{.data['tls\.ca']}")"
+  "$EIRINI_CONTROLLER_DIR/deployment/scripts/render-templates.sh" eirini-controller "$render_dir" \
+    --values "$EIRINI_CONTROLLER_DIR/deployment/scripts/assets/value-overrides.yml" \
+    --set "resource_validator_ca_bundle=$ca_bundle"
+  kbld -f "$render_dir" -f "$RUN_DIR/kbld-local-eirini-controller.yml" >"$render_dir/rendered.yml"
   for img in $(grep -oh "kbld:.*" "$render_dir/rendered.yml"); do
     kind load docker-image --name eats "$img"
   done
-  kapp -y delete -a eirini
-  kapp -y deploy -a eirini -f "$render_dir/rendered.yml"
+  kapp -y delete -a eirini-controller
+  kapp -y deploy -a eirini-controller -f "$render_dir/rendered.yml"
 }
 
 run_linter() {

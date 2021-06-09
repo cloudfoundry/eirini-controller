@@ -1,0 +1,18 @@
+---
+apiVersion: kbld.k14s.io/v1alpha1
+kind: Config
+sources:
+- imageRepo: eirini/eirini-controller
+  path: .
+  docker:
+    build:
+      file: docker/eirini-controller/Dockerfile
+      rawOptions: ["--build-arg", "GIT_SHA=eirini-controller-dirty", "--tag", "eirini-controller"]
+      buildkit: true
+- imageRepo: eirini/migration
+  path: .
+  docker:
+    build:
+      file: docker/migration/Dockerfile
+      rawOptions: ["--build-arg", "GIT_SHA=migration-dirty", "--tag", "migration"]
+      buildkit: true

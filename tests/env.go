@@ -47,10 +47,6 @@ func GetEiriniWorkloadsNamespace() string {
 	return lookupOptionalEnv("EIRINI_WORKLOADS_NS")
 }
 
-func getEiriniTLSSecretName() string {
-	return lookupOptionalEnv("EIRINI_TLS_SECRET")
-}
-
 func GetEiriniAddress() string {
 	return lookupOptionalEnv("EIRINI_ADDRESS")
 }

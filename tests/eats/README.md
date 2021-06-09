@@ -13,8 +13,7 @@ $EIRINI_RELEASE_DIR/deploy/scripts/cleanup.sh
 $EIRINI_RELEASE_DIR/deploy/scripts/deploy.sh
 
 EIRINI_ADDRESS=https://$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[0].address}') \
-EIRINI_TLS_SECRET=eirini-certs \
-EIRINI_SYSTEM_NS=eirini-core \
+EIRINI_SYSTEM_NS=eirini-controller \
 $EIRINI_DIR/scripts/run_eats_tests.sh
 ```
 
@@ -45,7 +44,6 @@ $EIRINI_DIR/scripts/run_eats_tests.sh
    ```
 1. ```
    EIRINI_ADDRESS=https://eirini.ENV-NAME.ci-envs.eirini.cf-app.com \
-   EIRINI_TLS_SECRET=eirini-internal-tls-certs-ver-1 \
    EIRINI_SYSTEM_NS=cf-system \
    ./scripts/run_eats_tests.sh
    ```
