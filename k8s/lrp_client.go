@@ -3,22 +3,23 @@ package k8s
 import (
 	"context"
 
-	"code.cloudfoundry.org/eirini-controller/api"
 	"code.cloudfoundry.org/eirini-controller/k8s/stset"
+	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
 	"code.cloudfoundry.org/lager"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 type PodClient interface {
 	GetAll(ctx context.Context) ([]corev1.Pod, error)
-	GetByLRPIdentifier(ctx context.Context, id api.LRPIdentifier) ([]corev1.Pod, error)
+	GetByLRP(ctx context.Context, lrp eiriniv1.LRP) ([]corev1.Pod, error)
 	Delete(ctx context.Context, namespace, name string) error
 }
 
 type PodDisruptionBudgetClient interface {
-	Update(ctx context.Context, stset *appsv1.StatefulSet, lrp *api.LRP) error
+	Update(ctx context.Context, stset *appsv1.StatefulSet, lrp *eiriniv1.LRP) error
 }
 
 type StatefulSetClient interface {
@@ -26,7 +27,7 @@ type StatefulSetClient interface {
 	Update(ctx context.Context, namespace string, statefulSet *appsv1.StatefulSet) (*appsv1.StatefulSet, error)
 	Delete(ctx context.Context, namespace string, name string) error
 	GetBySourceType(ctx context.Context, sourceType string) ([]appsv1.StatefulSet, error)
-	GetByLRPIdentifier(ctx context.Context, id api.LRPIdentifier) ([]appsv1.StatefulSet, error)
+	GetByLRP(ctx context.Context, lrp *eiriniv1.LRP) ([]appsv1.StatefulSet, error)
 }
 
 type SecretsClient interface {
@@ -41,10 +42,7 @@ type EventsClient interface {
 
 type LRPClient struct {
 	stset.Desirer
-	stset.Lister
-	stset.Stopper
 	stset.Updater
-	stset.Getter
 	stset.StatusGetter
 }
 
@@ -56,14 +54,11 @@ func NewLRPClient(
 	pdbClient PodDisruptionBudgetClient,
 	events EventsClient,
 	lrpToStatefulSetConverter stset.LRPToStatefulSetConverter,
-	statefulSetToLRPConverter stset.StatefulSetToLRPConverter,
+	scheme *runtime.Scheme,
 ) *LRPClient {
 	return &LRPClient{
-		Desirer:      stset.NewDesirer(logger, secrets, statefulSets, lrpToStatefulSetConverter, pdbClient),
-		Lister:       stset.NewLister(logger, statefulSets, statefulSetToLRPConverter),
-		Stopper:      stset.NewStopper(logger, statefulSets, statefulSets, pods),
+		Desirer:      stset.NewDesirer(logger, secrets, statefulSets, lrpToStatefulSetConverter, pdbClient, scheme),
 		Updater:      stset.NewUpdater(logger, statefulSets, statefulSets, pdbClient),
-		Getter:       stset.NewGetter(logger, statefulSets, pods, events, statefulSetToLRPConverter),
 		StatusGetter: stset.NewStatusGetter(logger, statefulSets),
 	}
 }

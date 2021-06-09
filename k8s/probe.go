@@ -1,7 +1,7 @@
 package k8s
 
 import (
-	"code.cloudfoundry.org/eirini-controller/api"
+	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -11,29 +11,33 @@ const (
 	readinessFailureThreshold = 1
 )
 
-func CreateLivenessProbe(lrp *api.LRP) *v1.Probe {
-	initialDelay := toSeconds(lrp.Health.TimeoutMs)
+func CreateLivenessProbe(lrp *eiriniv1.LRP) *v1.Probe {
+	initialDelay := toSeconds(lrp.Spec.Health.TimeoutMs)
 
-	if lrp.Health.Type == "http" {
+	if lrp.Spec.Health.Type == "http" {
 		return createHTTPProbe(lrp, initialDelay, livenessFailureThreshold)
-	} else if lrp.Health.Type == "port" {
+	}
+
+	if lrp.Spec.Health.Type == "port" {
 		return createPortProbe(lrp, initialDelay, livenessFailureThreshold)
 	}
 
 	return nil
 }
 
-func CreateReadinessProbe(lrp *api.LRP) *v1.Probe {
-	if lrp.Health.Type == "http" {
+func CreateReadinessProbe(lrp *eiriniv1.LRP) *v1.Probe {
+	if lrp.Spec.Health.Type == "http" {
 		return createHTTPProbe(lrp, 0, readinessFailureThreshold)
-	} else if lrp.Health.Type == "port" {
+	}
+
+	if lrp.Spec.Health.Type == "port" {
 		return createPortProbe(lrp, 0, readinessFailureThreshold)
 	}
 
 	return nil
 }
 
-func createPortProbe(lrp *api.LRP, initialDelay, failureThreshold int32) *v1.Probe {
+func createPortProbe(lrp *eiriniv1.LRP, initialDelay, failureThreshold int32) *v1.Probe {
 	return &v1.Probe{
 		Handler: v1.Handler{
 			TCPSocket: tcpSocketAction(lrp),
@@ -43,7 +47,7 @@ func createPortProbe(lrp *api.LRP, initialDelay, failureThreshold int32) *v1.Pro
 	}
 }
 
-func createHTTPProbe(lrp *api.LRP, initialDelay, failureThreshold int32) *v1.Probe {
+func createHTTPProbe(lrp *eiriniv1.LRP, initialDelay, failureThreshold int32) *v1.Probe {
 	return &v1.Probe{
 		Handler: v1.Handler{
 			HTTPGet: httpGetAction(lrp),
@@ -53,16 +57,16 @@ func createHTTPProbe(lrp *api.LRP, initialDelay, failureThreshold int32) *v1.Pro
 	}
 }
 
-func httpGetAction(lrp *api.LRP) *v1.HTTPGetAction {
+func httpGetAction(lrp *eiriniv1.LRP) *v1.HTTPGetAction {
 	return &v1.HTTPGetAction{
-		Path: lrp.Health.Endpoint,
-		Port: intstr.IntOrString{Type: intstr.Int, IntVal: lrp.Health.Port},
+		Path: lrp.Spec.Health.Endpoint,
+		Port: intstr.IntOrString{Type: intstr.Int, IntVal: lrp.Spec.Health.Port},
 	}
 }
 
-func tcpSocketAction(lrp *api.LRP) *v1.TCPSocketAction {
+func tcpSocketAction(lrp *eiriniv1.LRP) *v1.TCPSocketAction {
 	return &v1.TCPSocketAction{
-		Port: intstr.IntOrString{Type: intstr.Int, IntVal: lrp.Health.Port},
+		Port: intstr.IntOrString{Type: intstr.Int, IntVal: lrp.Spec.Health.Port},
 	}
 }
 

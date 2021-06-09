@@ -7,8 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"code.cloudfoundry.org/eirini-controller/api"
-	"code.cloudfoundry.org/eirini-controller/k8s/shared"
+	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
 	"code.cloudfoundry.org/eirini-controller/prometheus"
 	"code.cloudfoundry.org/eirini-controller/prometheus/prometheusfakes"
 	"code.cloudfoundry.org/lager/lagertest"
@@ -23,26 +22,21 @@ import (
 
 var _ = Describe("LRP Client Prometheus Decorator", func() {
 	var (
-		lrpClient  *prometheusfakes.FakeLRPClient
-		decorator  prometheus.LRPClient
-		desireOpts []shared.Option
-		lrp        *api.LRP
-		desireErr  error
-		logger     *lagertest.TestLogger
-		registry   metrics.RegistererGatherer
-		fakeClock  *clock.FakePassiveClock
-		t0         time.Time
-		ctx        context.Context
+		lrpClient *prometheusfakes.FakeLRPClient
+		decorator prometheus.LRPClient
+		lrp       *eiriniv1.LRP
+		desireErr error
+		logger    *lagertest.TestLogger
+		registry  metrics.RegistererGatherer
+		fakeClock *clock.FakePassiveClock
+		t0        time.Time
+		ctx       context.Context
 	)
 
 	BeforeEach(func() {
 		ctx = context.Background()
 		lrpClient = new(prometheusfakes.FakeLRPClient)
-		desireOption := func(resource interface{}) error {
-			return nil
-		}
-		desireOpts = []shared.Option{desireOption}
-		lrp = &api.LRP{}
+		lrp = &eiriniv1.LRP{}
 		registry = prometheus_api.NewRegistry()
 
 		t0 = time.Now()
@@ -54,7 +48,7 @@ var _ = Describe("LRP Client Prometheus Decorator", func() {
 	})
 
 	JustBeforeEach(func() {
-		desireErr = decorator.Desire(ctx, "the-namespace", lrp, desireOpts...)
+		desireErr = decorator.Desire(ctx, lrp)
 	})
 
 	It("succeeds", func() {
@@ -63,10 +57,8 @@ var _ = Describe("LRP Client Prometheus Decorator", func() {
 
 	It("delegates to the LRP client on Desire", func() {
 		Expect(lrpClient.DesireCallCount()).To(Equal(1))
-		_, actualNamespace, actualLrp, actualOption := lrpClient.DesireArgsForCall(0)
-		Expect(actualNamespace).To(Equal("the-namespace"))
+		_, actualLrp := lrpClient.DesireArgsForCall(0)
 		Expect(actualLrp).To(Equal(lrp))
-		Expect(actualOption).To(Equal(desireOpts))
 	})
 
 	It("increments the LRP creation counter", func() {
@@ -75,7 +67,7 @@ var _ = Describe("LRP Client Prometheus Decorator", func() {
 
 	Describe("observing durations", func() {
 		BeforeEach(func() {
-			lrpClient.DesireStub = func(ctx context.Context, s string, l *api.LRP, o ...shared.Option) error {
+			lrpClient.DesireStub = func(ctx context.Context, l *eiriniv1.LRP) error {
 				fakeClock.SetTime(t0.Add(time.Second))
 
 				return nil
@@ -115,7 +107,7 @@ var _ = Describe("LRP Client Prometheus Decorator", func() {
 		})
 
 		JustBeforeEach(func() {
-			Expect(otherDecorator.Desire(ctx, "the-namespace", lrp, desireOpts...)).To(Succeed())
+			Expect(otherDecorator.Desire(ctx, lrp)).To(Succeed())
 		})
 
 		It("adopts the existing counters", func() {

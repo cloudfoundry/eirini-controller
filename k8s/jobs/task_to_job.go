@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	eirinictrl "code.cloudfoundry.org/eirini-controller"
-	"code.cloudfoundry.org/eirini-controller/api"
 	"code.cloudfoundry.org/eirini-controller/k8s/shared"
 	"code.cloudfoundry.org/eirini-controller/k8s/utils"
+	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
 	batch "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -36,24 +36,22 @@ func NewTaskToJobConverter(
 	}
 }
 
-func (m *Converter) Convert(task *api.Task, privateRegistrySecret *corev1.Secret) *batch.Job {
+func (m *Converter) Convert(task *eiriniv1.Task, privateRegistrySecret *corev1.Secret) *batch.Job {
 	job := m.toJob(task)
 	job.Spec.Template.Spec.ServiceAccountName = m.serviceAccountName
 	job.Labels[LabelSourceType] = TaskSourceType
-	job.Labels[LabelName] = task.Name
-	job.Annotations[AnnotationCompletionCallback] = task.CompletionCallback
-	job.Spec.Template.Annotations[AnnotationGUID] = task.GUID
+	job.Labels[LabelName] = task.Spec.Name
+	job.Spec.Template.Annotations[AnnotationGUID] = task.Spec.GUID
 	job.Spec.Template.Annotations[AnnotationTaskContainerName] = taskContainerName
-	job.Spec.Template.Annotations[AnnotationCompletionCallback] = task.CompletionCallback
 
 	envs := getEnvs(task)
 	containers := []corev1.Container{
 		{
 			Name:            taskContainerName,
-			Image:           task.Image,
+			Image:           task.Spec.Image,
 			ImagePullPolicy: corev1.PullAlways,
 			Env:             envs,
-			Command:         task.Command,
+			Command:         task.Spec.Command,
 		},
 	}
 
@@ -73,7 +71,7 @@ func (m *Converter) Convert(task *api.Task, privateRegistrySecret *corev1.Secret
 	return job
 }
 
-func (m *Converter) toJob(task *api.Task) *batch.Job {
+func (m *Converter) toJob(task *eiriniv1.Task) *batch.Job {
 	runAsNonRoot := true
 
 	job := &batch.Job{
@@ -97,27 +95,27 @@ func (m *Converter) toJob(task *api.Task) *batch.Job {
 		job.Spec.Template.Spec.AutomountServiceAccountToken = &automountServiceAccountToken
 	}
 
-	name := fmt.Sprintf("%s-%s", task.AppName, task.SpaceName)
-	sanitizedName := utils.SanitizeName(name, task.GUID)
+	name := fmt.Sprintf("%s-%s", task.Spec.AppName, task.Spec.SpaceName)
+	sanitizedName := utils.SanitizeName(name, task.Spec.GUID)
 
-	if task.Name != "" {
-		sanitizedName = fmt.Sprintf("%s-%s", sanitizedName, task.Name)
+	if task.Spec.Name != "" {
+		sanitizedName = fmt.Sprintf("%s-%s", sanitizedName, task.Spec.Name)
 	}
 
-	job.Name = utils.SanitizeNameWithMaxStringLen(sanitizedName, task.GUID, sanitizedNameMaxLen)
+	job.Name = utils.SanitizeNameWithMaxStringLen(sanitizedName, task.Spec.GUID, sanitizedNameMaxLen)
 
 	job.Labels = map[string]string{
-		LabelGUID:    task.GUID,
-		LabelAppGUID: task.AppGUID,
+		LabelGUID:    task.Spec.GUID,
+		LabelAppGUID: task.Spec.AppGUID,
 	}
 
 	job.Annotations = map[string]string{
-		AnnotationAppName:              task.AppName,
-		AnnotationAppID:                task.AppGUID,
-		AnnotationOrgName:              task.OrgName,
-		AnnotationOrgGUID:              task.OrgGUID,
-		AnnotationSpaceName:            task.SpaceName,
-		AnnotationSpaceGUID:            task.SpaceGUID,
+		AnnotationAppName:              task.Spec.AppName,
+		AnnotationAppID:                task.Spec.AppGUID,
+		AnnotationOrgName:              task.Spec.OrgName,
+		AnnotationOrgGUID:              task.Spec.OrgGUID,
+		AnnotationSpaceName:            task.Spec.SpaceName,
+		AnnotationSpaceGUID:            task.Spec.SpaceGUID,
 		corev1.SeccompPodAnnotationKey: corev1.SeccompProfileRuntimeDefault,
 	}
 
@@ -127,8 +125,8 @@ func (m *Converter) toJob(task *api.Task) *batch.Job {
 	return job
 }
 
-func getEnvs(task *api.Task) []corev1.EnvVar {
-	envs := shared.MapToEnvVar(task.Env)
+func getEnvs(task *eiriniv1.Task) []corev1.EnvVar {
+	envs := shared.MapToEnvVar(task.Spec.Env)
 	fieldEnvs := []corev1.EnvVar{
 		{
 			Name: eirinictrl.EnvPodName,

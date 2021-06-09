@@ -21,11 +21,10 @@ var _ = Describe("Delete", func() {
 	)
 
 	var (
-		jobGetter          *jobsfakes.FakeJobGetter
-		jobDeleter         *jobsfakes.FakeJobDeleter
-		job                batchv1.Job
-		deleteErr          error
-		completionCallback string
+		jobGetter  *jobsfakes.FakeJobGetter
+		jobDeleter *jobsfakes.FakeJobDeleter
+		job        batchv1.Job
+		deleteErr  error
 
 		deleter jobs.Deleter
 	)
@@ -45,9 +44,8 @@ var _ = Describe("Delete", func() {
 				Name:      "my-job",
 				Namespace: "my-namespace",
 				Annotations: map[string]string{
-					jobs.AnnotationCompletionCallback: "the/completion/callback",
-					jobs.AnnotationAppName:            "my-app",
-					jobs.AnnotationSpaceName:          "my-space",
+					jobs.AnnotationAppName:   "my-app",
+					jobs.AnnotationSpaceName: "my-space",
 				},
 				Labels: map[string]string{
 					jobs.LabelGUID: taskGUID,
@@ -59,7 +57,7 @@ var _ = Describe("Delete", func() {
 	})
 
 	JustBeforeEach(func() {
-		completionCallback, deleteErr = deleter.Delete(ctx, taskGUID)
+		deleteErr = deleter.Delete(ctx, taskGUID)
 	})
 
 	It("succeeds", func() {
@@ -71,10 +69,6 @@ var _ = Describe("Delete", func() {
 		_, actualJobNs, actualJobName := jobDeleter.DeleteArgsForCall(0)
 		Expect(actualJobNs).To(Equal(job.Namespace))
 		Expect(actualJobName).To(Equal(job.Name))
-	})
-
-	It("returns the completion callback", func() {
-		Expect(completionCallback).To(Equal("the/completion/callback"))
 	})
 
 	It("selects the job using the task label guid and the eirini label", func() {

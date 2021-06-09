@@ -1,9 +1,9 @@
 package integration_test
 
 import (
-	"code.cloudfoundry.org/eirini-controller/api"
 	"code.cloudfoundry.org/eirini-controller/k8s/client"
 	"code.cloudfoundry.org/eirini-controller/k8s/stset"
+	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
 	"code.cloudfoundry.org/eirini-controller/tests"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -59,7 +59,7 @@ var _ = Describe("Pod", func() {
 		})
 	})
 
-	Describe("GetByLRPIdentifier", func() {
+	Describe("GetByLRP", func() {
 		var guid, extraNs string
 
 		BeforeEach(func() {
@@ -84,8 +84,12 @@ var _ = Describe("Pod", func() {
 			})
 		})
 
-		It("lists all pods matching the specified LRP identifier", func() {
-			pods, err := podClient.GetByLRPIdentifier(ctx, api.LRPIdentifier{GUID: guid, Version: "42"})
+		It("lists all pods matching the specified LRP", func() {
+			pods, err := podClient.GetByLRP(ctx, eiriniv1.LRP{
+				Spec: eiriniv1.LRPSpec{
+					GUID: guid, Version: "42",
+				},
+			})
 
 			Expect(err).NotTo(HaveOccurred())
 			Eventually(func() []string { return podNames(pods) }).Should(ConsistOf("four", "five", "six"))

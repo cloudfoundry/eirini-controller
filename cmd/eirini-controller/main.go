@@ -141,7 +141,7 @@ func createLRPReconciler(
 		pdb.NewUpdater(client.NewPodDisruptionBudget(clientset)),
 		client.NewEvent(clientset),
 		lrpToStatefulSetConverter,
-		stset.NewStatefulSetToLRPConverter(),
+		eirinischeme.Scheme,
 	)
 
 	decoratedWorkloadClient, err := prometheus.NewLRPClientDecorator(logger.Session("prometheus-decorator"), workloadClient, metrics.Registry, clock.RealClock{})
@@ -155,7 +155,7 @@ func createLRPReconciler(
 		logger,
 		lrpsCrClient,
 		decoratedWorkloadClient,
-		scheme,
+		client.NewStatefulSet(clientset, cfg.WorkloadsNamespace),
 	), nil
 }
 
@@ -176,10 +176,11 @@ func createTaskReconciler(
 		client.NewJob(clientset, cfg.WorkloadsNamespace),
 		client.NewSecret(clientset),
 		taskToJobConverter,
+		scheme,
 	)
 	tasksCrClient := crclient.NewTasks(controllerClient)
 
-	return reconciler.NewTask(logger, tasksCrClient, workloadClient, scheme, cfg.TaskTTLSeconds)
+	return reconciler.NewTask(logger, tasksCrClient, workloadClient, cfg.TaskTTLSeconds)
 }
 
 func createPodCrashReconciler(

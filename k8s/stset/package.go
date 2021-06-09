@@ -12,9 +12,7 @@ const (
 	AnnotationOrgName              = "cloudfoundry.org/org_name"
 	AnnotationOrgGUID              = "cloudfoundry.org/org_guid"
 	AnnotationSpaceGUID            = "cloudfoundry.org/space_guid"
-	AnnotationLastUpdated          = "cloudfoundry.org/last_updated"
 	AnnotationProcessGUID          = "cloudfoundry.org/process_guid"
-	AnnotationOriginalRequest      = "cloudfoundry.org/original_request"
 	AnnotationLastReportedAppCrash = "cloudfoundry.org/last_reported_app_crash"
 	AnnotationLastReportedLRPCrash = "cloudfoundry.org/last_reported_lrp_crash"
 

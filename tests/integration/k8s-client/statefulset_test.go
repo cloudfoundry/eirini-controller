@@ -1,9 +1,9 @@
 package integration_test
 
 import (
-	"code.cloudfoundry.org/eirini-controller/api"
 	"code.cloudfoundry.org/eirini-controller/k8s/client"
 	"code.cloudfoundry.org/eirini-controller/k8s/stset"
+	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
 	"code.cloudfoundry.org/eirini-controller/tests"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -109,7 +109,7 @@ var _ = Describe("StatefulSets", func() {
 		})
 	})
 
-	Describe("GetByLRPIdentifier", func() {
+	Describe("GetByLRP", func() {
 		var guid, extraNs string
 
 		BeforeEach(func() {
@@ -128,8 +128,14 @@ var _ = Describe("StatefulSets", func() {
 			})
 		})
 
-		It("lists all StatefulSets matching the specified LRP identifier", func() {
-			statefulSets, err := statefulSetClient.GetByLRPIdentifier(ctx, api.LRPIdentifier{GUID: guid, Version: "42"})
+		It("lists all StatefulSets matching the specified LRP guid and version", func() {
+			lrp := &eiriniv1.LRP{
+				Spec: eiriniv1.LRPSpec{
+					GUID:    guid,
+					Version: "42",
+				},
+			}
+			statefulSets, err := statefulSetClient.GetByLRP(ctx, lrp)
 
 			Expect(err).NotTo(HaveOccurred())
 			Eventually(func() []string { return statefulSetNames(statefulSets) }).Should(ConsistOf("one", "two"))

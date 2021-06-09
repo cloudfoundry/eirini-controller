@@ -5,10 +5,10 @@ import (
 	"errors"
 	"fmt"
 
-	"code.cloudfoundry.org/eirini-controller/api"
 	"code.cloudfoundry.org/eirini-controller/k8s/pdb"
 	"code.cloudfoundry.org/eirini-controller/k8s/pdb/pdbfakes"
 	"code.cloudfoundry.org/eirini-controller/k8s/stset"
+	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
@@ -24,7 +24,7 @@ var _ = Describe("PDB", func() {
 		creator   *pdb.Updater
 		k8sClient *pdbfakes.FakeK8sClient
 		stSet     *appsv1.StatefulSet
-		lrp       *api.LRP
+		lrp       *eiriniv1.LRP
 		ctx       context.Context
 	)
 
@@ -40,14 +40,14 @@ var _ = Describe("PDB", func() {
 			},
 		}
 
-		lrp = &api.LRP{
-			LRPIdentifier: api.LRPIdentifier{
-				GUID:    "guid",
-				Version: "version",
+		lrp = &eiriniv1.LRP{
+			Spec: eiriniv1.LRPSpec{
+				GUID:      "guid",
+				Version:   "version",
+				AppName:   "appName",
+				SpaceName: "spaceName",
+				Instances: 2,
 			},
-			AppName:         "appName",
-			SpaceName:       "spaceName",
-			TargetInstances: 2,
 		}
 
 		ctx = context.Background()
@@ -71,8 +71,8 @@ var _ = Describe("PDB", func() {
 
 			Expect(pdb.Name).To(Equal("name"))
 			Expect(pdb.Spec.MinAvailable).To(PointTo(Equal(intstr.FromString("50%"))))
-			Expect(pdb.Spec.Selector.MatchLabels).To(HaveKeyWithValue(stset.LabelGUID, lrp.GUID))
-			Expect(pdb.Spec.Selector.MatchLabels).To(HaveKeyWithValue(stset.LabelVersion, lrp.Version))
+			Expect(pdb.Spec.Selector.MatchLabels).To(HaveKeyWithValue(stset.LabelGUID, lrp.Spec.GUID))
+			Expect(pdb.Spec.Selector.MatchLabels).To(HaveKeyWithValue(stset.LabelVersion, lrp.Spec.Version))
 			Expect(pdb.Spec.Selector.MatchLabels).To(HaveKeyWithValue(stset.LabelSourceType, "APP"))
 			Expect(pdb.OwnerReferences).To(HaveLen(1))
 			Expect(pdb.OwnerReferences[0].Name).To(Equal(stSet.Name))
@@ -91,7 +91,7 @@ var _ = Describe("PDB", func() {
 
 		When("the LRP has less than 2 target instances", func() {
 			BeforeEach(func() {
-				lrp.TargetInstances = 1
+				lrp.Spec.Instances = 1
 			})
 
 			It("does not create but does try to delete pdb", func() {

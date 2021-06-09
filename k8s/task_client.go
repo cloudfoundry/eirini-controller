@@ -6,6 +6,7 @@ import (
 	"code.cloudfoundry.org/eirini-controller/k8s/jobs"
 	"code.cloudfoundry.org/lager"
 	batch "k8s.io/api/batch/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 //counterfeiter:generate . JobClient
@@ -30,9 +31,10 @@ func NewTaskClient(
 	jobClient JobClient,
 	secretsClient SecretsClient,
 	taskToJobConverter jobs.TaskToJobConverter,
+	scheme *runtime.Scheme,
 ) *TaskClient {
 	return &TaskClient{
-		Desirer:      jobs.NewDesirer(logger, taskToJobConverter, jobClient, secretsClient),
+		Desirer:      jobs.NewDesirer(logger, taskToJobConverter, jobClient, secretsClient, scheme),
 		Getter:       jobs.NewGetter(jobClient),
 		Deleter:      jobs.NewDeleter(logger, jobClient, jobClient),
 		Lister:       jobs.NewLister(jobClient),

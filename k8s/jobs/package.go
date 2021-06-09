@@ -16,7 +16,6 @@ const (
 	AnnotationOrgGUID                     = stset.AnnotationOrgGUID
 	AnnotationSpaceName                   = stset.AnnotationSpaceName
 	AnnotationSpaceGUID                   = stset.AnnotationSpaceGUID
-	AnnotationCompletionCallback          = "cloudfoundry.org/completion_callback"
 	AnnotationTaskContainerName           = "cloudfoundry.org/opi-task-container-name"
 	AnnotationTaskCompletionReportCounter = "cloudfoundry.org/task_completion_report_counter"
 	AnnotationCCAckedTaskCompletion       = "cloudfoundry.org/cc_acked_task_completion"

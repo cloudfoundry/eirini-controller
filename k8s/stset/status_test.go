@@ -1,7 +1,6 @@
 package stset_test
 
 import (
-	"code.cloudfoundry.org/eirini-controller/api"
 	"code.cloudfoundry.org/eirini-controller/k8s/stset"
 	"code.cloudfoundry.org/eirini-controller/k8s/stset/stsetfakes"
 	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
@@ -17,23 +16,25 @@ import (
 var _ = Describe("StatusGetter", func() {
 	var (
 		logger            lager.Logger
-		statefulSetGetter *stsetfakes.FakeStatefulSetByLRPIdentifierGetter
+		statefulSetGetter *stsetfakes.FakeStatefulSetByLRPGetter
 		statusGetter      stset.StatusGetter
 
 		status eiriniv1.LRPStatus
 		err    error
-		lrpID  api.LRPIdentifier
+		lrp    *eiriniv1.LRP
 	)
 
 	BeforeEach(func() {
 		logger = lagertest.NewTestLogger("status-getter-test")
-		lrpID = api.LRPIdentifier{
-			GUID:    "abc123",
-			Version: "3",
+		lrp = &eiriniv1.LRP{
+			Spec: eiriniv1.LRPSpec{
+				GUID:    "abc123",
+				Version: "3",
+			},
 		}
-		statefulSetGetter = new(stsetfakes.FakeStatefulSetByLRPIdentifierGetter)
+		statefulSetGetter = new(stsetfakes.FakeStatefulSetByLRPGetter)
 
-		statefulSetGetter.GetByLRPIdentifierReturns([]v1.StatefulSet{
+		statefulSetGetter.GetByLRPReturns([]v1.StatefulSet{
 			{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "foo",
@@ -48,7 +49,7 @@ var _ = Describe("StatusGetter", func() {
 	})
 
 	JustBeforeEach(func() {
-		status, err = statusGetter.GetStatus(ctx, lrpID)
+		status, err = statusGetter.GetStatus(ctx, lrp)
 	})
 
 	It("succeeds", func() {
@@ -56,16 +57,16 @@ var _ = Describe("StatusGetter", func() {
 	})
 
 	It("gets the Status of the matching StatefulSet", func() {
-		Expect(statefulSetGetter.GetByLRPIdentifierCallCount()).To(Equal(1))
-		actualCtx, actualLRPId := statefulSetGetter.GetByLRPIdentifierArgsForCall(0)
+		Expect(statefulSetGetter.GetByLRPCallCount()).To(Equal(1))
+		actualCtx, actualLRPId := statefulSetGetter.GetByLRPArgsForCall(0)
 		Expect(actualCtx).To(Equal(ctx))
-		Expect(actualLRPId).To(Equal(lrpID))
+		Expect(actualLRPId).To(Equal(lrp))
 		Expect(status.Replicas).To(Equal(int32(42)))
 	})
 
 	When("getting the StatefulSet fails", func() {
 		BeforeEach(func() {
-			statefulSetGetter.GetByLRPIdentifierReturns(nil, errors.New("get-by-lrp-id-error"))
+			statefulSetGetter.GetByLRPReturns(nil, errors.New("get-by-lrp-id-error"))
 		})
 
 		It("fails", func() {
@@ -73,9 +74,9 @@ var _ = Describe("StatusGetter", func() {
 		})
 	})
 
-	When("no statefulsets matching the LRP identifier exist", func() {
+	When("no statefulsets matching the LRP exist", func() {
 		BeforeEach(func() {
-			statefulSetGetter.GetByLRPIdentifierReturns(nil, nil)
+			statefulSetGetter.GetByLRPReturns(nil, nil)
 		})
 
 		It("fails", func() {
@@ -83,13 +84,13 @@ var _ = Describe("StatusGetter", func() {
 		})
 	})
 
-	When("multiple statefulsets matching the LRP identifier exist", func() {
+	When("multiple statefulsets matching the LRP exist", func() {
 		BeforeEach(func() {
-			statefulSetGetter.GetByLRPIdentifierReturns([]v1.StatefulSet{{}, {}}, nil)
+			statefulSetGetter.GetByLRPReturns([]v1.StatefulSet{{}, {}}, nil)
 		})
 
 		It("fails", func() {
-			Expect(err).To(MatchError(ContainSubstring("failed to get statefulset for LRP: multiple statefulsets found for LRP identifier")))
+			Expect(err).To(MatchError(ContainSubstring("failed to get statefulset for LRP: multiple statefulsets found for LRP")))
 		})
 	})
 })

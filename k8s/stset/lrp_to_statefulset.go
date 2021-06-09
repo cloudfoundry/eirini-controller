@@ -1,9 +1,11 @@
 package stset
 
 import (
+	"fmt"
+
 	eirinictrl "code.cloudfoundry.org/eirini-controller"
-	"code.cloudfoundry.org/eirini-controller/api"
 	"code.cloudfoundry.org/eirini-controller/k8s/shared"
+	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -14,7 +16,7 @@ import (
 
 const PodAffinityTermWeight = 100
 
-type ProbeCreator func(lrp *api.LRP) *corev1.Probe
+type ProbeCreator func(lrp *eiriniv1.LRP) *corev1.Probe
 
 type LRPToStatefulSet struct {
 	applicationServiceAccount         string
@@ -43,8 +45,8 @@ func NewLRPToStatefulSetConverter(
 	}
 }
 
-func (c *LRPToStatefulSet) Convert(statefulSetName string, lrp *api.LRP, privateRegistrySecret *corev1.Secret) (*appsv1.StatefulSet, error) {
-	envs := shared.MapToEnvVar(lrp.Env)
+func (c *LRPToStatefulSet) Convert(statefulSetName string, lrp *eiriniv1.LRP, privateRegistrySecret *corev1.Secret) (*appsv1.StatefulSet, error) {
+	envs := shared.MapToEnvVar(lrp.Spec.Env)
 	fieldEnvs := []corev1.EnvVar{
 		{
 			Name: eirinictrl.EnvPodName,
@@ -83,29 +85,29 @@ func (c *LRPToStatefulSet) Convert(statefulSetName string, lrp *api.LRP, private
 	envs = append(envs, fieldEnvs...)
 	ports := []corev1.ContainerPort{}
 
-	for _, port := range lrp.Ports {
+	for _, port := range lrp.Spec.Ports {
 		ports = append(ports, corev1.ContainerPort{ContainerPort: port})
 	}
 
 	livenessProbe := c.livenessProbeCreator(lrp)
 	readinessProbe := c.readinessProbeCreator(lrp)
 
-	volumes, volumeMounts := getVolumeSpecs(lrp.VolumeMounts)
+	volumes, volumeMounts := getVolumeSpecs(lrp.Spec.VolumeMounts)
 	allowPrivilegeEscalation := false
 	imagePullSecrets := c.calculateImagePullSecrets(privateRegistrySecret)
 
 	containers := []corev1.Container{
 		{
 			Name:            ApplicationContainerName,
-			Image:           lrp.Image,
+			Image:           lrp.Spec.Image,
 			ImagePullPolicy: corev1.PullAlways,
-			Command:         lrp.Command,
+			Command:         lrp.Spec.Command,
 			Env:             envs,
 			Ports:           ports,
 			SecurityContext: &corev1.SecurityContext{
 				AllowPrivilegeEscalation: &allowPrivilegeEscalation,
 			},
-			Resources:      getContainerResources(lrp.CPUWeight, lrp.MemoryMB, lrp.DiskMB),
+			Resources:      getContainerResources(lrp.Spec.CPUWeight, lrp.Spec.MemoryMB, lrp.Spec.DiskMB),
 			LivenessProbe:  livenessProbe,
 			ReadinessProbe: readinessProbe,
 			VolumeMounts:   volumeMounts,
@@ -120,12 +122,12 @@ func (c *LRPToStatefulSet) Convert(statefulSetName string, lrp *api.LRP, private
 		},
 		Spec: appsv1.StatefulSetSpec{
 			PodManagementPolicy: "Parallel",
-			Replicas:            int32ptr(lrp.TargetInstances),
+			Replicas:            int32ptr(lrp.Spec.Instances),
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
 					Containers:         containers,
 					ImagePullSecrets:   imagePullSecrets,
-					SecurityContext:    c.getGetSecurityContext(lrp),
+					SecurityContext:    c.getGetSecurityContext(),
 					ServiceAccountName: c.applicationServiceAccount,
 					Volumes:            volumes,
 				},
@@ -157,14 +159,14 @@ func (c *LRPToStatefulSet) Convert(statefulSetName string, lrp *api.LRP, private
 	}
 
 	labels := map[string]string{
-		LabelOrgGUID:     lrp.OrgGUID,
-		LabelOrgName:     lrp.OrgName,
-		LabelSpaceGUID:   lrp.SpaceGUID,
-		LabelSpaceName:   lrp.SpaceName,
-		LabelGUID:        lrp.GUID,
-		LabelProcessType: lrp.ProcessType,
-		LabelVersion:     lrp.Version,
-		LabelAppGUID:     lrp.AppGUID,
+		LabelOrgGUID:     lrp.Spec.OrgGUID,
+		LabelOrgName:     lrp.Spec.OrgName,
+		LabelSpaceGUID:   lrp.Spec.SpaceGUID,
+		LabelSpaceName:   lrp.Spec.SpaceName,
+		LabelGUID:        lrp.Spec.GUID,
+		LabelProcessType: lrp.Spec.ProcessType,
+		LabelVersion:     lrp.Spec.Version,
+		LabelAppGUID:     lrp.Spec.AppGUID,
 		LabelSourceType:  AppSourceType,
 	}
 
@@ -172,19 +174,17 @@ func (c *LRPToStatefulSet) Convert(statefulSetName string, lrp *api.LRP, private
 	statefulSet.Labels = labels
 
 	annotations := map[string]string{
-		AnnotationSpaceName:       lrp.SpaceName,
-		AnnotationSpaceGUID:       lrp.SpaceGUID,
-		AnnotationOriginalRequest: lrp.LRP,
-		AnnotationAppID:           lrp.AppGUID,
-		AnnotationVersion:         lrp.Version,
-		AnnotationLastUpdated:     lrp.LastUpdated,
-		AnnotationProcessGUID:     lrp.ProcessGUID(),
-		AnnotationAppName:         lrp.AppName,
-		AnnotationOrgName:         lrp.OrgName,
-		AnnotationOrgGUID:         lrp.OrgGUID,
+		AnnotationSpaceName:   lrp.Spec.SpaceName,
+		AnnotationSpaceGUID:   lrp.Spec.SpaceGUID,
+		AnnotationAppID:       lrp.Spec.AppGUID,
+		AnnotationVersion:     lrp.Spec.Version,
+		AnnotationProcessGUID: fmt.Sprintf("%s-%s", lrp.Spec.GUID, lrp.Spec.Version),
+		AnnotationAppName:     lrp.Spec.AppName,
+		AnnotationOrgName:     lrp.Spec.OrgName,
+		AnnotationOrgGUID:     lrp.Spec.OrgGUID,
 	}
 
-	for k, v := range lrp.UserDefinedAnnotations {
+	for k, v := range lrp.Spec.UserDefinedAnnotations {
 		annotations[k] = v
 	}
 
@@ -209,7 +209,7 @@ func (c *LRPToStatefulSet) calculateImagePullSecrets(privateRegistrySecret *core
 	return imagePullSecrets
 }
 
-func (c *LRPToStatefulSet) getGetSecurityContext(lrp *api.LRP) *corev1.PodSecurityContext {
+func (c *LRPToStatefulSet) getGetSecurityContext() *corev1.PodSecurityContext {
 	if c.allowRunImageAsRoot {
 		return nil
 	}
@@ -221,7 +221,7 @@ func (c *LRPToStatefulSet) getGetSecurityContext(lrp *api.LRP) *corev1.PodSecuri
 	}
 }
 
-func getVolumeSpecs(lrpVolumeMounts []api.VolumeMount) ([]corev1.Volume, []corev1.VolumeMount) {
+func getVolumeSpecs(lrpVolumeMounts []eiriniv1.VolumeMount) ([]corev1.Volume, []corev1.VolumeMount) {
 	volumes := []corev1.Volume{}
 	volumeMounts := []corev1.VolumeMount{}
 
@@ -265,16 +265,16 @@ func toCPUMillicores(cpuPercentage uint8) resource.Quantity {
 	return *resource.NewScaledQuantity(int64(cpuPercentage), resource.Milli)
 }
 
-func getSidecarContainers(lrp *api.LRP) []corev1.Container {
+func getSidecarContainers(lrp *eiriniv1.LRP) []corev1.Container {
 	containers := []corev1.Container{}
 
-	for _, s := range lrp.Sidecars {
+	for _, s := range lrp.Spec.Sidecars {
 		c := corev1.Container{
 			Name:      s.Name,
 			Command:   s.Command,
-			Image:     lrp.Image,
+			Image:     lrp.Spec.Image,
 			Env:       shared.MapToEnvVar(s.Env),
-			Resources: getContainerResources(lrp.CPUWeight, s.MemoryMB, lrp.DiskMB),
+			Resources: getContainerResources(lrp.Spec.CPUWeight, s.MemoryMB, lrp.Spec.DiskMB),
 		}
 		containers = append(containers, c)
 	}
@@ -303,11 +303,11 @@ func toLabelSelectorRequirements(selector *metav1.LabelSelector) []metav1.LabelS
 	return reqs
 }
 
-func StatefulSetLabelSelector(lrp *api.LRP) *metav1.LabelSelector {
+func StatefulSetLabelSelector(lrp *eiriniv1.LRP) *metav1.LabelSelector {
 	return &metav1.LabelSelector{
 		MatchLabels: map[string]string{
-			LabelGUID:       lrp.GUID,
-			LabelVersion:    lrp.Version,
+			LabelGUID:       lrp.Spec.GUID,
+			LabelVersion:    lrp.Spec.Version,
 			LabelSourceType: AppSourceType,
 		},
 	}

@@ -5,22 +5,22 @@ import (
 	"fmt"
 
 	eirinictrl "code.cloudfoundry.org/eirini-controller"
-	"code.cloudfoundry.org/eirini-controller/api"
+	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 )
 
-//counterfeiter:generate . StatefulSetByLRPIdentifierGetter
+//counterfeiter:generate . StatefulSetByLRPGetter
 
-type StatefulSetByLRPIdentifierGetter interface {
-	GetByLRPIdentifier(ctx context.Context, id api.LRPIdentifier) ([]appsv1.StatefulSet, error)
+type StatefulSetByLRPGetter interface {
+	GetByLRP(ctx context.Context, lrp *eiriniv1.LRP) ([]appsv1.StatefulSet, error)
 }
 
-type getStatefulSetFunc func(ctx context.Context, identifier api.LRPIdentifier) (*appsv1.StatefulSet, error)
+type getStatefulSetFunc func(ctx context.Context, lrp *eiriniv1.LRP) (*appsv1.StatefulSet, error)
 
-func newGetStatefulSetFunc(stSetGetter StatefulSetByLRPIdentifierGetter) getStatefulSetFunc {
-	return func(ctx context.Context, identifier api.LRPIdentifier) (*appsv1.StatefulSet, error) {
-		statefulSets, err := stSetGetter.GetByLRPIdentifier(ctx, identifier)
+func newGetStatefulSetFunc(stSetGetter StatefulSetByLRPGetter) getStatefulSetFunc {
+	return func(ctx context.Context, lrp *eiriniv1.LRP) (*appsv1.StatefulSet, error) {
+		statefulSets, err := stSetGetter.GetByLRP(ctx, lrp)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to list statefulsets")
 		}
@@ -31,7 +31,7 @@ func newGetStatefulSetFunc(stSetGetter StatefulSetByLRPIdentifierGetter) getStat
 		case 1:
 			return &statefulSets[0], nil
 		default:
-			return nil, fmt.Errorf("multiple statefulsets found for LRP identifier %+v", identifier)
+			return nil, fmt.Errorf("multiple statefulsets found for LRP {%s}%s", lrp.Namespace, lrp.Name)
 		}
 	}
 }

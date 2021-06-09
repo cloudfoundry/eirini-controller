@@ -4,8 +4,6 @@ import (
 	"context"
 	"errors"
 
-	"code.cloudfoundry.org/eirini-controller/api"
-	"code.cloudfoundry.org/eirini-controller/k8s/shared"
 	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
 	"code.cloudfoundry.org/lager"
 	prometheus_api "github.com/prometheus/client_golang/prometheus"
@@ -22,10 +20,9 @@ const (
 //counterfeiter:generate . LRPClient
 
 type LRPClient interface {
-	Desire(ctx context.Context, namespace string, lrp *api.LRP, opts ...shared.Option) error
-	Get(ctx context.Context, identifier api.LRPIdentifier) (*api.LRP, error)
-	Update(ctx context.Context, lrp *api.LRP) error
-	GetStatus(ctx context.Context, identifier api.LRPIdentifier) (eiriniv1.LRPStatus, error)
+	Desire(ctx context.Context, lrp *eiriniv1.LRP) error
+	Update(ctx context.Context, lrp *eiriniv1.LRP) error
+	GetStatus(ctx context.Context, lrp *eiriniv1.LRP) (eiriniv1.LRPStatus, error)
 }
 
 type LRPClientDecorator struct {
@@ -61,10 +58,10 @@ func NewLRPClientDecorator(
 	}, nil
 }
 
-func (d *LRPClientDecorator) Desire(ctx context.Context, namespace string, lrp *api.LRP, opts ...shared.Option) error {
+func (d *LRPClientDecorator) Desire(ctx context.Context, lrp *eiriniv1.LRP) error {
 	start := d.clock.Now()
 
-	err := d.LRPClient.Desire(ctx, namespace, lrp, opts...)
+	err := d.LRPClient.Desire(ctx, lrp)
 	if err == nil {
 		d.creations.Inc()
 		d.creationDurations.Observe(float64(d.clock.Since(start).Milliseconds()))

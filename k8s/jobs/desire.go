@@ -3,15 +3,17 @@ package jobs
 import (
 	"context"
 
-	"code.cloudfoundry.org/eirini-controller/api"
-	"code.cloudfoundry.org/eirini-controller/k8s/shared"
 	"code.cloudfoundry.org/eirini-controller/k8s/utils/dockerutils"
+	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
+	"code.cloudfoundry.org/eirini-controller/util"
 	"code.cloudfoundry.org/lager"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	batch "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 //counterfeiter:generate . TaskToJobConverter
@@ -19,7 +21,7 @@ import (
 //counterfeiter:generate . SecretsClient
 
 type TaskToJobConverter interface {
-	Convert(*api.Task, *corev1.Secret) *batch.Job
+	Convert(*eiriniv1.Task, *corev1.Secret) *batch.Job
 }
 
 type JobCreator interface {
@@ -37,6 +39,7 @@ type Desirer struct {
 	taskToJobConverter TaskToJobConverter
 	jobCreator         JobCreator
 	secrets            SecretsClient
+	scheme             *runtime.Scheme
 }
 
 func NewDesirer(
@@ -44,17 +47,19 @@ func NewDesirer(
 	taskToJobConverter TaskToJobConverter,
 	jobCreator JobCreator,
 	secretCreator SecretsClient,
+	scheme *runtime.Scheme,
 ) Desirer {
 	return Desirer{
 		logger:             logger,
 		taskToJobConverter: taskToJobConverter,
 		jobCreator:         jobCreator,
 		secrets:            secretCreator,
+		scheme:             scheme,
 	}
 }
 
-func (d *Desirer) Desire(ctx context.Context, namespace string, task *api.Task, opts ...shared.Option) error {
-	logger := d.logger.Session("desire-task", lager.Data{"guid": task.GUID, "name": task.Name, "namespace": namespace})
+func (d *Desirer) Desire(ctx context.Context, task *eiriniv1.Task) error {
+	logger := d.logger.Session("desire-task", lager.Data{"guid": task.Spec.GUID, "name": task.Name, "namespace": task.Namespace})
 
 	var (
 		err                   error
@@ -62,7 +67,7 @@ func (d *Desirer) Desire(ctx context.Context, namespace string, task *api.Task, 
 	)
 
 	if imageInPrivateRegistry(task) {
-		privateRegistrySecret, err = d.createPrivateRegistrySecret(ctx, namespace, task)
+		privateRegistrySecret, err = d.createPrivateRegistrySecret(ctx, task.Namespace, task)
 		if err != nil {
 			return errors.Wrap(err, "failed to create task secret")
 		}
@@ -70,15 +75,13 @@ func (d *Desirer) Desire(ctx context.Context, namespace string, task *api.Task, 
 
 	job := d.taskToJobConverter.Convert(task, privateRegistrySecret)
 
-	job.Namespace = namespace
+	job.Namespace = task.Namespace
 
-	if err = shared.ApplyOpts(job, opts...); err != nil {
-		logger.Error("failed-to-apply-option", err)
-
-		return err
+	if err = ctrl.SetControllerReference(task, job, d.scheme); err != nil {
+		return errors.Wrap(err, "failed to set controller reference")
 	}
 
-	job, err = d.jobCreator.Create(ctx, namespace, job)
+	job, err = d.jobCreator.Create(ctx, task.Namespace, job)
 	if err != nil {
 		logger.Error("failed-to-create-job", err)
 
@@ -95,20 +98,20 @@ func (d *Desirer) Desire(ctx context.Context, namespace string, task *api.Task, 
 	return nil
 }
 
-func imageInPrivateRegistry(task *api.Task) bool {
-	return task.PrivateRegistry != nil && task.PrivateRegistry.Username != "" && task.PrivateRegistry.Password != ""
+func imageInPrivateRegistry(task *eiriniv1.Task) bool {
+	return task.Spec.PrivateRegistry != nil && task.Spec.PrivateRegistry.Username != "" && task.Spec.PrivateRegistry.Password != ""
 }
 
-func (d *Desirer) createPrivateRegistrySecret(ctx context.Context, namespace string, task *api.Task) (*corev1.Secret, error) {
+func (d *Desirer) createPrivateRegistrySecret(ctx context.Context, namespace string, task *eiriniv1.Task) (*corev1.Secret, error) {
 	secret := &corev1.Secret{}
 
 	secret.GenerateName = PrivateRegistrySecretGenerateName
 	secret.Type = corev1.SecretTypeDockerConfigJson
 
 	dockerConfig := dockerutils.NewDockerConfig(
-		task.PrivateRegistry.Server,
-		task.PrivateRegistry.Username,
-		task.PrivateRegistry.Password,
+		util.ParseImageRegistryHost(task.Spec.Image),
+		task.Spec.PrivateRegistry.Username,
+		task.Spec.PrivateRegistry.Password,
 	)
 
 	dockerConfigJSON, err := dockerConfig.JSON()

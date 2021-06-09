@@ -3,10 +3,10 @@ package stset
 import (
 	"context"
 
-	"code.cloudfoundry.org/eirini-controller/api"
-	"code.cloudfoundry.org/eirini-controller/k8s/shared"
 	"code.cloudfoundry.org/eirini-controller/k8s/utils"
 	"code.cloudfoundry.org/eirini-controller/k8s/utils/dockerutils"
+	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
+	"code.cloudfoundry.org/eirini-controller/util"
 	"code.cloudfoundry.org/lager"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
@@ -14,6 +14,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 //counterfeiter:generate . SecretsClient
@@ -22,7 +24,7 @@ import (
 //counterfeiter:generate . PodDisruptionBudgetUpdater
 
 type LRPToStatefulSetConverter interface {
-	Convert(statefulSetName string, lrp *api.LRP, privateRegistrySecret *corev1.Secret) (*appsv1.StatefulSet, error)
+	Convert(statefulSetName string, lrp *eiriniv1.LRP, privateRegistrySecret *corev1.Secret) (*appsv1.StatefulSet, error)
 }
 
 type SecretsClient interface {
@@ -36,7 +38,7 @@ type StatefulSetCreator interface {
 }
 
 type PodDisruptionBudgetUpdater interface {
-	Update(ctx context.Context, stset *appsv1.StatefulSet, lrp *api.LRP) error
+	Update(ctx context.Context, stset *appsv1.StatefulSet, lrp *eiriniv1.LRP) error
 }
 
 type Desirer struct {
@@ -45,6 +47,7 @@ type Desirer struct {
 	statefulSets               StatefulSetCreator
 	lrpToStatefulSetConverter  LRPToStatefulSetConverter
 	podDisruptionBudgetCreator PodDisruptionBudgetUpdater
+	scheme                     *runtime.Scheme
 }
 
 func NewDesirer(
@@ -53,6 +56,7 @@ func NewDesirer(
 	statefulSets StatefulSetCreator,
 	lrpToStatefulSetConverter LRPToStatefulSetConverter,
 	podDisruptionBudgetCreator PodDisruptionBudgetUpdater,
+	scheme *runtime.Scheme,
 ) Desirer {
 	return Desirer{
 		logger:                     logger,
@@ -60,18 +64,19 @@ func NewDesirer(
 		statefulSets:               statefulSets,
 		lrpToStatefulSetConverter:  lrpToStatefulSetConverter,
 		podDisruptionBudgetCreator: podDisruptionBudgetCreator,
+		scheme:                     scheme,
 	}
 }
 
-func (d *Desirer) Desire(ctx context.Context, namespace string, lrp *api.LRP, opts ...shared.Option) error {
-	logger := d.logger.Session("desire", lager.Data{"guid": lrp.GUID, "version": lrp.Version, "namespace": namespace})
+func (d *Desirer) Desire(ctx context.Context, lrp *eiriniv1.LRP) error {
+	logger := d.logger.Session("desire", lager.Data{"guid": lrp.Spec.GUID, "version": lrp.Spec.Version, "namespace": lrp.Namespace})
 
 	statefulSetName, err := utils.GetStatefulsetName(lrp)
 	if err != nil {
 		return err
 	}
 
-	privateRegistrySecret, err := d.createRegistryCredsSecretIfRequired(ctx, namespace, lrp)
+	privateRegistrySecret, err := d.createRegistryCredsSecretIfRequired(ctx, lrp)
 	if err != nil {
 		return err
 	}
@@ -81,14 +86,13 @@ func (d *Desirer) Desire(ctx context.Context, namespace string, lrp *api.LRP, op
 		return err
 	}
 
-	st.Namespace = namespace
+	st.Namespace = lrp.Namespace
 
-	err = shared.ApplyOpts(st, opts...)
-	if err != nil {
-		return err
+	if err = ctrl.SetControllerReference(lrp, st, d.scheme); err != nil {
+		return errors.Wrap(err, "failed to set controller reference")
 	}
 
-	stSet, err := d.statefulSets.Create(ctx, namespace, st)
+	stSet, err := d.statefulSets.Create(ctx, lrp.Namespace, st)
 	if err != nil {
 		var statusErr *k8serrors.StatusError
 		if errors.As(err, &statusErr) && statusErr.Status().Reason == metav1.StatusReasonAlreadyExists {
@@ -125,8 +129,8 @@ func (d *Desirer) setSecretOwner(ctx context.Context, privateRegistrySecret *cor
 	return err
 }
 
-func (d *Desirer) createRegistryCredsSecretIfRequired(ctx context.Context, namespace string, lrp *api.LRP) (*corev1.Secret, error) {
-	if lrp.PrivateRegistry == nil {
+func (d *Desirer) createRegistryCredsSecretIfRequired(ctx context.Context, lrp *eiriniv1.LRP) (*corev1.Secret, error) {
+	if lrp.Spec.PrivateRegistry == nil {
 		return nil, nil
 	}
 
@@ -135,7 +139,7 @@ func (d *Desirer) createRegistryCredsSecretIfRequired(ctx context.Context, names
 		return nil, errors.Wrap(err, "failed to generate private registry secret for statefulset")
 	}
 
-	secret, err = d.secrets.Create(ctx, namespace, secret)
+	secret, err = d.secrets.Create(ctx, lrp.Namespace, secret)
 
 	return secret, errors.Wrap(err, "failed to create private registry secret for statefulset")
 }
@@ -153,11 +157,11 @@ func (d *Desirer) cleanupAndError(ctx context.Context, stsetCreationError error,
 	return resultError
 }
 
-func generateRegistryCredsSecret(lrp *api.LRP) (*corev1.Secret, error) {
+func generateRegistryCredsSecret(lrp *eiriniv1.LRP) (*corev1.Secret, error) {
 	dockerConfig := dockerutils.NewDockerConfig(
-		lrp.PrivateRegistry.Server,
-		lrp.PrivateRegistry.Username,
-		lrp.PrivateRegistry.Password,
+		util.ParseImageRegistryHost(lrp.Spec.Image),
+		lrp.Spec.PrivateRegistry.Username,
+		lrp.Spec.PrivateRegistry.Password,
 	)
 
 	dockerConfigJSON, err := dockerConfig.JSON()

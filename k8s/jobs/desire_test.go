@@ -5,10 +5,10 @@ import (
 	"fmt"
 
 	eirinictrl "code.cloudfoundry.org/eirini-controller"
-	"code.cloudfoundry.org/eirini-controller/api"
 	"code.cloudfoundry.org/eirini-controller/k8s/jobs"
 	"code.cloudfoundry.org/eirini-controller/k8s/jobs/jobsfakes"
-	"code.cloudfoundry.org/eirini-controller/k8s/shared/sharedfakes"
+	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
+	eirinischeme "code.cloudfoundry.org/eirini-controller/pkg/generated/clientset/versioned/scheme"
 	"code.cloudfoundry.org/lager/lagertest"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -20,7 +20,7 @@ import (
 
 var _ = Describe("Desire", func() {
 	const (
-		image    = "docker.png"
+		image    = "gcr.io/foo/bar"
 		taskGUID = "task-123"
 	)
 
@@ -28,10 +28,9 @@ var _ = Describe("Desire", func() {
 		jobCreator         *jobsfakes.FakeJobCreator
 		secretsClient      *jobsfakes.FakeSecretsClient
 		taskToJobConverter *jobsfakes.FakeTaskToJobConverter
-		desireOpt          *sharedfakes.FakeOption
 
 		job       *batch.Job
-		task      *api.Task
+		task      *eiriniv1.Task
 		desireErr error
 
 		desirer jobs.Desirer
@@ -45,42 +44,36 @@ var _ = Describe("Desire", func() {
 			},
 		}
 
-		desireOpt = new(sharedfakes.FakeOption)
-		desireOpt.Stub = func(resource interface{}) error {
-			Expect(resource).To(BeAssignableToTypeOf(&batch.Job{}))
-			j, ok := resource.(*batch.Job)
-			Expect(ok).To(BeTrue())
-			Expect(j.Namespace).NotTo(BeEmpty())
-
-			return nil
-		}
-
 		jobCreator = new(jobsfakes.FakeJobCreator)
 		secretsClient = new(jobsfakes.FakeSecretsClient)
 		taskToJobConverter = new(jobsfakes.FakeTaskToJobConverter)
 		taskToJobConverter.ConvertReturns(job)
 		jobCreator.CreateReturns(job, nil)
 
-		task = &api.Task{
-			Image:              image,
-			CompletionCallback: "cloud-countroller.io/task/completed",
-			Command:            []string{"/lifecycle/launch"},
-			AppName:            "my-app",
-			Name:               "task-name",
-			AppGUID:            "my-app-guid",
-			OrgName:            "my-org",
-			SpaceName:          "my-space",
-			SpaceGUID:          "space-id",
-			OrgGUID:            "org-id",
-			GUID:               taskGUID,
-			Env: map[string]string{
-				eirinictrl.EnvDownloadURL:      "example.com/download",
-				eirinictrl.EnvDropletUploadURL: "example.com/upload",
-				eirinictrl.EnvAppID:            "env-app-id",
+		task = &eiriniv1.Task{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: "app-namespace",
 			},
-			MemoryMB:  1,
-			CPUWeight: 2,
-			DiskMB:    3,
+			Spec: eiriniv1.TaskSpec{
+				Image:     image,
+				Command:   []string{"/lifecycle/launch"},
+				AppName:   "my-app",
+				Name:      "task-name",
+				AppGUID:   "my-app-guid",
+				OrgName:   "my-org",
+				SpaceName: "my-space",
+				SpaceGUID: "space-id",
+				OrgGUID:   "org-id",
+				GUID:      taskGUID,
+				Env: map[string]string{
+					eirinictrl.EnvDownloadURL:      "example.com/download",
+					eirinictrl.EnvDropletUploadURL: "example.com/upload",
+					eirinictrl.EnvAppID:            "env-app-id",
+				},
+				MemoryMB:  1,
+				CPUWeight: 2,
+				DiskMB:    3,
+			},
 		}
 
 		desirer = jobs.NewDesirer(
@@ -88,11 +81,12 @@ var _ = Describe("Desire", func() {
 			taskToJobConverter,
 			jobCreator,
 			secretsClient,
+			eirinischeme.Scheme,
 		)
 	})
 
 	JustBeforeEach(func() {
-		desireErr = desirer.Desire(ctx, "app-namespace", task, desireOpt.Spy)
+		desireErr = desirer.Desire(ctx, task)
 	})
 
 	It("succeeds", func() {
@@ -125,27 +119,11 @@ var _ = Describe("Desire", func() {
 		Expect(job.Namespace).To(Equal("app-namespace"))
 	})
 
-	It("applies the desire options after setting the job namespace", func() {
-		Expect(desireOpt.CallCount()).To(Equal(1))
-		Expect(desireOpt.ArgsForCall(0)).To(Equal(job))
-	})
-
-	When("applying an option fails", func() {
-		BeforeEach(func() {
-			desireOpt.Returns(errors.New("opt-error"))
-		})
-
-		It("returns an error", func() {
-			Expect(desireErr).To(MatchError(ContainSubstring("opt-error")))
-		})
-	})
-
 	When("the task uses a private registry", func() {
 		var privateRegistrySecret *corev1.Secret
 
 		BeforeEach(func() {
-			task.PrivateRegistry = &api.PrivateRegistry{
-				Server:   "some-server",
+			task.Spec.PrivateRegistry = &eiriniv1.PrivateRegistry{
 				Username: "username",
 				Password: "password",
 			}
@@ -168,14 +146,14 @@ var _ = Describe("Desire", func() {
 				HaveKeyWithValue(
 					".dockerconfigjson",
 					fmt.Sprintf(
-						`{"auths":{"some-server":{"username":"username","password":"password","auth":"%s"}}}`,
+						`{"auths":{"gcr.io":{"username":"username","password":"password","auth":"%s"}}}`,
 						base64.StdEncoding.EncodeToString([]byte("username:password")),
 					),
 				),
 			)
 		})
 
-		It("converts the task using the priave registry secret", func() {
+		It("converts the task using the private registry secret", func() {
 			_, actualSecret := taskToJobConverter.ConvertArgsForCall(0)
 			Expect(actualSecret).To(Equal(privateRegistrySecret))
 		})

@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"code.cloudfoundry.org/eirini-controller/api"
 	"code.cloudfoundry.org/eirini-controller/k8s/jobs"
 	"code.cloudfoundry.org/eirini-controller/k8s/patching"
 	"code.cloudfoundry.org/eirini-controller/k8s/stset"
+	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -43,15 +43,15 @@ func (c *Pod) GetAll(ctx context.Context) ([]corev1.Pod, error) {
 	return podList.Items, nil
 }
 
-func (c *Pod) GetByLRPIdentifier(ctx context.Context, id api.LRPIdentifier) ([]corev1.Pod, error) {
+func (c *Pod) GetByLRP(ctx context.Context, lrp eiriniv1.LRP) ([]corev1.Pod, error) {
 	ctx, cancel := context.WithTimeout(ctx, k8sTimeout)
 	defer cancel()
 
 	podList, err := c.clientSet.CoreV1().Pods(c.workloadsNamespace).List(ctx, metav1.ListOptions{
 		LabelSelector: fmt.Sprintf(
 			"%s=%s,%s=%s",
-			stset.LabelGUID, id.GUID,
-			stset.LabelVersion, id.Version,
+			stset.LabelGUID, lrp.Spec.GUID,
+			stset.LabelVersion, lrp.Spec.Version,
 		),
 	})
 	if err != nil {

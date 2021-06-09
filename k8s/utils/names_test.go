@@ -1,8 +1,8 @@
 package utils_test
 
 import (
-	"code.cloudfoundry.org/eirini-controller/api"
 	. "code.cloudfoundry.org/eirini-controller/k8s/utils"
+	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -28,13 +28,13 @@ var _ = Describe("Names", func() {
 
 	Describe("GetStatefulsetName", func() {
 		It("calculates the name of an app's backing statefulset", func() {
-			statefulsetName, err := GetStatefulsetName(&api.LRP{
-				LRPIdentifier: api.LRPIdentifier{
-					GUID:    "guid",
-					Version: "version",
+			statefulsetName, err := GetStatefulsetName(&eiriniv1.LRP{
+				Spec: eiriniv1.LRPSpec{
+					GUID:      "guid",
+					Version:   "version",
+					AppName:   "app",
+					SpaceName: "space",
 				},
-				AppName:   "app",
-				SpaceName: "space",
 			})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(statefulsetName).To(Equal("app-space-077dc99e95"))
@@ -42,13 +42,13 @@ var _ = Describe("Names", func() {
 
 		When("the prefix is too long", func() {
 			It("calculates the name of an app's backing statefulset", func() {
-				statefulsetName, err := GetStatefulsetName(&api.LRP{
-					LRPIdentifier: api.LRPIdentifier{
-						GUID:    "guid",
-						Version: "version",
+				statefulsetName, err := GetStatefulsetName(&eiriniv1.LRP{
+					Spec: eiriniv1.LRPSpec{
+						GUID:      "guid",
+						Version:   "version",
+						AppName:   "very-long-app-name",
+						SpaceName: "space-with-very-very-very-very-very-very-very-very-very-long-name",
 					},
-					AppName:   "very-long-app-name",
-					SpaceName: "space-with-very-very-very-very-very-very-very-very-very-long-name",
 				})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(statefulsetName).To(Equal("very-long-app-name-space-with-very-very--077dc99e95"))

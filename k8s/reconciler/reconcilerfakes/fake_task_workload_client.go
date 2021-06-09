@@ -5,34 +5,28 @@ import (
 	"context"
 	"sync"
 
-	"code.cloudfoundry.org/eirini-controller/api"
 	"code.cloudfoundry.org/eirini-controller/k8s/reconciler"
-	"code.cloudfoundry.org/eirini-controller/k8s/shared"
 	v1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
 )
 
 type FakeTaskWorkloadClient struct {
-	DeleteStub        func(context.Context, string) (string, error)
+	DeleteStub        func(context.Context, string) error
 	deleteMutex       sync.RWMutex
 	deleteArgsForCall []struct {
 		arg1 context.Context
 		arg2 string
 	}
 	deleteReturns struct {
-		result1 string
-		result2 error
+		result1 error
 	}
 	deleteReturnsOnCall map[int]struct {
-		result1 string
-		result2 error
+		result1 error
 	}
-	DesireStub        func(context.Context, string, *api.Task, ...shared.Option) error
+	DesireStub        func(context.Context, *v1.Task) error
 	desireMutex       sync.RWMutex
 	desireArgsForCall []struct {
 		arg1 context.Context
-		arg2 string
-		arg3 *api.Task
-		arg4 []shared.Option
+		arg2 *v1.Task
 	}
 	desireReturns struct {
 		result1 error
@@ -58,7 +52,7 @@ type FakeTaskWorkloadClient struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeTaskWorkloadClient) Delete(arg1 context.Context, arg2 string) (string, error) {
+func (fake *FakeTaskWorkloadClient) Delete(arg1 context.Context, arg2 string) error {
 	fake.deleteMutex.Lock()
 	ret, specificReturn := fake.deleteReturnsOnCall[len(fake.deleteArgsForCall)]
 	fake.deleteArgsForCall = append(fake.deleteArgsForCall, struct {
@@ -73,9 +67,9 @@ func (fake *FakeTaskWorkloadClient) Delete(arg1 context.Context, arg2 string) (s
 		return stub(arg1, arg2)
 	}
 	if specificReturn {
-		return ret.result1, ret.result2
+		return ret.result1
 	}
-	return fakeReturns.result1, fakeReturns.result2
+	return fakeReturns.result1
 }
 
 func (fake *FakeTaskWorkloadClient) DeleteCallCount() int {
@@ -84,7 +78,7 @@ func (fake *FakeTaskWorkloadClient) DeleteCallCount() int {
 	return len(fake.deleteArgsForCall)
 }
 
-func (fake *FakeTaskWorkloadClient) DeleteCalls(stub func(context.Context, string) (string, error)) {
+func (fake *FakeTaskWorkloadClient) DeleteCalls(stub func(context.Context, string) error) {
 	fake.deleteMutex.Lock()
 	defer fake.deleteMutex.Unlock()
 	fake.DeleteStub = stub
@@ -97,47 +91,42 @@ func (fake *FakeTaskWorkloadClient) DeleteArgsForCall(i int) (context.Context, s
 	return argsForCall.arg1, argsForCall.arg2
 }
 
-func (fake *FakeTaskWorkloadClient) DeleteReturns(result1 string, result2 error) {
+func (fake *FakeTaskWorkloadClient) DeleteReturns(result1 error) {
 	fake.deleteMutex.Lock()
 	defer fake.deleteMutex.Unlock()
 	fake.DeleteStub = nil
 	fake.deleteReturns = struct {
-		result1 string
-		result2 error
-	}{result1, result2}
+		result1 error
+	}{result1}
 }
 
-func (fake *FakeTaskWorkloadClient) DeleteReturnsOnCall(i int, result1 string, result2 error) {
+func (fake *FakeTaskWorkloadClient) DeleteReturnsOnCall(i int, result1 error) {
 	fake.deleteMutex.Lock()
 	defer fake.deleteMutex.Unlock()
 	fake.DeleteStub = nil
 	if fake.deleteReturnsOnCall == nil {
 		fake.deleteReturnsOnCall = make(map[int]struct {
-			result1 string
-			result2 error
+			result1 error
 		})
 	}
 	fake.deleteReturnsOnCall[i] = struct {
-		result1 string
-		result2 error
-	}{result1, result2}
+		result1 error
+	}{result1}
 }
 
-func (fake *FakeTaskWorkloadClient) Desire(arg1 context.Context, arg2 string, arg3 *api.Task, arg4 ...shared.Option) error {
+func (fake *FakeTaskWorkloadClient) Desire(arg1 context.Context, arg2 *v1.Task) error {
 	fake.desireMutex.Lock()
 	ret, specificReturn := fake.desireReturnsOnCall[len(fake.desireArgsForCall)]
 	fake.desireArgsForCall = append(fake.desireArgsForCall, struct {
 		arg1 context.Context
-		arg2 string
-		arg3 *api.Task
-		arg4 []shared.Option
-	}{arg1, arg2, arg3, arg4})
+		arg2 *v1.Task
+	}{arg1, arg2})
 	stub := fake.DesireStub
 	fakeReturns := fake.desireReturns
-	fake.recordInvocation("Desire", []interface{}{arg1, arg2, arg3, arg4})
+	fake.recordInvocation("Desire", []interface{}{arg1, arg2})
 	fake.desireMutex.Unlock()
 	if stub != nil {
-		return stub(arg1, arg2, arg3, arg4...)
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1
@@ -151,17 +140,17 @@ func (fake *FakeTaskWorkloadClient) DesireCallCount() int {
 	return len(fake.desireArgsForCall)
 }
 
-func (fake *FakeTaskWorkloadClient) DesireCalls(stub func(context.Context, string, *api.Task, ...shared.Option) error) {
+func (fake *FakeTaskWorkloadClient) DesireCalls(stub func(context.Context, *v1.Task) error) {
 	fake.desireMutex.Lock()
 	defer fake.desireMutex.Unlock()
 	fake.DesireStub = stub
 }
 
-func (fake *FakeTaskWorkloadClient) DesireArgsForCall(i int) (context.Context, string, *api.Task, []shared.Option) {
+func (fake *FakeTaskWorkloadClient) DesireArgsForCall(i int) (context.Context, *v1.Task) {
 	fake.desireMutex.RLock()
 	defer fake.desireMutex.RUnlock()
 	argsForCall := fake.desireArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+	return argsForCall.arg1, argsForCall.arg2
 }
 
 func (fake *FakeTaskWorkloadClient) DesireReturns(result1 error) {

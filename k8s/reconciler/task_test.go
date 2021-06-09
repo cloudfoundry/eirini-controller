@@ -8,14 +8,11 @@ import (
 	"code.cloudfoundry.org/eirini-controller/k8s/reconciler"
 	"code.cloudfoundry.org/eirini-controller/k8s/reconciler/reconcilerfakes"
 	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
-	eiriniv1scheme "code.cloudfoundry.org/eirini-controller/pkg/generated/clientset/versioned/scheme"
 	"code.cloudfoundry.org/lager/lagertest"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -29,7 +26,6 @@ var _ = Describe("Task", func() {
 		tasksCrClient   *reconcilerfakes.FakeTasksCrClient
 		namespacedName  types.NamespacedName
 		workloadClient  *reconcilerfakes.FakeTaskWorkloadClient
-		scheme          *runtime.Scheme
 		task            *eiriniv1.Task
 		ttlSeconds      int
 	)
@@ -42,10 +38,9 @@ var _ = Describe("Task", func() {
 		}
 		workloadClient = new(reconcilerfakes.FakeTaskWorkloadClient)
 
-		scheme = eiriniv1scheme.Scheme
 		logger := lagertest.NewTestLogger("task-reconciler")
 		ttlSeconds = 30
-		taskReconciler = reconciler.NewTask(logger, tasksCrClient, workloadClient, scheme, ttlSeconds)
+		taskReconciler = reconciler.NewTask(logger, tasksCrClient, workloadClient, ttlSeconds)
 		task = &eiriniv1.Task{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      namespacedName.Name,
@@ -83,22 +78,8 @@ var _ = Describe("Task", func() {
 
 		By("invoking the task desirer", func() {
 			Expect(workloadClient.DesireCallCount()).To(Equal(1))
-			_, namespace, apiTask, _ := workloadClient.DesireArgsForCall(0)
-			Expect(namespace).To(Equal("my-namespace"))
-			Expect(apiTask.GUID).To(Equal(task.Spec.GUID))
-			Expect(apiTask.Name).To(Equal(task.Spec.Name))
-			Expect(apiTask.Image).To(Equal(task.Spec.Image))
-			Expect(apiTask.Env).To(Equal(task.Spec.Env))
-			Expect(apiTask.Command).To(Equal(task.Spec.Command))
-			Expect(apiTask.AppName).To(Equal(task.Spec.AppName))
-			Expect(apiTask.AppGUID).To(Equal(task.Spec.AppGUID))
-			Expect(apiTask.OrgName).To(Equal(task.Spec.OrgName))
-			Expect(apiTask.OrgGUID).To(Equal(task.Spec.OrgGUID))
-			Expect(apiTask.SpaceName).To(Equal(task.Spec.SpaceName))
-			Expect(apiTask.SpaceGUID).To(Equal(task.Spec.SpaceGUID))
-			Expect(apiTask.MemoryMB).To(Equal(task.Spec.MemoryMB))
-			Expect(apiTask.DiskMB).To(Equal(task.Spec.DiskMB))
-			Expect(apiTask.CPUWeight).To(Equal(task.Spec.CPUWeight))
+			_, actualTask := workloadClient.DesireArgsForCall(0)
+			Expect(actualTask).To(Equal(task))
 		})
 
 		By("updating the task execution status", func() {
@@ -106,19 +87,6 @@ var _ = Describe("Task", func() {
 			_, actualTask, status := tasksCrClient.UpdateTaskStatusArgsForCall(0)
 			Expect(actualTask).To(Equal(task))
 			Expect(status.ExecutionStatus).To(Equal(eiriniv1.TaskStarting))
-		})
-
-		By("sets an owner reference in the job", func() {
-			Expect(workloadClient.DesireCallCount()).To(Equal(1))
-			_, _, _, setOwnerFns := workloadClient.DesireArgsForCall(0)
-			Expect(setOwnerFns).To(HaveLen(1))
-			setOwnerFn := setOwnerFns[0]
-
-			job := &batchv1.Job{ObjectMeta: metav1.ObjectMeta{Namespace: "my-namespace"}}
-			Expect(setOwnerFn(job)).To(Succeed())
-			Expect(job.ObjectMeta.OwnerReferences).To(HaveLen(1))
-			Expect(job.ObjectMeta.OwnerReferences[0].Kind).To(Equal("Task"))
-			Expect(job.ObjectMeta.OwnerReferences[0].Name).To(Equal("my-name"))
 		})
 	})
 
@@ -196,7 +164,7 @@ var _ = Describe("Task", func() {
 
 			When("deleting the task fails", func() {
 				BeforeEach(func() {
-					workloadClient.DeleteReturns("", fmt.Errorf("boom"))
+					workloadClient.DeleteReturns(fmt.Errorf("boom"))
 				})
 
 				It("returns an error", func() {
@@ -300,11 +268,10 @@ var _ = Describe("Task", func() {
 
 		It("passes the private registry details to the desirer", func() {
 			Expect(workloadClient.DesireCallCount()).To(Equal(1))
-			_, _, apiTask, _ := workloadClient.DesireArgsForCall(0)
-			Expect(apiTask.PrivateRegistry).ToNot(BeNil())
-			Expect(apiTask.PrivateRegistry.Username).To(Equal("admin"))
-			Expect(apiTask.PrivateRegistry.Password).To(Equal("p4ssw0rd"))
-			Expect(apiTask.PrivateRegistry.Server).To(Equal("index.docker.io/v1/"))
+			_, actualTask := workloadClient.DesireArgsForCall(0)
+			Expect(actualTask.Spec.PrivateRegistry).ToNot(BeNil())
+			Expect(actualTask.Spec.PrivateRegistry.Username).To(Equal("admin"))
+			Expect(actualTask.Spec.PrivateRegistry.Password).To(Equal("p4ssw0rd"))
 		})
 	})
 

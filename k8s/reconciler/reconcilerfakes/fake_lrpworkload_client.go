@@ -5,20 +5,16 @@ import (
 	"context"
 	"sync"
 
-	"code.cloudfoundry.org/eirini-controller/api"
 	"code.cloudfoundry.org/eirini-controller/k8s/reconciler"
-	"code.cloudfoundry.org/eirini-controller/k8s/shared"
 	v1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
 )
 
 type FakeLRPWorkloadCLient struct {
-	DesireStub        func(context.Context, string, *api.LRP, ...shared.Option) error
+	DesireStub        func(context.Context, *v1.LRP) error
 	desireMutex       sync.RWMutex
 	desireArgsForCall []struct {
 		arg1 context.Context
-		arg2 string
-		arg3 *api.LRP
-		arg4 []shared.Option
+		arg2 *v1.LRP
 	}
 	desireReturns struct {
 		result1 error
@@ -26,25 +22,11 @@ type FakeLRPWorkloadCLient struct {
 	desireReturnsOnCall map[int]struct {
 		result1 error
 	}
-	GetStub        func(context.Context, api.LRPIdentifier) (*api.LRP, error)
-	getMutex       sync.RWMutex
-	getArgsForCall []struct {
-		arg1 context.Context
-		arg2 api.LRPIdentifier
-	}
-	getReturns struct {
-		result1 *api.LRP
-		result2 error
-	}
-	getReturnsOnCall map[int]struct {
-		result1 *api.LRP
-		result2 error
-	}
-	GetStatusStub        func(context.Context, api.LRPIdentifier) (v1.LRPStatus, error)
+	GetStatusStub        func(context.Context, *v1.LRP) (v1.LRPStatus, error)
 	getStatusMutex       sync.RWMutex
 	getStatusArgsForCall []struct {
 		arg1 context.Context
-		arg2 api.LRPIdentifier
+		arg2 *v1.LRP
 	}
 	getStatusReturns struct {
 		result1 v1.LRPStatus
@@ -54,11 +36,11 @@ type FakeLRPWorkloadCLient struct {
 		result1 v1.LRPStatus
 		result2 error
 	}
-	UpdateStub        func(context.Context, *api.LRP) error
+	UpdateStub        func(context.Context, *v1.LRP) error
 	updateMutex       sync.RWMutex
 	updateArgsForCall []struct {
 		arg1 context.Context
-		arg2 *api.LRP
+		arg2 *v1.LRP
 	}
 	updateReturns struct {
 		result1 error
@@ -70,21 +52,19 @@ type FakeLRPWorkloadCLient struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeLRPWorkloadCLient) Desire(arg1 context.Context, arg2 string, arg3 *api.LRP, arg4 ...shared.Option) error {
+func (fake *FakeLRPWorkloadCLient) Desire(arg1 context.Context, arg2 *v1.LRP) error {
 	fake.desireMutex.Lock()
 	ret, specificReturn := fake.desireReturnsOnCall[len(fake.desireArgsForCall)]
 	fake.desireArgsForCall = append(fake.desireArgsForCall, struct {
 		arg1 context.Context
-		arg2 string
-		arg3 *api.LRP
-		arg4 []shared.Option
-	}{arg1, arg2, arg3, arg4})
+		arg2 *v1.LRP
+	}{arg1, arg2})
 	stub := fake.DesireStub
 	fakeReturns := fake.desireReturns
-	fake.recordInvocation("Desire", []interface{}{arg1, arg2, arg3, arg4})
+	fake.recordInvocation("Desire", []interface{}{arg1, arg2})
 	fake.desireMutex.Unlock()
 	if stub != nil {
-		return stub(arg1, arg2, arg3, arg4...)
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1
@@ -98,17 +78,17 @@ func (fake *FakeLRPWorkloadCLient) DesireCallCount() int {
 	return len(fake.desireArgsForCall)
 }
 
-func (fake *FakeLRPWorkloadCLient) DesireCalls(stub func(context.Context, string, *api.LRP, ...shared.Option) error) {
+func (fake *FakeLRPWorkloadCLient) DesireCalls(stub func(context.Context, *v1.LRP) error) {
 	fake.desireMutex.Lock()
 	defer fake.desireMutex.Unlock()
 	fake.DesireStub = stub
 }
 
-func (fake *FakeLRPWorkloadCLient) DesireArgsForCall(i int) (context.Context, string, *api.LRP, []shared.Option) {
+func (fake *FakeLRPWorkloadCLient) DesireArgsForCall(i int) (context.Context, *v1.LRP) {
 	fake.desireMutex.RLock()
 	defer fake.desireMutex.RUnlock()
 	argsForCall := fake.desireArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+	return argsForCall.arg1, argsForCall.arg2
 }
 
 func (fake *FakeLRPWorkloadCLient) DesireReturns(result1 error) {
@@ -134,77 +114,12 @@ func (fake *FakeLRPWorkloadCLient) DesireReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *FakeLRPWorkloadCLient) Get(arg1 context.Context, arg2 api.LRPIdentifier) (*api.LRP, error) {
-	fake.getMutex.Lock()
-	ret, specificReturn := fake.getReturnsOnCall[len(fake.getArgsForCall)]
-	fake.getArgsForCall = append(fake.getArgsForCall, struct {
-		arg1 context.Context
-		arg2 api.LRPIdentifier
-	}{arg1, arg2})
-	stub := fake.GetStub
-	fakeReturns := fake.getReturns
-	fake.recordInvocation("Get", []interface{}{arg1, arg2})
-	fake.getMutex.Unlock()
-	if stub != nil {
-		return stub(arg1, arg2)
-	}
-	if specificReturn {
-		return ret.result1, ret.result2
-	}
-	return fakeReturns.result1, fakeReturns.result2
-}
-
-func (fake *FakeLRPWorkloadCLient) GetCallCount() int {
-	fake.getMutex.RLock()
-	defer fake.getMutex.RUnlock()
-	return len(fake.getArgsForCall)
-}
-
-func (fake *FakeLRPWorkloadCLient) GetCalls(stub func(context.Context, api.LRPIdentifier) (*api.LRP, error)) {
-	fake.getMutex.Lock()
-	defer fake.getMutex.Unlock()
-	fake.GetStub = stub
-}
-
-func (fake *FakeLRPWorkloadCLient) GetArgsForCall(i int) (context.Context, api.LRPIdentifier) {
-	fake.getMutex.RLock()
-	defer fake.getMutex.RUnlock()
-	argsForCall := fake.getArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2
-}
-
-func (fake *FakeLRPWorkloadCLient) GetReturns(result1 *api.LRP, result2 error) {
-	fake.getMutex.Lock()
-	defer fake.getMutex.Unlock()
-	fake.GetStub = nil
-	fake.getReturns = struct {
-		result1 *api.LRP
-		result2 error
-	}{result1, result2}
-}
-
-func (fake *FakeLRPWorkloadCLient) GetReturnsOnCall(i int, result1 *api.LRP, result2 error) {
-	fake.getMutex.Lock()
-	defer fake.getMutex.Unlock()
-	fake.GetStub = nil
-	if fake.getReturnsOnCall == nil {
-		fake.getReturnsOnCall = make(map[int]struct {
-			result1 *api.LRP
-			result2 error
-		})
-	}
-	fake.getReturnsOnCall[i] = struct {
-		result1 *api.LRP
-		result2 error
-	}{result1, result2}
-}
-
-func (fake *FakeLRPWorkloadCLient) GetStatus(arg1 context.Context, arg2 api.LRPIdentifier) (v1.LRPStatus, error) {
+func (fake *FakeLRPWorkloadCLient) GetStatus(arg1 context.Context, arg2 *v1.LRP) (v1.LRPStatus, error) {
 	fake.getStatusMutex.Lock()
 	ret, specificReturn := fake.getStatusReturnsOnCall[len(fake.getStatusArgsForCall)]
 	fake.getStatusArgsForCall = append(fake.getStatusArgsForCall, struct {
 		arg1 context.Context
-		arg2 api.LRPIdentifier
+		arg2 *v1.LRP
 	}{arg1, arg2})
 	stub := fake.GetStatusStub
 	fakeReturns := fake.getStatusReturns
@@ -225,13 +140,13 @@ func (fake *FakeLRPWorkloadCLient) GetStatusCallCount() int {
 	return len(fake.getStatusArgsForCall)
 }
 
-func (fake *FakeLRPWorkloadCLient) GetStatusCalls(stub func(context.Context, api.LRPIdentifier) (v1.LRPStatus, error)) {
+func (fake *FakeLRPWorkloadCLient) GetStatusCalls(stub func(context.Context, *v1.LRP) (v1.LRPStatus, error)) {
 	fake.getStatusMutex.Lock()
 	defer fake.getStatusMutex.Unlock()
 	fake.GetStatusStub = stub
 }
 
-func (fake *FakeLRPWorkloadCLient) GetStatusArgsForCall(i int) (context.Context, api.LRPIdentifier) {
+func (fake *FakeLRPWorkloadCLient) GetStatusArgsForCall(i int) (context.Context, *v1.LRP) {
 	fake.getStatusMutex.RLock()
 	defer fake.getStatusMutex.RUnlock()
 	argsForCall := fake.getStatusArgsForCall[i]
@@ -264,12 +179,12 @@ func (fake *FakeLRPWorkloadCLient) GetStatusReturnsOnCall(i int, result1 v1.LRPS
 	}{result1, result2}
 }
 
-func (fake *FakeLRPWorkloadCLient) Update(arg1 context.Context, arg2 *api.LRP) error {
+func (fake *FakeLRPWorkloadCLient) Update(arg1 context.Context, arg2 *v1.LRP) error {
 	fake.updateMutex.Lock()
 	ret, specificReturn := fake.updateReturnsOnCall[len(fake.updateArgsForCall)]
 	fake.updateArgsForCall = append(fake.updateArgsForCall, struct {
 		arg1 context.Context
-		arg2 *api.LRP
+		arg2 *v1.LRP
 	}{arg1, arg2})
 	stub := fake.UpdateStub
 	fakeReturns := fake.updateReturns
@@ -290,13 +205,13 @@ func (fake *FakeLRPWorkloadCLient) UpdateCallCount() int {
 	return len(fake.updateArgsForCall)
 }
 
-func (fake *FakeLRPWorkloadCLient) UpdateCalls(stub func(context.Context, *api.LRP) error) {
+func (fake *FakeLRPWorkloadCLient) UpdateCalls(stub func(context.Context, *v1.LRP) error) {
 	fake.updateMutex.Lock()
 	defer fake.updateMutex.Unlock()
 	fake.UpdateStub = stub
 }
 
-func (fake *FakeLRPWorkloadCLient) UpdateArgsForCall(i int) (context.Context, *api.LRP) {
+func (fake *FakeLRPWorkloadCLient) UpdateArgsForCall(i int) (context.Context, *v1.LRP) {
 	fake.updateMutex.RLock()
 	defer fake.updateMutex.RUnlock()
 	argsForCall := fake.updateArgsForCall[i]
@@ -331,8 +246,6 @@ func (fake *FakeLRPWorkloadCLient) Invocations() map[string][][]interface{} {
 	defer fake.invocationsMutex.RUnlock()
 	fake.desireMutex.RLock()
 	defer fake.desireMutex.RUnlock()
-	fake.getMutex.RLock()
-	defer fake.getMutex.RUnlock()
 	fake.getStatusMutex.RLock()
 	defer fake.getStatusMutex.RUnlock()
 	fake.updateMutex.RLock()

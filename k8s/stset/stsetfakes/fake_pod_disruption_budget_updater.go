@@ -5,18 +5,18 @@ import (
 	"context"
 	"sync"
 
-	"code.cloudfoundry.org/eirini-controller/api"
 	"code.cloudfoundry.org/eirini-controller/k8s/stset"
+	v1a "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
 	v1 "k8s.io/api/apps/v1"
 )
 
 type FakePodDisruptionBudgetUpdater struct {
-	UpdateStub        func(context.Context, *v1.StatefulSet, *api.LRP) error
+	UpdateStub        func(context.Context, *v1.StatefulSet, *v1a.LRP) error
 	updateMutex       sync.RWMutex
 	updateArgsForCall []struct {
 		arg1 context.Context
 		arg2 *v1.StatefulSet
-		arg3 *api.LRP
+		arg3 *v1a.LRP
 	}
 	updateReturns struct {
 		result1 error
@@ -28,13 +28,13 @@ type FakePodDisruptionBudgetUpdater struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakePodDisruptionBudgetUpdater) Update(arg1 context.Context, arg2 *v1.StatefulSet, arg3 *api.LRP) error {
+func (fake *FakePodDisruptionBudgetUpdater) Update(arg1 context.Context, arg2 *v1.StatefulSet, arg3 *v1a.LRP) error {
 	fake.updateMutex.Lock()
 	ret, specificReturn := fake.updateReturnsOnCall[len(fake.updateArgsForCall)]
 	fake.updateArgsForCall = append(fake.updateArgsForCall, struct {
 		arg1 context.Context
 		arg2 *v1.StatefulSet
-		arg3 *api.LRP
+		arg3 *v1a.LRP
 	}{arg1, arg2, arg3})
 	stub := fake.UpdateStub
 	fakeReturns := fake.updateReturns
@@ -55,13 +55,13 @@ func (fake *FakePodDisruptionBudgetUpdater) UpdateCallCount() int {
 	return len(fake.updateArgsForCall)
 }
 
-func (fake *FakePodDisruptionBudgetUpdater) UpdateCalls(stub func(context.Context, *v1.StatefulSet, *api.LRP) error) {
+func (fake *FakePodDisruptionBudgetUpdater) UpdateCalls(stub func(context.Context, *v1.StatefulSet, *v1a.LRP) error) {
 	fake.updateMutex.Lock()
 	defer fake.updateMutex.Unlock()
 	fake.UpdateStub = stub
 }
 
-func (fake *FakePodDisruptionBudgetUpdater) UpdateArgsForCall(i int) (context.Context, *v1.StatefulSet, *api.LRP) {
+func (fake *FakePodDisruptionBudgetUpdater) UpdateArgsForCall(i int) (context.Context, *v1.StatefulSet, *v1a.LRP) {
 	fake.updateMutex.RLock()
 	defer fake.updateMutex.RUnlock()
 	argsForCall := fake.updateArgsForCall[i]

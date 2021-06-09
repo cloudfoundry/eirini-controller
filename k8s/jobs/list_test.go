@@ -1,9 +1,9 @@
 package jobs_test
 
 import (
-	"code.cloudfoundry.org/eirini-controller/api"
 	"code.cloudfoundry.org/eirini-controller/k8s/jobs"
 	"code.cloudfoundry.org/eirini-controller/k8s/jobs/jobsfakes"
+	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
@@ -15,7 +15,7 @@ var _ = Describe("List", func() {
 	const taskGUID = "task-123"
 	var (
 		job       *batch.Job
-		tasks     []*api.Task
+		tasks     []*eiriniv1.Task
 		jobLister *jobsfakes.FakeJobLister
 		lister    jobs.Lister
 		err       error
@@ -54,7 +54,7 @@ var _ = Describe("List", func() {
 
 		taskGUIDs := []string{}
 		for _, task := range tasks {
-			taskGUIDs = append(taskGUIDs, task.GUID)
+			taskGUIDs = append(taskGUIDs, task.Spec.GUID)
 		}
 
 		Expect(taskGUIDs).To(ContainElement(taskGUID))

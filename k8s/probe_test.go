@@ -1,8 +1,8 @@
 package k8s_test
 
 import (
-	"code.cloudfoundry.org/eirini-controller/api"
 	. "code.cloudfoundry.org/eirini-controller/k8s"
+	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	v1 "k8s.io/api/core/v1"
@@ -13,15 +13,17 @@ import (
 var _ = Describe("PrrobeCreator", func() {
 	var (
 		probe *v1.Probe
-		lrp   *api.LRP
+		lrp   *eiriniv1.LRP
 	)
 
 	BeforeEach(func() {
-		lrp = &api.LRP{
-			Health: api.Healthcheck{
-				Endpoint:  "/healthz",
-				Port:      8080,
-				TimeoutMs: 3000,
+		lrp = &eiriniv1.LRP{
+			Spec: eiriniv1.LRPSpec{
+				Health: eiriniv1.Healthcheck{
+					Endpoint:  "/healthz",
+					Port:      8080,
+					TimeoutMs: 3000,
+				},
 			},
 		}
 	})
@@ -33,7 +35,7 @@ var _ = Describe("PrrobeCreator", func() {
 
 		Context("When healthcheck type is HTTP", func() {
 			BeforeEach(func() {
-				lrp.Health.Type = "http"
+				lrp.Spec.Health.Type = "http"
 			})
 
 			It("creates a probe with HTTPGet action", func() {
@@ -52,7 +54,7 @@ var _ = Describe("PrrobeCreator", func() {
 
 		Context("When healthcheck type is Port", func() {
 			BeforeEach(func() {
-				lrp.Health.Type = "port"
+				lrp.Spec.Health.Type = "port"
 			})
 
 			It("creates a probe with TCPSocket action", func() {
@@ -70,8 +72,8 @@ var _ = Describe("PrrobeCreator", func() {
 
 		Context("When timeout is not a whole number", func() {
 			BeforeEach(func() {
-				lrp.Health.Type = "http"
-				lrp.Health.TimeoutMs = 5700
+				lrp.Spec.Health.Type = "http"
+				lrp.Spec.Health.TimeoutMs = 5700
 			})
 
 			It("rounds it down", func() {
@@ -81,7 +83,7 @@ var _ = Describe("PrrobeCreator", func() {
 
 		Context("When healthcheck information is missing", func() {
 			BeforeEach(func() {
-				lrp = &api.LRP{}
+				lrp = &eiriniv1.LRP{}
 			})
 
 			It("returns nil", func() {
@@ -97,7 +99,7 @@ var _ = Describe("PrrobeCreator", func() {
 
 		Context("When Healtcheck type is HTTP", func() {
 			BeforeEach(func() {
-				lrp.Health.Type = "http"
+				lrp.Spec.Health.Type = "http"
 			})
 
 			It("should create a probe with a HTTP GET action", func() {
@@ -116,7 +118,7 @@ var _ = Describe("PrrobeCreator", func() {
 
 		Context("When Healthcheck type is Port", func() {
 			BeforeEach(func() {
-				lrp.Health.Type = "port"
+				lrp.Spec.Health.Type = "port"
 			})
 
 			It("should create a probe with a TCPSocket action", func() {
@@ -134,7 +136,7 @@ var _ = Describe("PrrobeCreator", func() {
 
 		Context("When healthcheck information is missing", func() {
 			BeforeEach(func() {
-				lrp = &api.LRP{}
+				lrp = &eiriniv1.LRP{}
 			})
 
 			It("returns nil", func() {

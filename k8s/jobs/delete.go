@@ -33,12 +33,12 @@ func NewDeleter(
 	}
 }
 
-func (d *Deleter) Delete(ctx context.Context, guid string) (string, error) {
+func (d *Deleter) Delete(ctx context.Context, guid string) error {
 	logger := d.logger.Session("delete", lager.Data{"guid": guid})
 
 	job, err := d.getJobByGUID(ctx, logger, guid)
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	return d.delete(ctx, logger, job)
@@ -61,14 +61,12 @@ func (d *Deleter) getJobByGUID(ctx context.Context, logger lager.Logger, guid st
 	return jobs[0], nil
 }
 
-func (d *Deleter) delete(ctx context.Context, logger lager.Logger, job batchv1.Job) (string, error) {
-	callbackURL := job.Annotations[AnnotationCompletionCallback]
-
+func (d *Deleter) delete(ctx context.Context, logger lager.Logger, job batchv1.Job) error {
 	if err := d.jobDeleter.Delete(ctx, job.Namespace, job.Name); err != nil {
 		logger.Error("failed-to-delete-job", err)
 
-		return "", errors.Wrap(err, "failed to delete job")
+		return errors.Wrap(err, "failed to delete job")
 	}
 
-	return callbackURL, nil
+	return nil
 }

@@ -5,10 +5,10 @@ import (
 	"encoding/base64"
 	"fmt"
 
-	"code.cloudfoundry.org/eirini-controller/api"
-	"code.cloudfoundry.org/eirini-controller/k8s/shared/sharedfakes"
 	"code.cloudfoundry.org/eirini-controller/k8s/stset"
 	"code.cloudfoundry.org/eirini-controller/k8s/stset/stsetfakes"
+	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
+	eirinischeme "code.cloudfoundry.org/eirini-controller/pkg/generated/clientset/versioned/scheme"
 	"code.cloudfoundry.org/lager"
 	"code.cloudfoundry.org/lager/lagertest"
 	. "github.com/onsi/ginkgo"
@@ -28,9 +28,8 @@ var _ = Describe("Desirer", func() {
 		statefulSets               *stsetfakes.FakeStatefulSetCreator
 		lrpToStatefulSetConverter  *stsetfakes.FakeLRPToStatefulSetConverter
 		podDisruptionBudgetUpdater *stsetfakes.FakePodDisruptionBudgetUpdater
-		desireOptOne, desireOptTwo *sharedfakes.FakeOption
 
-		lrp       *api.LRP
+		lrp       *eiriniv1.LRP
 		desireErr error
 
 		desirer stset.Desirer
@@ -41,7 +40,7 @@ var _ = Describe("Desirer", func() {
 		secrets = new(stsetfakes.FakeSecretsClient)
 		statefulSets = new(stsetfakes.FakeStatefulSetCreator)
 		lrpToStatefulSetConverter = new(stsetfakes.FakeLRPToStatefulSetConverter)
-		lrpToStatefulSetConverter.ConvertStub = func(statefulSetName string, lrp *api.LRP, _ *corev1.Secret) (*v1.StatefulSet, error) {
+		lrpToStatefulSetConverter.ConvertStub = func(statefulSetName string, lrp *eiriniv1.LRP, _ *corev1.Secret) (*v1.StatefulSet, error) {
 			return &v1.StatefulSet{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: statefulSetName,
@@ -53,14 +52,12 @@ var _ = Describe("Desirer", func() {
 		}
 
 		podDisruptionBudgetUpdater = new(stsetfakes.FakePodDisruptionBudgetUpdater)
-		lrp = createLRP("Baldur")
-		desireOptOne = new(sharedfakes.FakeOption)
-		desireOptTwo = new(sharedfakes.FakeOption)
-		desirer = stset.NewDesirer(logger, secrets, statefulSets, lrpToStatefulSetConverter, podDisruptionBudgetUpdater)
+		lrp = createLRP("the-namespace", "Baldur")
+		desirer = stset.NewDesirer(logger, secrets, statefulSets, lrpToStatefulSetConverter, podDisruptionBudgetUpdater, eirinischeme.Scheme)
 	})
 
 	JustBeforeEach(func() {
-		desireErr = desirer.Desire(ctx, "the-namespace", lrp, desireOptOne.Spy, desireOptTwo.Spy)
+		desireErr = desirer.Desire(ctx, lrp)
 	})
 
 	It("should succeed", func() {
@@ -94,15 +91,6 @@ var _ = Describe("Desirer", func() {
 		})
 	})
 
-	It("should invoke the opts with the StatefulSet", func() {
-		Expect(desireOptOne.CallCount()).To(Equal(1))
-		Expect(desireOptTwo.CallCount()).To(Equal(1))
-
-		_, _, statefulSet := statefulSets.CreateArgsForCall(0)
-		Expect(desireOptOne.ArgsForCall(0)).To(Equal(statefulSet))
-		Expect(desireOptTwo.ArgsForCall(0)).To(Equal(statefulSet))
-	})
-
 	It("should set namespace for the stateful set", func() {
 		_, namespace, _ := statefulSets.CreateArgsForCall(0)
 		Expect(namespace).To(Equal("the-namespace"))
@@ -110,7 +98,7 @@ var _ = Describe("Desirer", func() {
 
 	When("the app name contains unsupported characters", func() {
 		BeforeEach(func() {
-			lrp = createLRP("Балдър")
+			lrp = createLRP("the-namespace", "Балдър")
 		})
 
 		It("should use the guid as a name", func() {
@@ -151,8 +139,7 @@ var _ = Describe("Desirer", func() {
 			}
 			secrets.CreateReturns(registrySecret, nil)
 
-			lrp.PrivateRegistry = &api.PrivateRegistry{
-				Server:   "host",
+			lrp.Spec.PrivateRegistry = &eiriniv1.PrivateRegistry{
 				Username: "user",
 				Password: "password",
 			}
@@ -168,7 +155,7 @@ var _ = Describe("Desirer", func() {
 				HaveKeyWithValue(
 					".dockerconfigjson",
 					fmt.Sprintf(
-						`{"auths":{"host":{"username":"user","password":"password","auth":"%s"}}}`,
+						`{"auths":{"gcr.io":{"username":"user","password":"password","auth":"%s"}}}`,
 						base64.StdEncoding.EncodeToString([]byte("user:password")),
 					),
 				),
@@ -222,8 +209,6 @@ var _ = Describe("Desirer", func() {
 		})
 	})
 })
-
-const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 func expectedValFrom(fieldPath string) *corev1.EnvVarSource {
 	return &corev1.EnvVarSource{

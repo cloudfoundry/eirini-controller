@@ -2,9 +2,9 @@ package jobs_test
 
 import (
 	eirinictrl "code.cloudfoundry.org/eirini-controller"
-	"code.cloudfoundry.org/eirini-controller/api"
 	"code.cloudfoundry.org/eirini-controller/k8s/jobs"
 	"code.cloudfoundry.org/eirini-controller/k8s/jobs/jobsfakes"
+	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
@@ -18,7 +18,7 @@ var _ = Describe("Get", func() {
 		job       *batch.Job
 		err       error
 		jobGetter *jobsfakes.FakeJobGetter
-		task      *api.Task
+		task      *eiriniv1.Task
 		getter    jobs.Getter
 	)
 
@@ -48,12 +48,12 @@ var _ = Describe("Get", func() {
 	It("requests incompleted jobs from the jobs client", func() {
 		Expect(jobGetter.GetByGUIDCallCount()).To(Equal(1))
 		_, actualGUID, actualIncludeCompleted := jobGetter.GetByGUIDArgsForCall(0)
-		Expect(actualGUID).To(Equal(task.GUID))
+		Expect(actualGUID).To(Equal(task.Spec.GUID))
 		Expect(actualIncludeCompleted).To(BeFalse())
 	})
 
 	It("returns the task with the specified task guid", func() {
-		Expect(task.GUID).To(Equal(taskGUID))
+		Expect(task.Spec.GUID).To(Equal(taskGUID))
 	})
 
 	When("getting the task fails", func() {

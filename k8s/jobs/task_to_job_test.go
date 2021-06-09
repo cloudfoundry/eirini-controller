@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	eirinictrl "code.cloudfoundry.org/eirini-controller"
-	"code.cloudfoundry.org/eirini-controller/api"
 	"code.cloudfoundry.org/eirini-controller/k8s/jobs"
+	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
@@ -25,7 +25,7 @@ var _ = Describe("TaskToJob", func() {
 	var (
 		job                               *batch.Job
 		privateRegistrySecret             *corev1.Secret
-		task                              *api.Task
+		task                              *eiriniv1.Task
 		allowAutomountServiceAccountToken bool
 	)
 
@@ -59,26 +59,27 @@ var _ = Describe("TaskToJob", func() {
 		allowAutomountServiceAccountToken = false
 		privateRegistrySecret = nil
 
-		task = &api.Task{
-			Image:              image,
-			CompletionCallback: "cloud-countroller.io/task/completed",
-			Command:            []string{"/lifecycle/launch"},
-			AppName:            "my-app",
-			Name:               "task-name",
-			AppGUID:            "my-app-guid",
-			OrgName:            "my-org",
-			SpaceName:          "my-space",
-			SpaceGUID:          "space-id",
-			OrgGUID:            "org-id",
-			GUID:               taskGUID,
-			Env: map[string]string{
-				eirinictrl.EnvDownloadURL:      "example.com/download",
-				eirinictrl.EnvDropletUploadURL: "example.com/upload",
-				eirinictrl.EnvAppID:            "env-app-id",
+		task = &eiriniv1.Task{
+			Spec: eiriniv1.TaskSpec{
+				Image:     image,
+				Command:   []string{"/lifecycle/launch"},
+				AppName:   "my-app",
+				Name:      "task-name",
+				AppGUID:   "my-app-guid",
+				OrgName:   "my-org",
+				SpaceName: "my-space",
+				SpaceGUID: "space-id",
+				OrgGUID:   "org-id",
+				GUID:      taskGUID,
+				Env: map[string]string{
+					eirinictrl.EnvDownloadURL:      "example.com/download",
+					eirinictrl.EnvDropletUploadURL: "example.com/upload",
+					eirinictrl.EnvAppID:            "env-app-id",
+				},
+				MemoryMB:  1,
+				CPUWeight: 2,
+				DiskMB:    3,
 			},
-			MemoryMB:  1,
-			CPUWeight: 2,
-			DiskMB:    3,
 		}
 	})
 
@@ -106,7 +107,6 @@ var _ = Describe("TaskToJob", func() {
 				HaveKeyWithValue(jobs.AnnotationOrgGUID, "org-id"),
 				HaveKeyWithValue(jobs.AnnotationSpaceName, "my-space"),
 				HaveKeyWithValue(jobs.AnnotationSpaceGUID, "space-id"),
-				HaveKeyWithValue(jobs.AnnotationCompletionCallback, "cloud-countroller.io/task/completed"),
 				HaveKeyWithValue(corev1.SeccompPodAnnotationKey, corev1.SeccompProfileRuntimeDefault),
 			))
 		})
@@ -130,7 +130,6 @@ var _ = Describe("TaskToJob", func() {
 				HaveKeyWithValue(jobs.AnnotationSpaceGUID, "space-id"),
 				HaveKeyWithValue(jobs.AnnotationTaskContainerName, "opi-task"),
 				HaveKeyWithValue(jobs.AnnotationGUID, "task-123"),
-				HaveKeyWithValue(jobs.AnnotationCompletionCallback, "cloud-countroller.io/task/completed"),
 				HaveKeyWithValue(corev1.SeccompPodAnnotationKey, corev1.SeccompProfileRuntimeDefault),
 			))
 		})
@@ -162,8 +161,8 @@ var _ = Describe("TaskToJob", func() {
 
 	When("the app name and space name are too long", func() {
 		BeforeEach(func() {
-			task.AppName = "app-with-very-long-name"
-			task.SpaceName = "space-with-a-very-very-very-very-very-very-long-name"
+			task.Spec.AppName = "app-with-very-long-name"
+			task.Spec.SpaceName = "space-with-a-very-very-very-very-very-very-long-name"
 		})
 
 		It("should truncate the app and space name", func() {
@@ -173,12 +172,12 @@ var _ = Describe("TaskToJob", func() {
 
 	When("the prefix would be invalid", func() {
 		BeforeEach(func() {
-			task.AppName = ""
-			task.SpaceName = ""
+			task.Spec.AppName = ""
+			task.Spec.SpaceName = ""
 		})
 
 		It("should use the guid as the prefix instead", func() {
-			Expect(job.Name).To(Equal(fmt.Sprintf("%s-%s", taskGUID, task.Name)))
+			Expect(job.Name).To(Equal(fmt.Sprintf("%s-%s", taskGUID, task.Spec.Name)))
 		})
 	})
 

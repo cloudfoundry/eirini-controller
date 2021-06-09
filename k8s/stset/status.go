@@ -3,7 +3,6 @@ package stset
 import (
 	"context"
 
-	"code.cloudfoundry.org/eirini-controller/api"
 	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
 	"code.cloudfoundry.org/lager"
 	"github.com/pkg/errors"
@@ -11,7 +10,7 @@ import (
 )
 
 type StatefulsetGetter interface {
-	GetByLRPIdentifier(ctx context.Context, id api.LRPIdentifier) ([]appsv1.StatefulSet, error)
+	GetByLRP(ctx context.Context, lrp *eiriniv1.LRP) ([]appsv1.StatefulSet, error)
 }
 
 type StatusGetter struct {
@@ -26,8 +25,8 @@ func NewStatusGetter(logger lager.Logger, statefulsetGetter StatefulsetGetter) S
 	}
 }
 
-func (g StatusGetter) GetStatus(ctx context.Context, identifier api.LRPIdentifier) (eiriniv1.LRPStatus, error) {
-	statefulSet, err := g.getStatefulSet(ctx, identifier)
+func (g StatusGetter) GetStatus(ctx context.Context, lrp *eiriniv1.LRP) (eiriniv1.LRPStatus, error) {
+	statefulSet, err := g.getStatefulSet(ctx, lrp)
 	if err != nil {
 		return eiriniv1.LRPStatus{}, errors.Wrap(err, "failed to get statefulset for LRP")
 	}

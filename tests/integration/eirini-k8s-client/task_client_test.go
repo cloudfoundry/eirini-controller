@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"os"
 
-	"code.cloudfoundry.org/eirini-controller/api"
 	"code.cloudfoundry.org/eirini-controller/k8s"
 	"code.cloudfoundry.org/eirini-controller/k8s/client"
 	"code.cloudfoundry.org/eirini-controller/k8s/jobs"
 	"code.cloudfoundry.org/eirini-controller/k8s/patching"
+	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
+	eirinischeme "code.cloudfoundry.org/eirini-controller/pkg/generated/clientset/versioned/scheme"
 	"code.cloudfoundry.org/eirini-controller/tests"
 	"code.cloudfoundry.org/eirini-controller/tests/integration"
-	"code.cloudfoundry.org/eirini-controller/util"
 	"code.cloudfoundry.org/lager"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -26,29 +26,38 @@ import (
 var _ = Describe("Task Client", func() {
 	var (
 		taskClient *k8s.TaskClient
-		task       *api.Task
+		task       *eiriniv1.Task
 		taskGUID   string
 	)
 
 	BeforeEach(func() {
 		taskGUID = tests.GenerateGUID()
-		task = &api.Task{
-			GUID:    taskGUID,
-			Name:    tests.GenerateGUID(),
-			Image:   "eirini/busybox",
-			Command: []string{"sh", "-c", "sleep 1"},
-			Env: map[string]string{
-				"FOO": "BAR",
+		taskName := tests.GenerateGUID()
+		task = &eiriniv1.Task{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: taskName,
 			},
-			AppName:   "app-name",
-			AppGUID:   "app-guid",
-			OrgName:   "org-name",
-			OrgGUID:   "org-guid",
-			SpaceName: "s",
-			SpaceGUID: "s-guid",
-			MemoryMB:  1024,
-			DiskMB:    2048,
+			Spec: eiriniv1.TaskSpec{
+				GUID:    taskGUID,
+				Name:    taskName,
+				Image:   "eirini/busybox",
+				Command: []string{"sh", "-c", "sleep 1"},
+				Env: map[string]string{
+					"FOO": "BAR",
+				},
+				AppName:   "app-name",
+				AppGUID:   "app-guid",
+				OrgName:   "org-name",
+				OrgGUID:   "org-guid",
+				SpaceName: "s",
+				SpaceGUID: "s-guid",
+				MemoryMB:  1024,
+				DiskMB:    2048,
+			},
 		}
+		var err error
+		task, err = fixture.EiriniClientset.EiriniV1().Tasks(fixture.Namespace).Create(ctx, task, metav1.CreateOptions{})
+		Expect(err).NotTo(HaveOccurred())
 	})
 
 	JustBeforeEach(func() {
@@ -59,7 +68,7 @@ var _ = Describe("Task Client", func() {
 		var desireErr error
 
 		JustBeforeEach(func() {
-			desireErr = taskClient.Desire(context.Background(), fixture.Namespace, task)
+			desireErr = taskClient.Desire(context.Background(), task)
 		})
 
 		It("succeeds", func() {
@@ -69,12 +78,12 @@ var _ = Describe("Task Client", func() {
 		It("creates a corresponding job in the same namespace", func() {
 			allJobs := integration.ListJobs(fixture.Clientset, fixture.Namespace, taskGUID)()
 			job := allJobs[0]
-			Expect(job.Name).To(Equal(fmt.Sprintf("app-name-s-%s", task.Name)))
+			Expect(job.Name).To(Equal(fmt.Sprintf("app-name-s-%s", task.Spec.Name)))
 			Expect(job.Labels).To(SatisfyAll(
-				HaveKeyWithValue(jobs.LabelGUID, task.GUID),
-				HaveKeyWithValue(jobs.LabelAppGUID, task.AppGUID),
+				HaveKeyWithValue(jobs.LabelGUID, task.Spec.GUID),
+				HaveKeyWithValue(jobs.LabelAppGUID, task.Spec.AppGUID),
 				HaveKeyWithValue(jobs.LabelSourceType, "TASK"),
-				HaveKeyWithValue(jobs.LabelName, task.Name),
+				HaveKeyWithValue(jobs.LabelName, task.Spec.Name),
 			))
 			Expect(job.Spec.Template.Spec.Containers).To(HaveLen(1))
 
@@ -93,12 +102,11 @@ var _ = Describe("Task Client", func() {
 
 		When("the task image lives in a private registry", func() {
 			BeforeEach(func() {
-				task.Image = "eiriniuser/notdora:latest"
-				task.Command = []string{"/bin/echo", "hello"}
-				task.PrivateRegistry = &api.PrivateRegistry{
+				task.Spec.Image = "eiriniuser/notdora:latest"
+				task.Spec.Command = []string{"/bin/echo", "hello"}
+				task.Spec.PrivateRegistry = &eiriniv1.PrivateRegistry{
 					Username: "eiriniuser",
 					Password: tests.GetEiriniDockerHubPassword(),
-					Server:   util.DockerHubHost,
 				}
 			})
 
@@ -166,14 +174,14 @@ var _ = Describe("Task Client", func() {
 		JustBeforeEach(func() {
 			otherNStaskClient = createTaskClient(fixture.CreateExtraNamespace())
 
-			Expect(taskClient.Desire(context.Background(), fixture.Namespace, task)).To(Succeed())
+			Expect(taskClient.Desire(context.Background(), task)).To(Succeed())
 		})
 
 		It("gets the task by guid", func() {
 			actualTask, err := taskClient.Get(context.Background(), taskGUID)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(actualTask.GUID).To(Equal(task.GUID))
+			Expect(actualTask.Spec.GUID).To(Equal(task.Spec.GUID))
 		})
 
 		It("does not get tasks from other namespaces", func() {
@@ -188,14 +196,14 @@ var _ = Describe("Task Client", func() {
 		JustBeforeEach(func() {
 			otherNStaskClient = createTaskClient(fixture.CreateExtraNamespace())
 
-			Expect(taskClient.Desire(context.Background(), fixture.Namespace, task)).To(Succeed())
+			Expect(taskClient.Desire(context.Background(), task)).To(Succeed())
 		})
 
 		It("List all tasks in the workloadsNamespace", func() {
 			actualTasks, err := taskClient.List(context.Background())
 			Expect(err).NotTo(HaveOccurred())
 			Expect(actualTasks).To(HaveLen(1))
-			Expect(actualTasks[0].GUID).To(Equal(task.GUID))
+			Expect(actualTasks[0].Spec.GUID).To(Equal(task.Spec.GUID))
 		})
 
 		It("does not list tasks from other namespaces", func() {
@@ -232,11 +240,11 @@ var _ = Describe("Task Client", func() {
 
 	Describe("Delete", func() {
 		JustBeforeEach(func() {
-			Expect(taskClient.Desire(context.Background(), fixture.Namespace, task)).To(Succeed())
+			Expect(taskClient.Desire(context.Background(), task)).To(Succeed())
 		})
 
 		It("deletes the job", func() {
-			_, err := taskClient.Delete(context.Background(), taskGUID)
+			err := taskClient.Delete(context.Background(), taskGUID)
 			Expect(err).NotTo(HaveOccurred())
 			Eventually(integration.ListJobs(fixture.Clientset, fixture.Namespace, taskGUID)).Should(BeEmpty())
 		})
@@ -245,12 +253,11 @@ var _ = Describe("Task Client", func() {
 			var privateRegistrySecret string
 
 			BeforeEach(func() {
-				task.Image = "eiriniuser/notdora:latest"
-				task.Command = []string{"/bin/echo", "hello"}
-				task.PrivateRegistry = &api.PrivateRegistry{
+				task.Spec.Image = "eiriniuser/notdora:latest"
+				task.Spec.Command = []string{"/bin/echo", "hello"}
+				task.Spec.PrivateRegistry = &eiriniv1.PrivateRegistry{
 					Username: "eiriniuser",
 					Password: tests.GetEiriniDockerHubPassword(),
-					Server:   util.DockerHubHost,
 				}
 			})
 
@@ -259,7 +266,7 @@ var _ = Describe("Task Client", func() {
 			})
 
 			It("deletes the image pull secret", func() {
-				_, err := taskClient.Delete(context.Background(), taskGUID)
+				err := taskClient.Delete(context.Background(), taskGUID)
 				Expect(err).NotTo(HaveOccurred())
 
 				Eventually(func() bool {
@@ -290,5 +297,6 @@ func createTaskClient(workloadsNamespace string) *k8s.TaskClient {
 		client.NewJob(fixture.Clientset, workloadsNamespace),
 		client.NewSecret(fixture.Clientset),
 		taskToJobConverter,
+		eirinischeme.Scheme,
 	)
 }

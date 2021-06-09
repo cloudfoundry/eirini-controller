@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"code.cloudfoundry.org/eirini-controller/api"
 	"code.cloudfoundry.org/eirini-controller/k8s/patching"
 	"code.cloudfoundry.org/eirini-controller/k8s/stset"
+	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -54,15 +54,15 @@ func (c *StatefulSet) GetBySourceType(ctx context.Context, sourceType string) ([
 	return statefulSetList.Items, nil
 }
 
-func (c *StatefulSet) GetByLRPIdentifier(ctx context.Context, id api.LRPIdentifier) ([]appsv1.StatefulSet, error) {
+func (c *StatefulSet) GetByLRP(ctx context.Context, lrp *eiriniv1.LRP) ([]appsv1.StatefulSet, error) {
 	ctx, cancel := context.WithTimeout(ctx, k8sTimeout)
 	defer cancel()
 
 	statefulSetList, err := c.clientSet.AppsV1().StatefulSets(c.workloadsNamespace).List(ctx, metav1.ListOptions{
 		LabelSelector: fmt.Sprintf(
 			"%s=%s,%s=%s",
-			stset.LabelGUID, id.GUID,
-			stset.LabelVersion, id.Version,
+			stset.LabelGUID, lrp.Spec.GUID,
+			stset.LabelVersion, lrp.Spec.Version,
 		),
 	})
 	if err != nil {

@@ -3,8 +3,8 @@ package pdb
 import (
 	"context"
 
-	"code.cloudfoundry.org/eirini-controller/api"
 	"code.cloudfoundry.org/eirini-controller/k8s/stset"
+	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/api/policy/v1beta1"
@@ -34,15 +34,15 @@ func NewUpdater(pdbClient K8sClient) *Updater {
 	}
 }
 
-func (c *Updater) Update(ctx context.Context, statefulSet *appsv1.StatefulSet, lrp *api.LRP) error {
-	if lrp.TargetInstances > 1 {
+func (c *Updater) Update(ctx context.Context, statefulSet *appsv1.StatefulSet, lrp *eiriniv1.LRP) error {
+	if lrp.Spec.Instances > 1 {
 		return c.createPDB(ctx, statefulSet, lrp)
 	}
 
 	return c.deletePDB(ctx, statefulSet)
 }
 
-func (c *Updater) createPDB(ctx context.Context, statefulSet *appsv1.StatefulSet, lrp *api.LRP) error {
+func (c *Updater) createPDB(ctx context.Context, statefulSet *appsv1.StatefulSet, lrp *eiriniv1.LRP) error {
 	minAvailable := intstr.FromString(PdbMinAvailableInstances)
 
 	pdb := &v1beta1.PodDisruptionBudget{
@@ -50,8 +50,8 @@ func (c *Updater) createPDB(ctx context.Context, statefulSet *appsv1.StatefulSet
 			Name:      statefulSet.Name,
 			Namespace: statefulSet.Namespace,
 			Labels: map[string]string{
-				stset.LabelGUID:    lrp.GUID,
-				stset.LabelVersion: lrp.Version,
+				stset.LabelGUID:    lrp.Spec.GUID,
+				stset.LabelVersion: lrp.Spec.Version,
 			},
 		},
 		Spec: v1beta1.PodDisruptionBudgetSpec{

@@ -1,9 +1,9 @@
 package stset_test
 
 import (
-	"code.cloudfoundry.org/eirini-controller/api"
 	"code.cloudfoundry.org/eirini-controller/k8s/stset"
 	"code.cloudfoundry.org/eirini-controller/k8s/stset/stsetfakes"
+	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
 	"code.cloudfoundry.org/lager"
 	"code.cloudfoundry.org/lager/lagertest"
 	. "github.com/onsi/ginkgo"
@@ -19,31 +19,30 @@ import (
 var _ = Describe("Update", func() {
 	var (
 		logger             lager.Logger
-		statefulSetGetter  *stsetfakes.FakeStatefulSetByLRPIdentifierGetter
+		statefulSetGetter  *stsetfakes.FakeStatefulSetByLRPGetter
 		statefulSetUpdater *stsetfakes.FakeStatefulSetUpdater
 		pdbUpdater         *stsetfakes.FakePodDisruptionBudgetUpdater
 
-		updatedLRP *api.LRP
+		updatedLRP *eiriniv1.LRP
 		err        error
 	)
 
 	BeforeEach(func() {
 		logger = lagertest.NewTestLogger("handler-test")
 
-		statefulSetGetter = new(stsetfakes.FakeStatefulSetByLRPIdentifierGetter)
+		statefulSetGetter = new(stsetfakes.FakeStatefulSetByLRPGetter)
 		statefulSetUpdater = new(stsetfakes.FakeStatefulSetUpdater)
 		pdbUpdater = new(stsetfakes.FakePodDisruptionBudgetUpdater)
 
-		updatedLRP = &api.LRP{
-			LRPIdentifier: api.LRPIdentifier{
-				GUID:    "guid_1234",
-				Version: "version_1234",
+		updatedLRP = &eiriniv1.LRP{
+			Spec: eiriniv1.LRPSpec{
+				GUID:      "guid_1234",
+				Version:   "version_1234",
+				AppName:   "baldur",
+				SpaceName: "space-foo",
+				Instances: 5,
+				Image:     "new/image",
 			},
-			AppName:         "baldur",
-			SpaceName:       "space-foo",
-			TargetInstances: 5,
-			LastUpdated:     "now",
-			Image:           "new/image",
 		}
 
 		replicas := int32(3)
@@ -55,7 +54,6 @@ var _ = Describe("Update", func() {
 					Namespace: "the-namespace",
 					Annotations: map[string]string{
 						stset.AnnotationProcessGUID: "Baldur-guid",
-						stset.AnnotationLastUpdated: "never",
 					},
 				},
 				Spec: appsv1.StatefulSetSpec{
@@ -72,7 +70,7 @@ var _ = Describe("Update", func() {
 			},
 		}
 
-		statefulSetGetter.GetByLRPIdentifierReturns(st, nil)
+		statefulSetGetter.GetByLRPReturns(st, nil)
 	})
 
 	JustBeforeEach(func() {
@@ -89,7 +87,6 @@ var _ = Describe("Update", func() {
 
 		_, namespace, st := statefulSetUpdater.UpdateArgsForCall(0)
 		Expect(namespace).To(Equal("the-namespace"))
-		Expect(st.GetAnnotations()).To(HaveKeyWithValue(stset.AnnotationLastUpdated, "now"))
 		Expect(st.GetAnnotations()).NotTo(HaveKey("another"))
 		Expect(*st.Spec.Replicas).To(Equal(int32(5)))
 		Expect(st.Spec.Template.Spec.Containers[0].Image).To(Equal("another/image"))
@@ -116,7 +113,7 @@ var _ = Describe("Update", func() {
 
 	When("the image is missing", func() {
 		BeforeEach(func() {
-			updatedLRP.Image = ""
+			updatedLRP.Spec.Image = ""
 		})
 
 		It("succeeds", func() {
@@ -154,7 +151,7 @@ var _ = Describe("Update", func() {
 
 	When("the app does not exist", func() {
 		BeforeEach(func() {
-			statefulSetGetter.GetByLRPIdentifierReturns(nil, errors.New("sorry"))
+			statefulSetGetter.GetByLRPReturns(nil, errors.New("sorry"))
 		})
 
 		It("should return an error", func() {

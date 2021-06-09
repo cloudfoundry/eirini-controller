@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strings"
 
-	"code.cloudfoundry.org/eirini-controller/api"
+	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
 	"code.cloudfoundry.org/eirini-controller/util"
 	"github.com/pkg/errors"
 )
@@ -35,14 +35,14 @@ func truncateString(str string, num int) string {
 	return str
 }
 
-func GetStatefulsetName(lrp *api.LRP) (string, error) {
-	nameSuffix, err := util.Hash(fmt.Sprintf("%s-%s", lrp.GUID, lrp.Version))
+func GetStatefulsetName(lrp *eiriniv1.LRP) (string, error) {
+	nameSuffix, err := util.Hash(fmt.Sprintf("%s-%s", lrp.Spec.GUID, lrp.Spec.Version))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to generate hash")
 	}
 
-	namePrefix := fmt.Sprintf("%s-%s", lrp.AppName, lrp.SpaceName)
-	namePrefix = SanitizeName(namePrefix, lrp.GUID)
+	namePrefix := fmt.Sprintf("%s-%s", lrp.Spec.AppName, lrp.Spec.SpaceName)
+	namePrefix = SanitizeName(namePrefix, lrp.Spec.GUID)
 
 	return fmt.Sprintf("%s-%s", namePrefix, nameSuffix), nil
 }

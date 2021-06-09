@@ -3,7 +3,7 @@ package stset
 import (
 	"context"
 
-	"code.cloudfoundry.org/eirini-controller/api"
+	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
 	"code.cloudfoundry.org/lager"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -25,7 +25,7 @@ type Updater struct {
 
 func NewUpdater(
 	logger lager.Logger,
-	statefulSetGetter StatefulSetByLRPIdentifierGetter,
+	statefulSetGetter StatefulSetByLRPGetter,
 	statefulSetUpdater StatefulSetUpdater,
 	pdbUpdater PodDisruptionBudgetUpdater,
 ) Updater {
@@ -37,7 +37,7 @@ func NewUpdater(
 	}
 }
 
-func (u *Updater) Update(ctx context.Context, lrp *api.LRP) error {
+func (u *Updater) Update(ctx context.Context, lrp *eiriniv1.LRP) error {
 	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		return u.update(ctx, lrp)
 	})
@@ -45,10 +45,10 @@ func (u *Updater) Update(ctx context.Context, lrp *api.LRP) error {
 	return errors.Wrap(err, "failed to update statefulset")
 }
 
-func (u *Updater) update(ctx context.Context, lrp *api.LRP) error {
-	logger := u.logger.Session("update", lager.Data{"guid": lrp.GUID, "version": lrp.Version})
+func (u *Updater) update(ctx context.Context, lrp *eiriniv1.LRP) error {
+	logger := u.logger.Session("update", lager.Data{"guid": lrp.Spec.GUID, "version": lrp.Spec.Version})
 
-	statefulSet, err := u.getStatefulSet(ctx, api.LRPIdentifier{GUID: lrp.GUID, Version: lrp.Version})
+	statefulSet, err := u.getStatefulSet(ctx, lrp)
 	if err != nil {
 		logger.Error("failed-to-get-statefulset", err)
 
@@ -56,9 +56,8 @@ func (u *Updater) update(ctx context.Context, lrp *api.LRP) error {
 	}
 
 	updatedStatefulSet, err := u.getUpdatedStatefulSetObj(statefulSet,
-		lrp.TargetInstances,
-		lrp.LastUpdated,
-		lrp.Image,
+		lrp.Spec.Instances,
+		lrp.Spec.Image,
 	)
 	if err != nil {
 		logger.Error("failed-to-get-updated-statefulset", err)
@@ -81,12 +80,11 @@ func (u *Updater) update(ctx context.Context, lrp *api.LRP) error {
 	return nil
 }
 
-func (u *Updater) getUpdatedStatefulSetObj(sts *appsv1.StatefulSet, instances int, lastUpdated, image string) (*appsv1.StatefulSet, error) {
+func (u *Updater) getUpdatedStatefulSetObj(sts *appsv1.StatefulSet, instances int, image string) (*appsv1.StatefulSet, error) {
 	updatedSts := sts.DeepCopy()
 
 	count := int32(instances)
 	updatedSts.Spec.Replicas = &count
-	updatedSts.Annotations[AnnotationLastUpdated] = lastUpdated
 
 	if image != "" {
 		for i, container := range updatedSts.Spec.Template.Spec.Containers {

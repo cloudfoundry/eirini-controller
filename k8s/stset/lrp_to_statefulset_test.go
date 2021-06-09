@@ -2,9 +2,9 @@ package stset_test
 
 import (
 	eirinictrl "code.cloudfoundry.org/eirini-controller"
-	"code.cloudfoundry.org/eirini-controller/api"
 	"code.cloudfoundry.org/eirini-controller/k8s/stset"
 	"code.cloudfoundry.org/eirini-controller/k8s/stset/stsetfakes"
+	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
@@ -21,7 +21,7 @@ var _ = Describe("LRP to StatefulSet Converter", func() {
 		allowRunImageAsRoot               bool
 		livenessProbeCreator              *stsetfakes.FakeProbeCreator
 		readinessProbeCreator             *stsetfakes.FakeProbeCreator
-		lrp                               *api.LRP
+		lrp                               *eiriniv1.LRP
 		statefulSet                       *appsv1.StatefulSet
 		privateRegistrySecret             *corev1.Secret
 		livenessProbe                     *corev1.Probe
@@ -33,7 +33,7 @@ var _ = Describe("LRP to StatefulSet Converter", func() {
 		allowRunImageAsRoot = false
 		livenessProbeCreator = new(stsetfakes.FakeProbeCreator)
 		readinessProbeCreator = new(stsetfakes.FakeProbeCreator)
-		lrp = createLRP("Baldur")
+		lrp = createLRP("the-namespace", "Baldur")
 		privateRegistrySecret = nil
 
 		livenessProbe = &corev1.Probe{}
@@ -67,7 +67,6 @@ var _ = Describe("LRP to StatefulSet Converter", func() {
 		Entry("AppName", stset.AnnotationAppName, "Baldur"),
 		Entry("AppID", stset.AnnotationAppID, "premium_app_guid_1234"),
 		Entry("Version", stset.AnnotationVersion, "version_1234"),
-		Entry("OriginalRequest", stset.AnnotationOriginalRequest, "original request"),
 		Entry("SpaceName", stset.AnnotationSpaceName, "space-foo"),
 		Entry("SpaceGUID", stset.AnnotationSpaceGUID, "space-guid"),
 		Entry("OrgName", stset.AnnotationOrgName, "org-foo"),
@@ -82,16 +81,11 @@ var _ = Describe("LRP to StatefulSet Converter", func() {
 		Entry("AppName", stset.AnnotationAppName, "Baldur"),
 		Entry("AppID", stset.AnnotationAppID, "premium_app_guid_1234"),
 		Entry("Version", stset.AnnotationVersion, "version_1234"),
-		Entry("OriginalRequest", stset.AnnotationOriginalRequest, "original request"),
 		Entry("SpaceName", stset.AnnotationSpaceName, "space-foo"),
 		Entry("SpaceGUID", stset.AnnotationSpaceGUID, "space-guid"),
 		Entry("OrgName", stset.AnnotationOrgName, "org-foo"),
 		Entry("OrgGUID", stset.AnnotationOrgGUID, "org-guid"),
 	)
-
-	It("should provide last updated to the statefulset annotation", func() {
-		Expect(statefulSet.Annotations).To(HaveKeyWithValue(stset.AnnotationLastUpdated, lrp.LastUpdated))
-	})
 
 	It("should set seccomp pod annotation", func() {
 		Expect(statefulSet.Spec.Template.Annotations[corev1.SeccompPodAnnotationKey]).To(Equal(corev1.SeccompProfileRuntimeDefault))
@@ -252,7 +246,7 @@ var _ = Describe("LRP to StatefulSet Converter", func() {
 
 	When("the app has sidecars", func() {
 		BeforeEach(func() {
-			lrp.Sidecars = []api.Sidecar{
+			lrp.Spec.Sidecars = []eiriniv1.Sidecar{
 				{
 					Name:    "first-sidecar",
 					Command: []string{"echo", "the first sidecar"},
@@ -279,39 +273,40 @@ var _ = Describe("LRP to StatefulSet Converter", func() {
 			Expect(containers).To(ContainElements(
 				corev1.Container{
 					Name:    "first-sidecar",
-					Image:   "busybox",
+					Image:   "gcr.io/foo/bar",
 					Command: []string{"echo", "the first sidecar"},
 					Env:     []corev1.EnvVar{{Name: "FOO", Value: "BAR"}},
 					Resources: corev1.ResourceRequirements{
 						Limits: corev1.ResourceList{
 							corev1.ResourceMemory:           *resource.NewScaledQuantity(101, resource.Mega),
-							corev1.ResourceEphemeralStorage: *resource.NewScaledQuantity(lrp.DiskMB, resource.Mega),
+							corev1.ResourceEphemeralStorage: *resource.NewScaledQuantity(lrp.Spec.DiskMB, resource.Mega),
 						},
 						Requests: corev1.ResourceList{
 							corev1.ResourceMemory: *resource.NewScaledQuantity(101, resource.Mega),
-							corev1.ResourceCPU:    *resource.NewScaledQuantity(int64(lrp.CPUWeight), resource.Milli),
+							corev1.ResourceCPU:    *resource.NewScaledQuantity(int64(lrp.Spec.CPUWeight), resource.Milli),
 						},
 					},
 				},
 				corev1.Container{
 					Name:    "second-sidecar",
-					Image:   "busybox",
+					Image:   "gcr.io/foo/bar",
 					Command: []string{"echo", "the second sidecar"},
 					Env:     []corev1.EnvVar{{Name: "FOO", Value: "BAZ"}},
 					Resources: corev1.ResourceRequirements{
 						Limits: corev1.ResourceList{
 							corev1.ResourceMemory:           *resource.NewScaledQuantity(102, resource.Mega),
-							corev1.ResourceEphemeralStorage: *resource.NewScaledQuantity(lrp.DiskMB, resource.Mega),
+							corev1.ResourceEphemeralStorage: *resource.NewScaledQuantity(lrp.Spec.DiskMB, resource.Mega),
 						},
 						Requests: corev1.ResourceList{
 							corev1.ResourceMemory: *resource.NewScaledQuantity(102, resource.Mega),
-							corev1.ResourceCPU:    *resource.NewScaledQuantity(int64(lrp.CPUWeight), resource.Milli),
+							corev1.ResourceCPU:    *resource.NewScaledQuantity(int64(lrp.Spec.CPUWeight), resource.Milli),
 						},
 					},
 				},
 			))
 		})
 	})
+
 	When("automounting service account token is allowed", func() {
 		BeforeEach(func() {
 			allowAutomountServiceAccountToken = true
@@ -334,8 +329,7 @@ var _ = Describe("LRP to StatefulSet Converter", func() {
 
 	When("the app references a private docker image", func() {
 		BeforeEach(func() {
-			lrp.PrivateRegistry = &api.PrivateRegistry{
-				Server:   "host",
+			lrp.Spec.PrivateRegistry = &eiriniv1.PrivateRegistry{
 				Username: "user",
 				Password: "password",
 			}

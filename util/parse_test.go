@@ -30,13 +30,28 @@ var _ = Describe("Parse", func() {
 	})
 
 	Describe("ImageRegistryHost", func() {
-		It("returns the registry host", func() {
+		It("returns the registry host when port is set", func() {
 			imageURL := "my-secret-docker-registry.docker.io:5000/repo/the-mighty-image:not-latest"
 			Expect(util.ParseImageRegistryHost(imageURL)).To(Equal("my-secret-docker-registry.docker.io"))
 		})
 
-		It("should default to the docker hub", func() {
+		It("returns the registry host when port is not set", func() {
+			imageURL := "my-secret-docker-registry.docker.io/repo/the-mighty-image:not-latest"
+			Expect(util.ParseImageRegistryHost(imageURL)).To(Equal("my-secret-docker-registry.docker.io"))
+		})
+
+		It("should default to the docker hub with just 1 slash", func() {
+			imageURL := "repo/the-mighty-image"
+			Expect(util.ParseImageRegistryHost(imageURL)).To(Equal("index.docker.io/v1/"))
+		})
+
+		It("should default to the docker hub with just 1 slash and a late colon", func() {
 			imageURL := "repo/the-mighty-image:not-latest"
+			Expect(util.ParseImageRegistryHost(imageURL)).To(Equal("index.docker.io/v1/"))
+		})
+
+		It("should default to the docker hub with no slashes", func() {
+			imageURL := "busybox"
 			Expect(util.ParseImageRegistryHost(imageURL)).To(Equal("index.docker.io/v1/"))
 		})
 	})
