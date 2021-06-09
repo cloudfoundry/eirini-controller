@@ -45,13 +45,6 @@ func (f *EATSFixture) TearDown() {
 	f.Fixture.TearDown()
 }
 
-func (f *EATSFixture) getSecret(namespace, secretName, secretPath string) string {
-	secret, err := f.Clientset.CoreV1().Secrets(namespace).Get(context.Background(), secretName, metav1.GetOptions{})
-	Expect(err).NotTo(HaveOccurred())
-
-	return string(secret.Data[secretPath])
-}
-
 func (f *EATSFixture) GetEiriniWorkloadsNamespace() string {
 	cm, err := f.Clientset.CoreV1().ConfigMaps(GetEiriniSystemNamespace()).Get(context.Background(), "api", metav1.GetOptions{})
 	Expect(err).NotTo(HaveOccurred())
