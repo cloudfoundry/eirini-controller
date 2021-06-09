@@ -1,4 +1,4 @@
-IMAGES = eirini-controller migration resource-validator
+IMAGES = eirini-controller resource-validator
 
 TAG ?= latest
 DOCKER_DIR := ${CURDIR}

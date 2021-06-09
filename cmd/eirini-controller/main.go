@@ -86,12 +86,10 @@ func main() {
 	mgr, err := manager.New(kubeConfig, managerOptions)
 	cmdcommons.ExitfIfError(err, "Failed to create k8s controller runtime manager")
 
-	latestMigrationIndex := cmdcommons.GetLatestMigrationIndex()
-
-	lrpReconciler, err := createLRPReconciler(logger, controllerClient, clientset, cfg, mgr.GetScheme(), latestMigrationIndex)
+	lrpReconciler, err := createLRPReconciler(logger, controllerClient, clientset, cfg, mgr.GetScheme())
 	cmdcommons.ExitfIfError(err, "Failed to create LRP reconciler")
 
-	taskReconciler := createTaskReconciler(logger, controllerClient, clientset, cfg, mgr.GetScheme(), latestMigrationIndex)
+	taskReconciler := createTaskReconciler(logger, controllerClient, clientset, cfg, mgr.GetScheme())
 	podCrashReconciler := createPodCrashReconciler(logger, cfg.WorkloadsNamespace, controllerClient, clientset)
 
 	err = builder.
@@ -125,7 +123,6 @@ func createLRPReconciler(
 	clientset kubernetes.Interface,
 	cfg eirinictrl.ControllerConfig,
 	scheme *runtime.Scheme,
-	latestMigration int,
 ) (*reconciler.LRP, error) {
 	logger = logger.Session("lrp-reconciler")
 	lrpToStatefulSetConverter := stset.NewLRPToStatefulSetConverter(
@@ -133,7 +130,6 @@ func createLRPReconciler(
 		cfg.RegistrySecretName,
 		cfg.UnsafeAllowAutomountServiceAccountToken,
 		cfg.AllowRunImageAsRoot,
-		latestMigration,
 		k8s.CreateLivenessProbe,
 		k8s.CreateReadinessProbe,
 	)
@@ -169,13 +165,11 @@ func createTaskReconciler(
 	clientset kubernetes.Interface,
 	cfg eirinictrl.ControllerConfig,
 	scheme *runtime.Scheme,
-	latestMigrationIndex int,
 ) *reconciler.Task {
 	taskToJobConverter := jobs.NewTaskToJobConverter(
 		cfg.ApplicationServiceAccount,
 		cfg.RegistrySecretName,
 		cfg.UnsafeAllowAutomountServiceAccountToken,
-		latestMigrationIndex,
 	)
 	workloadClient := k8s.NewTaskClient(
 		logger,

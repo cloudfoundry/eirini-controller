@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 
 	eirinictrl "code.cloudfoundry.org/eirini-controller"
-	"code.cloudfoundry.org/eirini-controller/migrations"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 	"k8s.io/client-go/kubernetes"
@@ -104,8 +103,4 @@ func GetCertPaths(envVar, defaultPath, name string) (string, string, string) {
 	VerifyFileExists(caPath, fmt.Sprintf("%s CA", name))
 
 	return crtPath, keyPath, caPath
-}
-
-func GetLatestMigrationIndex() int {
-	return migrations.CreateMigrationStepsProvider(nil, nil, nil, "").GetLatestMigrationIndex()
 }

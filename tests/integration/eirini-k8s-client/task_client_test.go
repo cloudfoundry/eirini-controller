@@ -10,7 +10,6 @@ import (
 	"code.cloudfoundry.org/eirini-controller/k8s/client"
 	"code.cloudfoundry.org/eirini-controller/k8s/jobs"
 	"code.cloudfoundry.org/eirini-controller/k8s/patching"
-	"code.cloudfoundry.org/eirini-controller/k8s/shared"
 	"code.cloudfoundry.org/eirini-controller/tests"
 	"code.cloudfoundry.org/eirini-controller/tests/integration"
 	"code.cloudfoundry.org/eirini-controller/util"
@@ -89,14 +88,6 @@ var _ = Describe("Task Client", func() {
 					"Type":   Equal(batchv1.JobComplete),
 					"Status": Equal(corev1.ConditionTrue),
 				})),
-			)
-		})
-
-		It("sets the latest migration index", func() {
-			allJobs := integration.ListJobs(fixture.Clientset, fixture.Namespace, taskGUID)()
-			job := allJobs[0]
-			Expect(job.Annotations).To(
-				HaveKeyWithValue(shared.AnnotationLatestMigration, "123"),
 			)
 		})
 
@@ -292,7 +283,6 @@ func createTaskClient(workloadsNamespace string) *k8s.TaskClient {
 		tests.GetApplicationServiceAccount(),
 		"registry-secret",
 		false,
-		123,
 	)
 
 	return k8s.NewTaskClient(

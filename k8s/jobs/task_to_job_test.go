@@ -2,12 +2,10 @@ package jobs_test
 
 import (
 	"fmt"
-	"strconv"
 
 	eirinictrl "code.cloudfoundry.org/eirini-controller"
 	"code.cloudfoundry.org/eirini-controller/api"
 	"code.cloudfoundry.org/eirini-controller/k8s/jobs"
-	"code.cloudfoundry.org/eirini-controller/k8s/shared"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
@@ -18,11 +16,10 @@ import (
 
 var _ = Describe("TaskToJob", func() {
 	const (
-		image           = "docker.png"
-		taskGUID        = "task-123"
-		serviceAccount  = "service-account"
-		registrySecret  = "registry-secret"
-		latestMigration = 1234
+		image          = "docker.png"
+		taskGUID       = "task-123"
+		serviceAccount = "service-account"
+		registrySecret = "registry-secret"
 	)
 
 	var (
@@ -86,7 +83,7 @@ var _ = Describe("TaskToJob", func() {
 	})
 
 	JustBeforeEach(func() {
-		job = jobs.NewTaskToJobConverter(serviceAccount, registrySecret, allowAutomountServiceAccountToken, latestMigration).Convert(task, privateRegistrySecret)
+		job = jobs.NewTaskToJobConverter(serviceAccount, registrySecret, allowAutomountServiceAccountToken).Convert(task, privateRegistrySecret)
 	})
 
 	It("returns a job for the task with the correct attributes", func() {
@@ -144,10 +141,6 @@ var _ = Describe("TaskToJob", func() {
 				HaveKeyWithValue(jobs.LabelGUID, "task-123"),
 				HaveKeyWithValue(jobs.LabelSourceType, "TASK"),
 			))
-		})
-
-		By("setting the latest migration annotation", func() {
-			Expect(job.Annotations[shared.AnnotationLatestMigration]).To(Equal(strconv.Itoa(latestMigration)))
 		})
 
 		By("creating a secret reference with the registry credentials", func() {

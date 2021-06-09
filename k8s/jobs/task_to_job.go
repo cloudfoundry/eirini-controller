@@ -2,7 +2,6 @@ package jobs
 
 import (
 	"fmt"
-	"strconv"
 
 	eirinictrl "code.cloudfoundry.org/eirini-controller"
 	"code.cloudfoundry.org/eirini-controller/api"
@@ -22,20 +21,17 @@ type Converter struct {
 	serviceAccountName                string
 	registrySecretName                string
 	allowAutomountServiceAccountToken bool
-	latestMigration                   int
 }
 
 func NewTaskToJobConverter(
 	serviceAccountName string,
 	registrySecretName string,
 	allowAutomountServiceAccountToken bool,
-	latestMigration int,
 ) *Converter {
 	return &Converter{
 		serviceAccountName:                serviceAccountName,
 		registrySecretName:                registrySecretName,
 		allowAutomountServiceAccountToken: allowAutomountServiceAccountToken,
-		latestMigration:                   latestMigration,
 	}
 }
 
@@ -115,14 +111,13 @@ func (m *Converter) toJob(task *api.Task) *batch.Job {
 	}
 
 	job.Annotations = map[string]string{
-		AnnotationAppName:                task.AppName,
-		AnnotationAppID:                  task.AppGUID,
-		AnnotationOrgName:                task.OrgName,
-		AnnotationOrgGUID:                task.OrgGUID,
-		AnnotationSpaceName:              task.SpaceName,
-		AnnotationSpaceGUID:              task.SpaceGUID,
-		corev1.SeccompPodAnnotationKey:   corev1.SeccompProfileRuntimeDefault,
-		shared.AnnotationLatestMigration: strconv.Itoa(m.latestMigration),
+		AnnotationAppName:              task.AppName,
+		AnnotationAppID:                task.AppGUID,
+		AnnotationOrgName:              task.OrgName,
+		AnnotationOrgGUID:              task.OrgGUID,
+		AnnotationSpaceName:            task.SpaceName,
+		AnnotationSpaceGUID:            task.SpaceGUID,
+		corev1.SeccompPodAnnotationKey: corev1.SeccompProfileRuntimeDefault,
 	}
 
 	job.Spec.Template.Labels = job.Labels

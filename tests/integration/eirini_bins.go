@@ -23,7 +23,6 @@ import (
 
 type EiriniBinaries struct {
 	EiriniController  Binary `json:"eirini_controller"`
-	Migration         Binary `json:"migration"`
 	ResourceValidator Binary `json:"resource_validator"`
 	ExternalBinsPath  bool
 	BinsPath          string
@@ -37,7 +36,6 @@ func NewEiriniBinaries() EiriniBinaries {
 
 	bins.setBinsPath()
 	bins.EiriniController = NewBinary("code.cloudfoundry.org/eirini-controller/cmd/eirini-controller", bins.BinsPath, bins.CertsPath)
-	bins.Migration = NewBinary("code.cloudfoundry.org/eirini-controller/cmd/migration", bins.BinsPath, bins.CertsPath)
 	bins.ResourceValidator = NewBinary("code.cloudfoundry.org/eirini-controller/cmd/resource-validator", bins.BinsPath, bins.CertsPath)
 
 	return bins

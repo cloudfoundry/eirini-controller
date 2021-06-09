@@ -3,13 +3,11 @@ package integration_test
 import (
 	"context"
 	"fmt"
-	"strconv"
 
 	"code.cloudfoundry.org/eirini-controller/api"
 	"code.cloudfoundry.org/eirini-controller/k8s"
 	"code.cloudfoundry.org/eirini-controller/k8s/client"
 	"code.cloudfoundry.org/eirini-controller/k8s/pdb"
-	"code.cloudfoundry.org/eirini-controller/k8s/shared"
 	"code.cloudfoundry.org/eirini-controller/k8s/stset"
 	"code.cloudfoundry.org/eirini-controller/tests"
 	"code.cloudfoundry.org/lager/lagertest"
@@ -77,11 +75,6 @@ var _ = Describe("LRPClient", func() {
 			Expect(statefulset.Spec.Template.Spec.Containers[0].Command).To(Equal(lrp.Command))
 			Expect(statefulset.Spec.Template.Spec.Containers[0].Image).To(Equal(lrp.Image))
 			Expect(statefulset.Spec.Template.Spec.Containers[0].Env).To(ContainElement(corev1.EnvVar{Name: "FOO", Value: "BAR"}))
-		})
-
-		It("sets the latest migration index annotation", func() {
-			statefulset := getStatefulSetForLRP(lrp)
-			Expect(statefulset.Annotations).To(HaveKeyWithValue(shared.AnnotationLatestMigration, strconv.Itoa(123)))
 		})
 
 		It("should create all associated pods", func() {
@@ -691,7 +684,6 @@ func createLrpClient(workloadsNamespace string, allowRunImageAsRoot bool) *k8s.L
 		"registry-secret",
 		false,
 		allowRunImageAsRoot,
-		123,
 		k8s.CreateLivenessProbe,
 		k8s.CreateReadinessProbe,
 	)

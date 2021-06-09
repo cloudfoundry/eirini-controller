@@ -103,11 +103,6 @@ type TaskReporterConfig struct {
 	KubeConfig `yaml:",inline"`
 }
 
-type MigrationConfig struct {
-	WorkloadsNamespace string
-	KubeConfig         `yaml:",inline"`
-}
-
 type InstanceIndexEnvInjectorConfig struct {
 	Port       int32 `yaml:"service_port"`
 	KubeConfig `yaml:",inline"`

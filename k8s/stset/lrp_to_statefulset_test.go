@@ -3,7 +3,6 @@ package stset_test
 import (
 	eirinictrl "code.cloudfoundry.org/eirini-controller"
 	"code.cloudfoundry.org/eirini-controller/api"
-	"code.cloudfoundry.org/eirini-controller/k8s/shared"
 	"code.cloudfoundry.org/eirini-controller/k8s/stset"
 	"code.cloudfoundry.org/eirini-controller/k8s/stset/stsetfakes"
 	. "github.com/onsi/ginkgo"
@@ -45,7 +44,7 @@ var _ = Describe("LRP to StatefulSet Converter", func() {
 	})
 
 	JustBeforeEach(func() {
-		converter := stset.NewLRPToStatefulSetConverter("eirini", "secret-name", allowAutomountServiceAccountToken, allowRunImageAsRoot, 999, livenessProbeCreator.Spy, readinessProbeCreator.Spy)
+		converter := stset.NewLRPToStatefulSetConverter("eirini", "secret-name", allowAutomountServiceAccountToken, allowRunImageAsRoot, livenessProbeCreator.Spy, readinessProbeCreator.Spy)
 
 		var err error
 		statefulSet, err = converter.Convert("Baldur", lrp, privateRegistrySecret)
@@ -73,7 +72,6 @@ var _ = Describe("LRP to StatefulSet Converter", func() {
 		Entry("SpaceGUID", stset.AnnotationSpaceGUID, "space-guid"),
 		Entry("OrgName", stset.AnnotationOrgName, "org-foo"),
 		Entry("OrgGUID", stset.AnnotationOrgGUID, "org-guid"),
-		Entry("LatestMigration", shared.AnnotationLatestMigration, "999"),
 	)
 
 	DescribeTable("Statefulset Template Annotations",
@@ -89,7 +87,6 @@ var _ = Describe("LRP to StatefulSet Converter", func() {
 		Entry("SpaceGUID", stset.AnnotationSpaceGUID, "space-guid"),
 		Entry("OrgName", stset.AnnotationOrgName, "org-foo"),
 		Entry("OrgGUID", stset.AnnotationOrgGUID, "org-guid"),
-		Entry("LatestMigration", shared.AnnotationLatestMigration, "999"),
 	)
 
 	It("should provide last updated to the statefulset annotation", func() {
