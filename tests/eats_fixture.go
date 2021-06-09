@@ -4,14 +4,12 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
 
 	"code.cloudfoundry.org/cfhttp/v2"
 	eirinictrl "code.cloudfoundry.org/eirini-controller"
-	"code.cloudfoundry.org/eirini-controller/tests/eats/wiremock"
 
 	// nolint:golint,stylecheck,revive
 	. "github.com/onsi/ginkgo"
@@ -28,7 +26,6 @@ import (
 type EATSFixture struct {
 	Fixture
 
-	Wiremock         *wiremock.Wiremock
 	DynamicClientset dynamic.Interface
 
 	eiriniCertPath   string
@@ -36,11 +33,10 @@ type EATSFixture struct {
 	eiriniHTTPClient *http.Client
 }
 
-func NewEATSFixture(baseFixture Fixture, dynamicClientset dynamic.Interface, wiremock *wiremock.Wiremock) *EATSFixture {
+func NewEATSFixture(baseFixture Fixture, dynamicClientset dynamic.Interface) *EATSFixture {
 	return &EATSFixture{
 		Fixture:          baseFixture,
 		DynamicClientset: dynamicClientset,
-		Wiremock:         wiremock,
 	}
 }
 
@@ -152,15 +148,6 @@ func (f *EATSFixture) GetNATSPassword() string {
 	Expect(err).NotTo(HaveOccurred())
 
 	return string(secret.Data["nats-password"])
-}
-
-func NewWiremock() *wiremock.Wiremock {
-	// We assume wiremock is exposed using a ClusterIP service which listens on port 80
-	wireMockHost := fmt.Sprintf("cc-wiremock.%s.svc.cluster.local", GetEiriniSystemNamespace())
-
-	RetryResolveHost(wireMockHost, "Is wiremock running in the cluster?")
-
-	return wiremock.New(wireMockHost)
 }
 
 func CopyRolesAndBindings(namespace string, clientset kubernetes.Interface) {

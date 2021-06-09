@@ -28,8 +28,6 @@ var fixture *tests.EATSFixture
 
 var _ = SynchronizedBeforeSuite(
 	func() []byte {
-		Expect(tests.NewWiremock().Reset()).To(Succeed())
-
 		return nil
 	},
 
@@ -41,9 +39,7 @@ var _ = SynchronizedBeforeSuite(
 		dynamicClientset, err := dynamic.NewForConfig(config)
 		Expect(err).NotTo(HaveOccurred(), "failed to create clientset")
 
-		wiremockClient := tests.NewWiremock()
-
-		fixture = tests.NewEATSFixture(*baseFixture, dynamicClientset, wiremockClient)
+		fixture = tests.NewEATSFixture(*baseFixture, dynamicClientset)
 	},
 )
 
