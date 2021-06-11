@@ -22,11 +22,12 @@ import (
 )
 
 type EiriniBinaries struct {
-	EiriniController  Binary `json:"eirini_controller"`
-	ResourceValidator Binary `json:"resource_validator"`
-	ExternalBinsPath  bool
-	BinsPath          string
-	CertsPath         string
+	EiriniController         Binary `json:"eirini_controller"`
+	ResourceValidator        Binary `json:"resource_validator"`
+	InstanceIndexEnvInjector Binary `json:"instance_index_env_injector"`
+	ExternalBinsPath         bool
+	BinsPath                 string
+	CertsPath                string
 }
 
 func NewEiriniBinaries() EiriniBinaries {
@@ -37,6 +38,7 @@ func NewEiriniBinaries() EiriniBinaries {
 	bins.setBinsPath()
 	bins.EiriniController = NewBinary("code.cloudfoundry.org/eirini-controller/cmd/eirini-controller", bins.BinsPath, bins.CertsPath)
 	bins.ResourceValidator = NewBinary("code.cloudfoundry.org/eirini-controller/cmd/resource-validator", bins.BinsPath, bins.CertsPath)
+	bins.InstanceIndexEnvInjector = NewBinary("code.cloudfoundry.org/eirini-controller/cmd/instance-index-env-injector", bins.BinsPath, bins.CertsPath)
 
 	return bins
 }

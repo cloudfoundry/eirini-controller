@@ -33,6 +33,10 @@ workloads:
 resource_validator:
   certs_secret_name: eirini-resource-validator-certs
 
+instance_index_env_injector:
+  certs_secret_name: eirini-instance-index-env-injector-certs
+
 images:
     eirini_controller: eirini/eirini-controller
     resource_validator: eirini/resource-validator
+    instance_index_env_injector: eirini/instance-index-env-injector

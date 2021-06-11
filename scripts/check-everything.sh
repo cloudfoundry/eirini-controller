@@ -139,9 +139,11 @@ redeploy_prometheus() {
 redeploy_eirini_controller() {
   render_dir=$(mktemp -d)
   trap "rm -rf $render_dir" EXIT
+  env_injector_ca_bundle="$(kubectl get secret -n eirini-controller eirini-instance-index-env-injector-certs -o jsonpath="{.data['tls\.ca']}")"
   ca_bundle="$(kubectl get secret -n eirini-controller eirini-resource-validator-certs -o jsonpath="{.data['tls\.ca']}")"
   "$EIRINI_CONTROLLER_DIR/deployment/scripts/render-templates.sh" eirini-controller "$render_dir" \
     --values "$EIRINI_CONTROLLER_DIR/deployment/scripts/assets/value-overrides.yml" \
+    --set "webhook_ca_bundle=$env_injector_ca_bundle" \
     --set "resource_validator_ca_bundle=$ca_bundle"
   kbld -f "$render_dir" -f "$RUN_DIR/kbld-local-eirini-controller.yml" >"$render_dir/rendered.yml"
   for img in $(grep -oh "kbld:.*" "$render_dir/rendered.yml"); do

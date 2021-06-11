@@ -16,7 +16,7 @@ pushd keys
 
   openssl req -x509 -newkey rsa:4096 -keyout tls.key -out tls.crt -nodes -subj '/CN=localhost' -addext "subjectAltName = DNS:$otherDNS, DNS:$otherDNS.cluster.local" -days 365
 
-  for secret_name in eirini-resource-validator-certs; do
+  for secret_name in eirini-instance-index-env-injector-certs eirini-resource-validator-certs; do
     if kubectl -n "$SYSTEM_NAMESPACE" get secret "$secret_name" >/dev/null 2>&1; then
       kubectl delete secret -n "$SYSTEM_NAMESPACE" "$secret_name"
     fi
