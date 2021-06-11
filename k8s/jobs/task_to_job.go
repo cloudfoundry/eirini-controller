@@ -1,10 +1,7 @@
 package jobs
 
 import (
-	"fmt"
-
 	eirinictrl "code.cloudfoundry.org/eirini-controller"
-	"code.cloudfoundry.org/eirini-controller/k8s/shared"
 	"code.cloudfoundry.org/eirini-controller/k8s/utils"
 	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
 	batch "k8s.io/api/batch/v1"
@@ -12,10 +9,9 @@ import (
 )
 
 const (
-	taskContainerName   = "opi-task"
-	parallelism         = 1
-	completions         = 1
-	sanitizedNameMaxLen = 50
+	taskContainerName = "opi-task"
+	parallelism       = 1
+	completions       = 1
 )
 
 type Converter struct {
@@ -95,14 +91,7 @@ func (m *Converter) toJob(task *eiriniv1.Task) *batch.Job {
 		job.Spec.Template.Spec.AutomountServiceAccountToken = &automountServiceAccountToken
 	}
 
-	name := fmt.Sprintf("%s-%s", task.Spec.AppName, task.Spec.SpaceName)
-	sanitizedName := utils.SanitizeName(name, task.Spec.GUID)
-
-	if task.Spec.Name != "" {
-		sanitizedName = fmt.Sprintf("%s-%s", sanitizedName, task.Spec.Name)
-	}
-
-	job.Name = utils.SanitizeNameWithMaxStringLen(sanitizedName, task.Spec.GUID, sanitizedNameMaxLen)
+	job.Name = utils.GetJobName(task)
 
 	job.Labels = map[string]string{
 		LabelGUID:    task.Spec.GUID,
@@ -126,7 +115,7 @@ func (m *Converter) toJob(task *eiriniv1.Task) *batch.Job {
 }
 
 func getEnvs(task *eiriniv1.Task) []corev1.EnvVar {
-	envs := shared.MapToEnvVar(task.Spec.Env)
+	envs := utils.MapToEnvVar(task.Spec.Env)
 	fieldEnvs := []corev1.EnvVar{
 		{
 			Name: eirinictrl.EnvPodName,

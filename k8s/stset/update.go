@@ -7,72 +7,40 @@ import (
 	"code.cloudfoundry.org/lager"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
-	"k8s.io/client-go/util/retry"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-//counterfeiter:generate . StatefulSetUpdater
-
-type StatefulSetUpdater interface {
-	Update(ctx context.Context, namespace string, statefulSet *appsv1.StatefulSet) (*appsv1.StatefulSet, error)
-}
-
 type Updater struct {
-	logger             lager.Logger
-	statefulSetUpdater StatefulSetUpdater
-	getStatefulSet     getStatefulSetFunc
-	pdbUpdater         PodDisruptionBudgetUpdater
+	logger     lager.Logger
+	client     client.Client
+	pdbUpdater PodDisruptionBudgetUpdater
 }
 
-func NewUpdater(
-	logger lager.Logger,
-	statefulSetGetter StatefulSetByLRPGetter,
-	statefulSetUpdater StatefulSetUpdater,
-	pdbUpdater PodDisruptionBudgetUpdater,
-) Updater {
-	return Updater{
-		logger:             logger,
-		statefulSetUpdater: statefulSetUpdater,
-		pdbUpdater:         pdbUpdater,
-		getStatefulSet:     newGetStatefulSetFunc(statefulSetGetter),
+func NewUpdater(logger lager.Logger, client client.Client, pdbUpdater PodDisruptionBudgetUpdater) *Updater {
+	return &Updater{
+		logger:     logger,
+		client:     client,
+		pdbUpdater: pdbUpdater,
 	}
 }
 
-func (u *Updater) Update(ctx context.Context, lrp *eiriniv1.LRP) error {
-	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		return u.update(ctx, lrp)
-	})
-
-	return errors.Wrap(err, "failed to update statefulset")
-}
-
-func (u *Updater) update(ctx context.Context, lrp *eiriniv1.LRP) error {
+func (u *Updater) Update(ctx context.Context, lrp *eiriniv1.LRP, stSet *appsv1.StatefulSet) error {
 	logger := u.logger.Session("update", lager.Data{"guid": lrp.Spec.GUID, "version": lrp.Spec.Version})
 
-	statefulSet, err := u.getStatefulSet(ctx, lrp)
-	if err != nil {
-		logger.Error("failed-to-get-statefulset", err)
+	updatedStatefulSet, updated := u.getUpdatedStatefulSetObj(stSet, lrp.Spec.Instances, lrp.Spec.Image)
 
-		return err
+	if !updated {
+		return nil
 	}
 
-	updatedStatefulSet, err := u.getUpdatedStatefulSetObj(statefulSet,
-		lrp.Spec.Instances,
-		lrp.Spec.Image,
-	)
-	if err != nil {
-		logger.Error("failed-to-get-updated-statefulset", err)
+	if err := u.client.Patch(ctx, updatedStatefulSet, client.MergeFrom(stSet)); err != nil {
+		logger.Error("failed-to-patch-statefulset", err, lager.Data{"namespace": stSet.Namespace})
 
-		return err
+		return errors.Wrap(err, "failed to patch statefulset")
 	}
 
-	if _, err = u.statefulSetUpdater.Update(ctx, updatedStatefulSet.Namespace, updatedStatefulSet); err != nil {
-		logger.Error("failed-to-update-statefulset", err, lager.Data{"namespace": statefulSet.Namespace})
-
-		return errors.Wrap(err, "failed to update statefulset")
-	}
-
-	if err = u.pdbUpdater.Update(ctx, statefulSet, lrp); err != nil {
-		logger.Error("failed-to-update-disruption-budget", err, lager.Data{"namespace": statefulSet.Namespace})
+	if err := u.pdbUpdater.Update(ctx, stSet, lrp); err != nil {
+		logger.Error("failed-to-update-disruption-budget", err, lager.Data{"namespace": stSet.Namespace})
 
 		return errors.Wrap(err, "failed to delete pod disruption budget")
 	}
@@ -80,19 +48,24 @@ func (u *Updater) update(ctx context.Context, lrp *eiriniv1.LRP) error {
 	return nil
 }
 
-func (u *Updater) getUpdatedStatefulSetObj(sts *appsv1.StatefulSet, instances int, image string) (*appsv1.StatefulSet, error) {
+func (u *Updater) getUpdatedStatefulSetObj(sts *appsv1.StatefulSet, instances int, image string) (*appsv1.StatefulSet, bool) {
+	updated := false
+
 	updatedSts := sts.DeepCopy()
 
-	count := int32(instances)
-	updatedSts.Spec.Replicas = &count
+	if count := int32(instances); *sts.Spec.Replicas != count {
+		updated = true
+		updatedSts.Spec.Replicas = &count
+	}
 
 	if image != "" {
 		for i, container := range updatedSts.Spec.Template.Spec.Containers {
-			if container.Name == ApplicationContainerName {
+			if container.Name == ApplicationContainerName && sts.Spec.Template.Spec.Containers[i].Image != image {
+				updated = true
 				updatedSts.Spec.Template.Spec.Containers[i].Image = image
 			}
 		}
 	}
 
-	return updatedSts, nil
+	return updatedSts, updated
 }

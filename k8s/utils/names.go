@@ -10,13 +10,16 @@ import (
 	"github.com/pkg/errors"
 )
 
-const sanitizedNameMaxLen = 40
+const (
+	sanitizedNameMaxLen    = 40
+	sanitizedJobNameMaxLen = 50
+)
 
-func SanitizeName(name, fallback string) string {
-	return SanitizeNameWithMaxStringLen(name, fallback, sanitizedNameMaxLen)
+func sanitizeName(name, fallback string) string {
+	return sanitizeNameWithMaxStringLen(name, fallback, sanitizedNameMaxLen)
 }
 
-func SanitizeNameWithMaxStringLen(name, fallback string, maxStringLen int) string {
+func sanitizeNameWithMaxStringLen(name, fallback string, maxStringLen int) string {
 	validNameRegex := regexp.MustCompile(`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`)
 	sanitizedName := strings.ReplaceAll(strings.ToLower(name), "_", "-")
 
@@ -42,7 +45,18 @@ func GetStatefulsetName(lrp *eiriniv1.LRP) (string, error) {
 	}
 
 	namePrefix := fmt.Sprintf("%s-%s", lrp.Spec.AppName, lrp.Spec.SpaceName)
-	namePrefix = SanitizeName(namePrefix, lrp.Spec.GUID)
+	namePrefix = sanitizeName(namePrefix, lrp.Spec.GUID)
 
 	return fmt.Sprintf("%s-%s", namePrefix, nameSuffix), nil
+}
+
+func GetJobName(task *eiriniv1.Task) string {
+	name := fmt.Sprintf("%s-%s", task.Spec.AppName, task.Spec.SpaceName)
+	sanitizedName := sanitizeName(name, task.Spec.GUID)
+
+	if task.Spec.Name != "" {
+		sanitizedName = fmt.Sprintf("%s-%s", sanitizedName, task.Spec.Name)
+	}
+
+	return sanitizeNameWithMaxStringLen(sanitizedName, task.Spec.GUID, sanitizedJobNameMaxLen)
 }

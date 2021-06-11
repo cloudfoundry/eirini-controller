@@ -72,6 +72,10 @@ run_integration_tests() {
     --expose 10001 \
     --expose 10002 \
     --expose 10003 \
+    --expose 10004 \
+    --expose 10005 \
+    --expose 10006 \
+    --expose 10007 \
     --docker-run \
     --rm \
     -v "$src_dir":/usr/src/app \
@@ -80,7 +84,7 @@ run_integration_tests() {
     -e EIRINIUSER_PASSWORD="$EIRINIUSER_PASSWORD" \
     -e TELEPRESENCE_EXPOSE_PORT_START=10000 \
     -e TELEPRESENCE_SERVICE_NAME="$service_name" \
-    -e NODES=4 \
+    -e NODES=8 \
     eirini/ci \
     /usr/src/app/scripts/run_integration_tests.sh "$@"
 }
@@ -118,7 +122,7 @@ run_eats() {
     -v "$src_dir":/usr/src/app \
     -v "$HOME"/.cache:/root/.cache \
     -e EIRINI_SYSTEM_NS=eirini-controller \
-    -e EIRINI_WORKLOADS_NS=eirini-workloads \
+    -e EIRINI_WORKLOADS_NS=eirini-controller-workloads \
     -e EIRINIUSER_PASSWORD="$EIRINIUSER_PASSWORD" \
     -e INTEGRATION_KUBECONFIG="/usr/src/app/$(basename $KUBECONFIG)" \
     eirini/ci \
@@ -141,16 +145,19 @@ redeploy_eirini_controller() {
   trap "rm -rf $render_dir" EXIT
   env_injector_ca_bundle="$(kubectl get secret -n eirini-controller eirini-instance-index-env-injector-certs -o jsonpath="{.data['tls\.ca']}")"
   ca_bundle="$(kubectl get secret -n eirini-controller eirini-resource-validator-certs -o jsonpath="{.data['tls\.ca']}")"
+  kbld -f "$EIRINI_CONTROLLER_DIR/scripts/kbld.yml" \
+    -f "$EIRINI_CONTROLLER_DIR/deployment/helm/values-template.yaml" \
+    >"$EIRINI_CONTROLLER_DIR/deployment/helm/values.yaml"
+
   "$EIRINI_CONTROLLER_DIR/deployment/scripts/render-templates.sh" eirini-controller "$render_dir" \
-    --values "$EIRINI_CONTROLLER_DIR/deployment/scripts/assets/value-overrides.yml" \
+    --values "$EIRINI_CONTROLLER_DIR/deployment/scripts/assets/value-overrides.yaml" \
     --set "webhook_ca_bundle=$env_injector_ca_bundle" \
     --set "resource_validator_ca_bundle=$ca_bundle"
-  kbld -f "$render_dir" -f "$RUN_DIR/kbld-local-eirini-controller.yml" >"$render_dir/rendered.yml"
-  for img in $(grep -oh "kbld:.*" "$render_dir/rendered.yml"); do
+  for img in $(grep -oh "kbld:.*" "$EIRINI_CONTROLLER_DIR/deployment/helm/values.yaml"); do
     kind load docker-image --name eats "$img"
   done
   kapp -y delete -a eirini-controller
-  kapp -y deploy -a eirini-controller -f "$render_dir/rendered.yml"
+  kapp -y deploy -a eirini-controller -f "$render_dir/templates/"
 }
 
 run_linter() {

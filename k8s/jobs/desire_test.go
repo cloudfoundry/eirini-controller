@@ -1,21 +1,24 @@
 package jobs_test
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 
 	eirinictrl "code.cloudfoundry.org/eirini-controller"
 	"code.cloudfoundry.org/eirini-controller/k8s/jobs"
 	"code.cloudfoundry.org/eirini-controller/k8s/jobs/jobsfakes"
+	"code.cloudfoundry.org/eirini-controller/k8s/k8sfakes"
 	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
 	eirinischeme "code.cloudfoundry.org/eirini-controller/pkg/generated/clientset/versioned/scheme"
 	"code.cloudfoundry.org/lager/lagertest"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
-	batch "k8s.io/api/batch/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var _ = Describe("Desire", func() {
@@ -25,30 +28,27 @@ var _ = Describe("Desire", func() {
 	)
 
 	var (
-		jobCreator         *jobsfakes.FakeJobCreator
-		secretsClient      *jobsfakes.FakeSecretsClient
 		taskToJobConverter *jobsfakes.FakeTaskToJobConverter
+		client             *k8sfakes.FakeClient
 
-		job       *batch.Job
+		job       *batchv1.Job
 		task      *eiriniv1.Task
 		desireErr error
 
-		desirer jobs.Desirer
+		desirer *jobs.Desirer
 	)
 
 	BeforeEach(func() {
-		job = &batch.Job{
+		job = &batchv1.Job{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "the-job-name",
 				UID:  "the-job-uid",
 			},
 		}
 
-		jobCreator = new(jobsfakes.FakeJobCreator)
-		secretsClient = new(jobsfakes.FakeSecretsClient)
+		client = new(k8sfakes.FakeClient)
 		taskToJobConverter = new(jobsfakes.FakeTaskToJobConverter)
 		taskToJobConverter.ConvertReturns(job)
-		jobCreator.CreateReturns(job, nil)
 
 		task = &eiriniv1.Task{
 			ObjectMeta: metav1.ObjectMeta{
@@ -79,8 +79,7 @@ var _ = Describe("Desire", func() {
 		desirer = jobs.NewDesirer(
 			lagertest.NewTestLogger("desiretask"),
 			taskToJobConverter,
-			jobCreator,
-			secretsClient,
+			client,
 			eirinischeme.Scheme,
 		)
 	})
@@ -94,15 +93,14 @@ var _ = Describe("Desire", func() {
 	})
 
 	It("creates a job", func() {
-		Expect(jobCreator.CreateCallCount()).To(Equal(1))
-		_, actualNs, actualJob := jobCreator.CreateArgsForCall(0)
-		Expect(actualNs).To(Equal("app-namespace"))
+		Expect(client.CreateCallCount()).To(Equal(1))
+		_, actualJob, _ := client.CreateArgsForCall(0)
 		Expect(actualJob).To(Equal(job))
 	})
 
 	When("creating the job fails", func() {
 		BeforeEach(func() {
-			jobCreator.CreateReturns(nil, errors.New("create-failed"))
+			client.CreateReturns(errors.New("create-failed"))
 		})
 
 		It("returns an error", func() {
@@ -120,26 +118,43 @@ var _ = Describe("Desire", func() {
 	})
 
 	When("the task uses a private registry", func() {
-		var privateRegistrySecret *corev1.Secret
+		var (
+			createSecretError error
+			createJobError    error
+		)
 
 		BeforeEach(func() {
+			createSecretError = nil
+			createJobError = nil
 			task.Spec.PrivateRegistry = &eiriniv1.PrivateRegistry{
 				Username: "username",
 				Password: "password",
 			}
-			privateRegistrySecret = &corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "the-generated-secret-name",
-					Namespace: "app-namespace",
-				},
+
+			client.CreateStub = func(_ context.Context, object k8sclient.Object, _ ...k8sclient.CreateOption) error {
+				secret, ok := object.(*corev1.Secret)
+				if ok {
+					if createSecretError != nil {
+						return createSecretError
+					}
+					secret.Name = secret.GenerateName + "1234"
+				}
+
+				_, ok = object.(*batchv1.Job)
+				if ok {
+					return createJobError
+				}
+
+				return nil
 			}
-			secretsClient.CreateReturns(privateRegistrySecret, nil)
 		})
 
 		It("creates a secret with the registry credentials", func() {
-			Expect(secretsClient.CreateCallCount()).To(Equal(1))
-			_, namespace, actualSecret := secretsClient.CreateArgsForCall(0)
-			Expect(namespace).To(Equal("app-namespace"))
+			Expect(client.CreateCallCount()).To(Equal(2))
+			_, actualObject, _ := client.CreateArgsForCall(0)
+			actualSecret, ok := actualObject.(*corev1.Secret)
+			Expect(ok).To(BeTrue())
+
 			Expect(actualSecret.GenerateName).To(Equal("private-registry-"))
 			Expect(actualSecret.Type).To(Equal(corev1.SecretTypeDockerConfigJson))
 			Expect(actualSecret.StringData).To(
@@ -155,19 +170,25 @@ var _ = Describe("Desire", func() {
 
 		It("converts the task using the private registry secret", func() {
 			_, actualSecret := taskToJobConverter.ConvertArgsForCall(0)
-			Expect(actualSecret).To(Equal(privateRegistrySecret))
+			Expect(actualSecret.Name).To(Equal("private-registry-1234"))
 		})
 
 		It("sets the ownership of the secret to the job", func() {
-			Expect(secretsClient.SetOwnerCallCount()).To(Equal(1))
-			_, actualSecret, actualOwner := secretsClient.SetOwnerArgsForCall(0)
-			Expect(actualOwner).To(Equal(job))
-			Expect(actualSecret).To(Equal(privateRegistrySecret))
+			Expect(client.PatchCallCount()).To(Equal(1))
+			_, obj, _, _ := client.PatchArgsForCall(0)
+			Expect(obj).To(BeAssignableToTypeOf(&corev1.Secret{}))
+
+			patchedSecret, ok := obj.(*corev1.Secret)
+			Expect(ok).To(BeTrue())
+
+			Expect(patchedSecret.OwnerReferences).To(HaveLen(1))
+			Expect(patchedSecret.OwnerReferences[0].Kind).To(Equal("Job"))
+			Expect(patchedSecret.OwnerReferences[0].Name).To(Equal(job.Name))
 		})
 
 		When("creating the secret fails", func() {
 			BeforeEach(func() {
-				secretsClient.CreateReturns(nil, errors.New("create-secret-err"))
+				createSecretError = errors.New("create-secret-err")
 			})
 
 			It("returns an error", func() {
@@ -177,7 +198,7 @@ var _ = Describe("Desire", func() {
 
 		When("creating the job fails", func() {
 			BeforeEach(func() {
-				jobCreator.CreateReturns(nil, errors.New("create-failed"))
+				createJobError = errors.New("create-failed")
 			})
 
 			It("returns an error", func() {
@@ -185,15 +206,16 @@ var _ = Describe("Desire", func() {
 			})
 
 			It("deletes the secret", func() {
-				Expect(secretsClient.DeleteCallCount()).To(Equal(1))
-				_, actualNamespace, actualName := secretsClient.DeleteArgsForCall(0)
-				Expect(actualNamespace).To(Equal("app-namespace"))
-				Expect(actualName).To(Equal("the-generated-secret-name"))
+				Expect(client.DeleteCallCount()).To(Equal(1))
+				_, obj, _ := client.DeleteArgsForCall(0)
+				deletedSecret, ok := obj.(*corev1.Secret)
+				Expect(ok).To(BeTrue())
+				Expect(deletedSecret.Name).To(Equal("private-registry-1234"))
 			})
 
 			When("deleting the secret fails", func() {
 				BeforeEach(func() {
-					secretsClient.DeleteReturns(errors.New("delete-secret-failed"))
+					client.DeleteReturns(errors.New("delete-secret-failed"))
 				})
 
 				It("returns a job creation error and a note that the secret is not cleaned up", func() {
@@ -204,7 +226,7 @@ var _ = Describe("Desire", func() {
 
 		When("setting the ownership of the secret fails", func() {
 			BeforeEach(func() {
-				secretsClient.SetOwnerReturns(nil, errors.New("potato"))
+				client.PatchReturns(errors.New("potato"))
 			})
 
 			It("returns an error", func() {

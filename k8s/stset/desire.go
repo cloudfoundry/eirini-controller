@@ -2,6 +2,7 @@ package stset
 
 import (
 	"context"
+	"time"
 
 	"code.cloudfoundry.org/eirini-controller/k8s/utils"
 	"code.cloudfoundry.org/eirini-controller/k8s/utils/dockerutils"
@@ -15,26 +16,17 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-//counterfeiter:generate . SecretsClient
-//counterfeiter:generate . StatefulSetCreator
 //counterfeiter:generate . LRPToStatefulSetConverter
 //counterfeiter:generate . PodDisruptionBudgetUpdater
 
 type LRPToStatefulSetConverter interface {
 	Convert(statefulSetName string, lrp *eiriniv1.LRP, privateRegistrySecret *corev1.Secret) (*appsv1.StatefulSet, error)
-}
-
-type SecretsClient interface {
-	Create(ctx context.Context, namespace string, secret *corev1.Secret) (*corev1.Secret, error)
-	SetOwner(ctx context.Context, secret *corev1.Secret, owner metav1.Object) (*corev1.Secret, error)
-	Delete(ctx context.Context, namespace string, name string) error
-}
-
-type StatefulSetCreator interface {
-	Create(ctx context.Context, namespace string, statefulSet *appsv1.StatefulSet) (*appsv1.StatefulSet, error)
 }
 
 type PodDisruptionBudgetUpdater interface {
@@ -43,27 +35,24 @@ type PodDisruptionBudgetUpdater interface {
 
 type Desirer struct {
 	logger                     lager.Logger
-	secrets                    SecretsClient
-	statefulSets               StatefulSetCreator
 	lrpToStatefulSetConverter  LRPToStatefulSetConverter
 	podDisruptionBudgetCreator PodDisruptionBudgetUpdater
 	scheme                     *runtime.Scheme
+	client                     client.Client
 }
 
 func NewDesirer(
 	logger lager.Logger,
-	secrets SecretsClient,
-	statefulSets StatefulSetCreator,
 	lrpToStatefulSetConverter LRPToStatefulSetConverter,
 	podDisruptionBudgetCreator PodDisruptionBudgetUpdater,
+	client client.Client,
 	scheme *runtime.Scheme,
-) Desirer {
-	return Desirer{
+) *Desirer {
+	return &Desirer{
 		logger:                     logger,
-		secrets:                    secrets,
-		statefulSets:               statefulSets,
 		lrpToStatefulSetConverter:  lrpToStatefulSetConverter,
 		podDisruptionBudgetCreator: podDisruptionBudgetCreator,
+		client:                     client,
 		scheme:                     scheme,
 	}
 }
@@ -92,7 +81,7 @@ func (d *Desirer) Desire(ctx context.Context, lrp *eiriniv1.LRP) error {
 		return errors.Wrap(err, "failed to set controller reference")
 	}
 
-	stSet, err := d.statefulSets.Create(ctx, lrp.Namespace, st)
+	err = d.client.Create(ctx, st)
 	if err != nil {
 		var statusErr *k8serrors.StatusError
 		if errors.As(err, &statusErr) && statusErr.Status().Reason == metav1.StatusReasonAlreadyExists {
@@ -104,13 +93,13 @@ func (d *Desirer) Desire(ctx context.Context, lrp *eiriniv1.LRP) error {
 		return d.cleanupAndError(ctx, errors.Wrap(err, "failed to create statefulset"), privateRegistrySecret)
 	}
 
-	if err := d.setSecretOwner(ctx, privateRegistrySecret, stSet); err != nil {
+	if err := d.setSecretOwner(ctx, privateRegistrySecret, st); err != nil {
 		logger.Error("failed-to-set-owner-to-the-registry-secret", err)
 
 		return errors.Wrap(err, "failed to set owner to the registry secret")
 	}
 
-	if err := d.podDisruptionBudgetCreator.Update(ctx, stSet, lrp); err != nil {
+	if err := d.podDisruptionBudgetCreator.Update(ctx, st, lrp); err != nil {
 		logger.Error("failed-to-create-pod-disruption-budget", err)
 
 		return errors.Wrap(err, "failed to create pod disruption budget")
@@ -124,9 +113,16 @@ func (d *Desirer) setSecretOwner(ctx context.Context, privateRegistrySecret *cor
 		return nil
 	}
 
-	_, err := d.secrets.SetOwner(ctx, privateRegistrySecret, stSet)
+	ctx, cancel := context.WithTimeout(ctx, time.Minute)
+	defer cancel()
 
-	return err
+	originalSecret := privateRegistrySecret.DeepCopy()
+
+	if err := controllerutil.SetOwnerReference(stSet, privateRegistrySecret, scheme.Scheme); err != nil {
+		return errors.Wrap(err, "secret-client-set-owner-ref-failed")
+	}
+
+	return d.client.Patch(ctx, privateRegistrySecret, client.MergeFrom(originalSecret))
 }
 
 func (d *Desirer) createRegistryCredsSecretIfRequired(ctx context.Context, lrp *eiriniv1.LRP) (*corev1.Secret, error) {
@@ -139,7 +135,7 @@ func (d *Desirer) createRegistryCredsSecretIfRequired(ctx context.Context, lrp *
 		return nil, errors.Wrap(err, "failed to generate private registry secret for statefulset")
 	}
 
-	secret, err = d.secrets.Create(ctx, lrp.Namespace, secret)
+	err = d.client.Create(ctx, secret)
 
 	return secret, errors.Wrap(err, "failed to create private registry secret for statefulset")
 }
@@ -148,7 +144,7 @@ func (d *Desirer) cleanupAndError(ctx context.Context, stsetCreationError error,
 	resultError := multierror.Append(nil, stsetCreationError)
 
 	if privateRegistrySecret != nil {
-		err := d.secrets.Delete(ctx, privateRegistrySecret.Namespace, privateRegistrySecret.Name)
+		err := d.client.Delete(ctx, privateRegistrySecret)
 		if err != nil {
 			resultError = multierror.Append(resultError, errors.Wrap(err, "failed to cleanup registry secret"))
 		}
@@ -171,6 +167,7 @@ func generateRegistryCredsSecret(lrp *eiriniv1.LRP) (*corev1.Secret, error) {
 
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
+			Namespace:    lrp.Namespace,
 			GenerateName: PrivateRegistrySecretGenerateName,
 		},
 		Type: corev1.SecretTypeDockerConfigJson,

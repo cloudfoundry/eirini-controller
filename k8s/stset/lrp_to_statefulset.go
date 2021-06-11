@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	eirinictrl "code.cloudfoundry.org/eirini-controller"
-	"code.cloudfoundry.org/eirini-controller/k8s/shared"
+	"code.cloudfoundry.org/eirini-controller/k8s/utils"
 	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -46,7 +46,7 @@ func NewLRPToStatefulSetConverter(
 }
 
 func (c *LRPToStatefulSet) Convert(statefulSetName string, lrp *eiriniv1.LRP, privateRegistrySecret *corev1.Secret) (*appsv1.StatefulSet, error) {
-	envs := shared.MapToEnvVar(lrp.Spec.Env)
+	envs := utils.MapToEnvVar(lrp.Spec.Env)
 	fieldEnvs := []corev1.EnvVar{
 		{
 			Name: eirinictrl.EnvPodName,
@@ -273,7 +273,7 @@ func getSidecarContainers(lrp *eiriniv1.LRP) []corev1.Container {
 			Name:      s.Name,
 			Command:   s.Command,
 			Image:     lrp.Spec.Image,
-			Env:       shared.MapToEnvVar(s.Env),
+			Env:       utils.MapToEnvVar(s.Env),
 			Resources: getContainerResources(lrp.Spec.CPUWeight, s.MemoryMB, lrp.Spec.DiskMB),
 		}
 		containers = append(containers, c)

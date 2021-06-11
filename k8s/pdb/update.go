@@ -12,25 +12,19 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
-
-//counterfeiter:generate . K8sClient
-
-type K8sClient interface {
-	Create(ctx context.Context, namespace string, podDisruptionBudget *v1beta1.PodDisruptionBudget) (*v1beta1.PodDisruptionBudget, error)
-	Delete(ctx context.Context, namespace string, name string) error
-}
 
 const PdbMinAvailableInstances = "50%"
 
 type Updater struct {
-	pdbClient K8sClient
+	client client.Client
 }
 
-func NewUpdater(pdbClient K8sClient) *Updater {
+func NewUpdater(client client.Client) *Updater {
 	return &Updater{
-		pdbClient: pdbClient,
+		client: client,
 	}
 }
 
@@ -64,7 +58,7 @@ func (c *Updater) createPDB(ctx context.Context, statefulSet *appsv1.StatefulSet
 		return errors.Wrap(err, "pdb-updated-failed-to-set-owner-ref")
 	}
 
-	_, err := c.pdbClient.Create(ctx, statefulSet.Namespace, pdb)
+	err := c.client.Create(ctx, pdb)
 
 	if k8serrors.IsAlreadyExists(err) {
 		return nil
@@ -74,11 +68,7 @@ func (c *Updater) createPDB(ctx context.Context, statefulSet *appsv1.StatefulSet
 }
 
 func (c *Updater) deletePDB(ctx context.Context, statefulSet *appsv1.StatefulSet) error {
-	err := c.pdbClient.Delete(ctx, statefulSet.Namespace, statefulSet.Name)
-
-	if k8serrors.IsNotFound(err) {
-		return nil
-	}
+	err := c.client.DeleteAllOf(ctx, &v1beta1.PodDisruptionBudget{}, client.InNamespace(statefulSet.Namespace), client.MatchingFields{"metadata.name": statefulSet.Name})
 
 	return errors.Wrap(err, "failed to delete pod distruption budget")
 }

@@ -5,16 +5,20 @@ import (
 	"fmt"
 	"time"
 
+	"code.cloudfoundry.org/eirini-controller/k8s/k8sfakes"
 	"code.cloudfoundry.org/eirini-controller/k8s/reconciler"
 	"code.cloudfoundry.org/eirini-controller/k8s/reconciler/reconcilerfakes"
 	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
 	"code.cloudfoundry.org/lager/lagertest"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"k8s.io/apimachinery/pkg/api/errors"
+	"github.com/pkg/errors"
+	batchv1 "k8s.io/api/batch/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -23,24 +27,60 @@ var _ = Describe("Task", func() {
 		taskReconciler  *reconciler.Task
 		reconcileResult reconcile.Result
 		reconcileErr    error
-		tasksCrClient   *reconcilerfakes.FakeTasksCrClient
+		getTaskErr      error
+		getJobErr       error
 		namespacedName  types.NamespacedName
-		workloadClient  *reconcilerfakes.FakeTaskWorkloadClient
 		task            *eiriniv1.Task
 		ttlSeconds      int
+		k8sClient       *k8sfakes.FakeClient
+		statusWriter    *k8sfakes.FakeStatusWriter
+		desirer         *reconcilerfakes.FakeTaskDesirer
+		statusGetter    *reconcilerfakes.FakeTaskStatusGetter
 	)
 
 	BeforeEach(func() {
-		tasksCrClient = new(reconcilerfakes.FakeTasksCrClient)
+		k8sClient = new(k8sfakes.FakeClient)
+		statusWriter = new(k8sfakes.FakeStatusWriter)
+		k8sClient.StatusReturns(statusWriter)
+
+		getTaskErr = nil
+		getJobErr = k8serrors.NewNotFound(schema.GroupResource{}, "not found")
+		k8sClient.GetStub = func(_ context.Context, _ types.NamespacedName, o client.Object) error {
+			taskPtr, ok := o.(*eiriniv1.Task)
+			if ok {
+				if getTaskErr != nil {
+					return getTaskErr
+				}
+				task.DeepCopyInto(taskPtr)
+
+				return nil
+			}
+
+			jobPtr, ok := o.(*batchv1.Job)
+			if ok {
+				if getJobErr != nil {
+					return getJobErr
+				}
+				(&batchv1.Job{}).DeepCopyInto(jobPtr)
+
+				return nil
+			}
+
+			Fail(fmt.Sprintf("Unsupported object: %v", o))
+
+			return nil
+		}
+		desirer = new(reconcilerfakes.FakeTaskDesirer)
+		statusGetter = new(reconcilerfakes.FakeTaskStatusGetter)
+
 		namespacedName = types.NamespacedName{
 			Namespace: "my-namespace",
 			Name:      "my-name",
 		}
-		workloadClient = new(reconcilerfakes.FakeTaskWorkloadClient)
 
 		logger := lagertest.NewTestLogger("task-reconciler")
 		ttlSeconds = 30
-		taskReconciler = reconciler.NewTask(logger, tasksCrClient, workloadClient, ttlSeconds)
+		taskReconciler = reconciler.NewTask(logger, k8sClient, desirer, statusGetter, ttlSeconds)
 		task = &eiriniv1.Task{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      namespacedName.Name,
@@ -63,10 +103,9 @@ var _ = Describe("Task", func() {
 				CPUWeight: 13,
 			},
 		}
-		tasksCrClient.GetTaskReturns(task, nil)
-		workloadClient.GetStatusReturns(eiriniv1.TaskStatus{
+		statusGetter.GetStatusReturns(eiriniv1.TaskStatus{
 			ExecutionStatus: eiriniv1.TaskStarting,
-		}, nil)
+		})
 	})
 
 	JustBeforeEach(func() {
@@ -77,29 +116,22 @@ var _ = Describe("Task", func() {
 		Expect(reconcileErr).NotTo(HaveOccurred())
 
 		By("invoking the task desirer", func() {
-			Expect(workloadClient.DesireCallCount()).To(Equal(1))
-			_, actualTask := workloadClient.DesireArgsForCall(0)
+			Expect(desirer.DesireCallCount()).To(Equal(1))
+			_, actualTask := desirer.DesireArgsForCall(0)
 			Expect(actualTask).To(Equal(task))
-		})
-
-		By("updating the task execution status", func() {
-			Expect(tasksCrClient.UpdateTaskStatusCallCount()).To(Equal(1))
-			_, actualTask, status := tasksCrClient.UpdateTaskStatusArgsForCall(0)
-			Expect(actualTask).To(Equal(task))
-			Expect(status.ExecutionStatus).To(Equal(eiriniv1.TaskStarting))
 		})
 	})
 
 	It("loads the task using names from request", func() {
-		Expect(tasksCrClient.GetTaskCallCount()).To(Equal(1))
-		_, namespace, name := tasksCrClient.GetTaskArgsForCall(0)
-		Expect(namespace).To(Equal("my-namespace"))
-		Expect(name).To(Equal("my-name"))
+		Expect(k8sClient.GetCallCount()).To(Equal(2))
+		_, namespacedName, _ := k8sClient.GetArgsForCall(0)
+		Expect(namespacedName.Namespace).To(Equal("my-namespace"))
+		Expect(namespacedName.Name).To(Equal("my-name"))
 	})
 
 	When("the task cannot be found", func() {
 		BeforeEach(func() {
-			tasksCrClient.GetTaskReturns(nil, errors.NewNotFound(schema.GroupResource{}, "foo"))
+			getTaskErr = k8serrors.NewNotFound(schema.GroupResource{}, "foo")
 		})
 
 		It("neither requeues nor returns an error", func() {
@@ -110,7 +142,7 @@ var _ = Describe("Task", func() {
 
 	When("getting the task returns another error", func() {
 		BeforeEach(func() {
-			tasksCrClient.GetTaskReturns(nil, fmt.Errorf("some problem"))
+			getTaskErr = errors.New("some problem")
 		})
 
 		It("returns an error", func() {
@@ -118,16 +150,25 @@ var _ = Describe("Task", func() {
 		})
 	})
 
-	It("gets the new task status", func() {
-		Expect(workloadClient.GetStatusCallCount()).To(Equal(1))
-		_, guid := workloadClient.GetStatusArgsForCall(0)
-		Expect(guid).To(Equal("guid"))
+	When("the job cannot be found", func() {
+		BeforeEach(func() {
+			getJobErr = k8serrors.NewNotFound(schema.GroupResource{}, "foo")
+		})
+
+		It("neither requeues nor returns an error", func() {
+			Expect(reconcileResult.Requeue).To(BeFalse())
+			Expect(reconcileErr).ToNot(HaveOccurred())
+		})
 	})
 
-	It("updates the task with the new status", func() {
-		Expect(tasksCrClient.UpdateTaskStatusCallCount()).To(Equal(1))
-		_, _, newStatus := tasksCrClient.UpdateTaskStatusArgsForCall(0)
-		Expect(newStatus.ExecutionStatus).To(Equal(eiriniv1.TaskStarting))
+	When("getting the job returns another error", func() {
+		BeforeEach(func() {
+			getJobErr = errors.New("some problem")
+		})
+
+		It("returns an error", func() {
+			Expect(reconcileErr).To(MatchError(ContainSubstring("some problem")))
+		})
 	})
 
 	When("the task has previously completed successfully", func() {
@@ -139,11 +180,10 @@ var _ = Describe("Task", func() {
 					EndTime:         &now,
 				},
 			}
-			tasksCrClient.GetTaskReturns(task, nil)
 		})
 
 		It("does not desire the task again", func() {
-			Expect(workloadClient.DesireCallCount()).To(Equal(0))
+			Expect(desirer.DesireCallCount()).To(Equal(0))
 		})
 
 		When("the task has exceeded the ttl", func() {
@@ -155,16 +195,15 @@ var _ = Describe("Task", func() {
 						EndTime:         &earlier,
 					},
 				}
-				tasksCrClient.GetTaskReturns(task, nil)
 			})
 
 			It("deletes the task", func() {
-				Expect(workloadClient.DeleteCallCount()).To(Equal(1))
+				Expect(k8sClient.DeleteAllOfCallCount()).To(Equal(1))
 			})
 
 			When("deleting the task fails", func() {
 				BeforeEach(func() {
-					workloadClient.DeleteReturns(fmt.Errorf("boom"))
+					k8sClient.DeleteAllOfReturns(errors.New("boom"))
 				})
 
 				It("returns an error", func() {
@@ -185,11 +224,10 @@ var _ = Describe("Task", func() {
 					EndTime:         &now,
 				},
 			}
-			tasksCrClient.GetTaskReturns(task, nil)
 		})
 
 		It("does not desire the task again", func() {
-			Expect(workloadClient.DesireCallCount()).To(Equal(0))
+			Expect(desirer.DesireCallCount()).To(Equal(0))
 		})
 
 		When("the task has exceeded the ttl", func() {
@@ -201,65 +239,17 @@ var _ = Describe("Task", func() {
 						EndTime:         &earlier,
 					},
 				}
-				tasksCrClient.GetTaskReturns(task, nil)
 			})
 
 			It("deletes the task", func() {
-				Expect(workloadClient.DeleteCallCount()).To(Equal(1))
+				Expect(k8sClient.DeleteAllOfCallCount()).To(Equal(1))
 			})
-		})
-	})
-
-	When("gettin the task status returns an error", func() {
-		BeforeEach(func() {
-			workloadClient.GetStatusReturns(eiriniv1.TaskStatus{}, fmt.Errorf("potato"))
-		})
-
-		It("returns an error", func() {
-			Expect(reconcileErr).To(MatchError(ContainSubstring("potato")))
-		})
-	})
-
-	When("updating the task status returns an error", func() {
-		BeforeEach(func() {
-			tasksCrClient.UpdateTaskStatusReturns(fmt.Errorf("crumpets"))
-		})
-
-		It("returns an error", func() {
-			Expect(reconcileErr).To(MatchError(ContainSubstring("crumpets")))
-		})
-	})
-
-	When("the task has completed successfully", func() {
-		BeforeEach(func() {
-			now := metav1.Now()
-			workloadClient.GetStatusReturns(eiriniv1.TaskStatus{
-				ExecutionStatus: eiriniv1.TaskSucceeded,
-				EndTime:         &now,
-			}, nil)
-		})
-
-		It("requeues the event after the ttl", func() {
-			Expect(reconcileResult.RequeueAfter).To(Equal(time.Duration(ttlSeconds) * time.Second))
-		})
-	})
-
-	When("the task has failed", func() {
-		BeforeEach(func() {
-			now := metav1.Now()
-			workloadClient.GetStatusReturns(eiriniv1.TaskStatus{
-				ExecutionStatus: eiriniv1.TaskFailed,
-				EndTime:         &now,
-			}, nil)
-		})
-
-		It("requeues the event after the ttl", func() {
-			Expect(reconcileResult.RequeueAfter).To(Equal(time.Duration(ttlSeconds) * time.Second))
 		})
 	})
 
 	When("there is a private registry set", func() {
 		BeforeEach(func() {
+			getJobErr = k8serrors.NewNotFound(schema.GroupResource{}, "not found")
 			task.Spec.PrivateRegistry = &eiriniv1.PrivateRegistry{
 				Username: "admin",
 				Password: "p4ssw0rd",
@@ -267,8 +257,8 @@ var _ = Describe("Task", func() {
 		})
 
 		It("passes the private registry details to the desirer", func() {
-			Expect(workloadClient.DesireCallCount()).To(Equal(1))
-			_, actualTask := workloadClient.DesireArgsForCall(0)
+			Expect(desirer.DesireCallCount()).To(Equal(1))
+			_, actualTask := desirer.DesireArgsForCall(0)
 			Expect(actualTask.Spec.PrivateRegistry).ToNot(BeNil())
 			Expect(actualTask.Spec.PrivateRegistry.Username).To(Equal("admin"))
 			Expect(actualTask.Spec.PrivateRegistry.Password).To(Equal("p4ssw0rd"))
@@ -277,12 +267,68 @@ var _ = Describe("Task", func() {
 
 	When("desiring the task returns an error", func() {
 		BeforeEach(func() {
-			workloadClient.DesireReturns(fmt.Errorf("some error"))
+			getJobErr = k8serrors.NewNotFound(schema.GroupResource{}, "not found")
+			desirer.DesireReturns(errors.New("some error"))
 		})
 
 		It("returns an error", func() {
 			Expect(reconcileErr).To(MatchError(ContainSubstring("some error")))
-			Expect(tasksCrClient.UpdateTaskStatusCallCount()).To(Equal(0))
+			Expect(statusWriter.PatchCallCount()).To(Equal(0))
+		})
+	})
+
+	When("the job has already been desired", func() {
+		BeforeEach(func() {
+			getJobErr = nil
+		})
+
+		It("updates the task execution status", func() {
+			Expect(statusGetter.GetStatusCallCount()).To(Equal(1))
+
+			Expect(statusWriter.PatchCallCount()).To(Equal(1))
+			_, obj, _, _ := statusWriter.PatchArgsForCall(0)
+			Expect(obj).To(BeAssignableToTypeOf(&eiriniv1.Task{}))
+			actualTask := obj.(*eiriniv1.Task)
+
+			Expect(actualTask.Status.ExecutionStatus).To(Equal(eiriniv1.TaskStarting))
+		})
+
+		When("the task has failed", func() {
+			BeforeEach(func() {
+				now := metav1.Now()
+				statusGetter.GetStatusReturns(eiriniv1.TaskStatus{
+					ExecutionStatus: eiriniv1.TaskFailed,
+					EndTime:         &now,
+				})
+			})
+
+			It("requeues the event after the ttl", func() {
+				Expect(reconcileResult.RequeueAfter).To(Equal(time.Duration(ttlSeconds) * time.Second))
+			})
+		})
+
+		When("the task has completed successfully", func() {
+			BeforeEach(func() {
+				now := metav1.Now()
+				statusGetter.GetStatusReturns(eiriniv1.TaskStatus{
+					ExecutionStatus: eiriniv1.TaskSucceeded,
+					EndTime:         &now,
+				})
+			})
+
+			It("requeues the event after the ttl", func() {
+				Expect(reconcileResult.RequeueAfter).To(Equal(time.Duration(ttlSeconds) * time.Second))
+			})
+		})
+
+		When("updating the task status returns an error", func() {
+			BeforeEach(func() {
+				statusWriter.PatchReturns(errors.New("crumpets"))
+			})
+
+			It("returns an error", func() {
+				Expect(reconcileErr).To(MatchError(ContainSubstring("crumpets")))
+			})
 		})
 	})
 })

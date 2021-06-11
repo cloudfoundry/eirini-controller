@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"fmt"
 
+	"code.cloudfoundry.org/eirini-controller/k8s/k8sfakes"
 	"code.cloudfoundry.org/eirini-controller/k8s/stset"
 	"code.cloudfoundry.org/eirini-controller/k8s/stset/stsetfakes"
 	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
@@ -14,63 +15,57 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
-	v1 "k8s.io/api/apps/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var _ = Describe("Desirer", func() {
 	var (
 		logger                     lager.Logger
-		secrets                    *stsetfakes.FakeSecretsClient
-		statefulSets               *stsetfakes.FakeStatefulSetCreator
+		client                     *k8sfakes.FakeClient
 		lrpToStatefulSetConverter  *stsetfakes.FakeLRPToStatefulSetConverter
 		podDisruptionBudgetUpdater *stsetfakes.FakePodDisruptionBudgetUpdater
-
-		lrp       *eiriniv1.LRP
-		desireErr error
-
-		desirer stset.Desirer
+		lrp                        *eiriniv1.LRP
+		desirer                    *stset.Desirer
+		desireErr                  error
 	)
 
 	BeforeEach(func() {
 		logger = lagertest.NewTestLogger("statefulset-desirer")
-		secrets = new(stsetfakes.FakeSecretsClient)
-		statefulSets = new(stsetfakes.FakeStatefulSetCreator)
+		client = new(k8sfakes.FakeClient)
 		lrpToStatefulSetConverter = new(stsetfakes.FakeLRPToStatefulSetConverter)
-		lrpToStatefulSetConverter.ConvertStub = func(statefulSetName string, lrp *eiriniv1.LRP, _ *corev1.Secret) (*v1.StatefulSet, error) {
-			return &v1.StatefulSet{
+		lrpToStatefulSetConverter.ConvertStub = func(statefulSetName string, lrp *eiriniv1.LRP, _ *corev1.Secret) (*appsv1.StatefulSet, error) {
+			return &appsv1.StatefulSet{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: statefulSetName,
 				},
 			}, nil
 		}
-		statefulSets.CreateStub = func(_ context.Context, _ string, stSet *v1.StatefulSet) (*v1.StatefulSet, error) {
-			return stSet, nil
-		}
 
 		podDisruptionBudgetUpdater = new(stsetfakes.FakePodDisruptionBudgetUpdater)
 		lrp = createLRP("the-namespace", "Baldur")
-		desirer = stset.NewDesirer(logger, secrets, statefulSets, lrpToStatefulSetConverter, podDisruptionBudgetUpdater, eirinischeme.Scheme)
+		desirer = stset.NewDesirer(logger, lrpToStatefulSetConverter, podDisruptionBudgetUpdater, client, eirinischeme.Scheme)
 	})
 
 	JustBeforeEach(func() {
 		desireErr = desirer.Desire(ctx, lrp)
 	})
 
-	It("should succeed", func() {
+	It("succeeds", func() {
 		Expect(desireErr).NotTo(HaveOccurred())
 	})
 
-	It("should set name for the stateful set", func() {
-		_, _, statefulSet := statefulSets.CreateArgsForCall(0)
+	It("creates the StatefulSet", func() {
+		Expect(client.CreateCallCount()).To(Equal(1))
+		_, obj, _ := client.CreateArgsForCall(0)
+		Expect(obj).To(BeAssignableToTypeOf(&appsv1.StatefulSet{}))
+		statefulSet := obj.(*appsv1.StatefulSet)
 		Expect(statefulSet.Name).To(Equal("baldur-space-foo-34f869d015"))
-	})
-
-	It("should call the statefulset client", func() {
-		Expect(statefulSets.CreateCallCount()).To(Equal(1))
+		Expect(statefulSet.Namespace).To(Equal("the-namespace"))
 	})
 
 	It("updates the pod disruption budget", func() {
@@ -91,25 +86,23 @@ var _ = Describe("Desirer", func() {
 		})
 	})
 
-	It("should set namespace for the stateful set", func() {
-		_, namespace, _ := statefulSets.CreateArgsForCall(0)
-		Expect(namespace).To(Equal("the-namespace"))
-	})
-
 	When("the app name contains unsupported characters", func() {
 		BeforeEach(func() {
 			lrp = createLRP("the-namespace", "Балдър")
 		})
 
 		It("should use the guid as a name", func() {
-			_, _, statefulSet := statefulSets.CreateArgsForCall(0)
+			Expect(client.CreateCallCount()).To(Equal(1))
+			_, obj, _ := client.CreateArgsForCall(0)
+			Expect(obj).To(BeAssignableToTypeOf(&appsv1.StatefulSet{}))
+			statefulSet := obj.(*appsv1.StatefulSet)
 			Expect(statefulSet.Name).To(Equal("guid_1234-34f869d015"))
 		})
 	})
 
 	When("the statefulset already exists", func() {
 		BeforeEach(func() {
-			statefulSets.CreateReturns(nil, k8serrors.NewAlreadyExists(schema.GroupResource{}, "potato"))
+			client.CreateReturnsOnCall(1, k8serrors.NewAlreadyExists(schema.GroupResource{}, "potato"))
 		})
 
 		It("does not fail", func() {
@@ -119,7 +112,7 @@ var _ = Describe("Desirer", func() {
 
 	When("creating the statefulset fails", func() {
 		BeforeEach(func() {
-			statefulSets.CreateReturns(nil, errors.New("potato"))
+			client.CreateReturns(errors.New("potato"))
 		})
 
 		It("propagates the error", func() {
@@ -128,27 +121,38 @@ var _ = Describe("Desirer", func() {
 	})
 
 	When("the app references a private docker image", func() {
-		var registrySecret *corev1.Secret
+		var stsetCreateErr error
 
 		BeforeEach(func() {
-			registrySecret = &corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "baldur-secret",
-					Namespace: "the-namespace",
-				},
-			}
-			secrets.CreateReturns(registrySecret, nil)
-
+			stsetCreateErr = nil
 			lrp.Spec.PrivateRegistry = &eiriniv1.PrivateRegistry{
 				Username: "user",
 				Password: "password",
 			}
+
+			client.CreateStub = func(_ context.Context, obj k8sclient.Object, _ ...k8sclient.CreateOption) error {
+				secret, ok := obj.(*corev1.Secret)
+				if ok {
+					secret.Name = "private-registry-1234"
+				}
+
+				_, ok = obj.(*appsv1.StatefulSet)
+				if ok {
+					return stsetCreateErr
+				}
+
+				return nil
+			}
 		})
 
 		It("should create a private repo secret containing the private repo credentials", func() {
-			Expect(secrets.CreateCallCount()).To(Equal(1))
-			_, secretNamespace, actualSecret := secrets.CreateArgsForCall(0)
-			Expect(secretNamespace).To(Equal("the-namespace"))
+			Expect(client.CreateCallCount()).To(Equal(2))
+			_, obj, _ := client.CreateArgsForCall(0)
+
+			Expect(obj).To(BeAssignableToTypeOf(&corev1.Secret{}))
+			actualSecret := obj.(*corev1.Secret)
+
+			Expect(actualSecret.Namespace).To(Equal("the-namespace"))
 			Expect(actualSecret.GenerateName).To(Equal("private-registry-"))
 			Expect(actualSecret.Type).To(Equal(corev1.SecretTypeDockerConfigJson))
 			Expect(actualSecret.StringData).To(
@@ -165,31 +169,37 @@ var _ = Describe("Desirer", func() {
 		It("uses that secret when converting to statefulset", func() {
 			Expect(lrpToStatefulSetConverter.ConvertCallCount()).To(Equal(1))
 			_, _, actualRegistrySecret := lrpToStatefulSetConverter.ConvertArgsForCall(0)
-			Expect(actualRegistrySecret).To(Equal(registrySecret))
+			Expect(actualRegistrySecret.Name).To(Equal("private-registry-1234"))
+			Expect(actualRegistrySecret.Namespace).To(Equal("the-namespace"))
 		})
 
 		It("sets the statefulset as the secret owner", func() {
-			Expect(secrets.SetOwnerCallCount()).To(Equal(1))
-			_, actualSecret, actualStatefulSet := secrets.SetOwnerArgsForCall(0)
-			Expect(actualSecret.Name).To(Equal("baldur-secret"))
-			Expect(actualStatefulSet.GetName()).To(Equal("baldur-space-foo-34f869d015"))
+			Expect(client.PatchCallCount()).To(Equal(1))
+			_, obj, _, _ := client.PatchArgsForCall(0)
+			Expect(obj).To(BeAssignableToTypeOf(&corev1.Secret{}))
+			patchedSecret := obj.(*corev1.Secret)
+			Expect(patchedSecret.OwnerReferences).To(HaveLen(1))
+			Expect(patchedSecret.OwnerReferences[0].Kind).To(Equal("StatefulSet"))
+			Expect(patchedSecret.OwnerReferences[0].Name).To(HavePrefix("baldur-space-foo"))
 		})
 
 		When("creating the statefulset fails", func() {
 			BeforeEach(func() {
-				statefulSets.CreateReturns(nil, errors.New("potato"))
+				stsetCreateErr = errors.New("potato")
 			})
 
 			It("deletes the secret", func() {
-				Expect(secrets.DeleteCallCount()).To(Equal(1))
-				_, actualNamespace, actualName := secrets.DeleteArgsForCall(0)
-				Expect(actualNamespace).To(Equal("the-namespace"))
-				Expect(actualName).To(Equal("baldur-secret"))
+				Expect(client.DeleteCallCount()).To(Equal(1))
+				_, obj, _ := client.DeleteArgsForCall(0)
+				Expect(obj).To(BeAssignableToTypeOf(&corev1.Secret{}))
+				actualSecret := obj.(*corev1.Secret)
+				Expect(actualSecret.Namespace).To(Equal("the-namespace"))
+				Expect(actualSecret.Name).To(Equal("private-registry-1234"))
 			})
 
 			When("deleting the secret fails", func() {
 				BeforeEach(func() {
-					secrets.DeleteReturns(errors.New("delete-secret-failed"))
+					client.DeleteReturns(errors.New("delete-secret-failed"))
 				})
 
 				It("returns a statefulset creation error and a note that the secret is not cleaned up", func() {
@@ -200,7 +210,7 @@ var _ = Describe("Desirer", func() {
 
 		When("setting the statefulset as a secret owner fails", func() {
 			BeforeEach(func() {
-				secrets.SetOwnerReturns(nil, errors.New("set-owner-failed"))
+				client.PatchReturns(errors.New("set-owner-failed"))
 			})
 
 			It("returns an error", func() {

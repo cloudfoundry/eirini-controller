@@ -2,9 +2,11 @@ package reconciler_test
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"time"
 
+	"code.cloudfoundry.org/eirini-controller/k8s/k8sfakes"
 	"code.cloudfoundry.org/eirini-controller/k8s/reconciler"
 	"code.cloudfoundry.org/eirini-controller/k8s/reconciler/reconcilerfakes"
 	"code.cloudfoundry.org/eirini-controller/k8s/stset"
@@ -19,40 +21,37 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 var _ = Describe("K8s/Reconciler/AppCrash", func() {
 	var (
 		podCrashReconciler  *reconciler.PodCrash
-		controllerClient    *reconcilerfakes.FakeClient
 		crashEventGenerator *reconcilerfakes.FakeCrashEventGenerator
-		eventsClient        *reconcilerfakes.FakeEventsClient
-		statefulSetGetter   *reconcilerfakes.FakeStatefulSetGetter
+		client              *k8sfakes.FakeClient
 		resultErr           error
 		podOwners           []metav1.OwnerReference
 		podGetError         error
 		podAnnotations      map[string]string
+		statefulSet         appsv1.StatefulSet
+		getStSetError       error
 	)
 
 	BeforeEach(func() {
-		controllerClient = new(reconcilerfakes.FakeClient)
 		crashEventGenerator = new(reconcilerfakes.FakeCrashEventGenerator)
-		eventsClient = new(reconcilerfakes.FakeEventsClient)
-		eventsClient.CreateReturns(&corev1.Event{}, nil)
-		statefulSetGetter = new(reconcilerfakes.FakeStatefulSetGetter)
+		client = new(k8sfakes.FakeClient)
 		podCrashReconciler = reconciler.NewPodCrash(
 			lagertest.NewTestLogger("pod-crash-test"),
-			controllerClient,
+			client,
 			crashEventGenerator,
-			eventsClient,
-			statefulSetGetter,
 		)
 		podAnnotations = nil
 
-		statefulSet := appsv1.StatefulSet{
+		statefulSet = appsv1.StatefulSet{
 			ObjectMeta: metav1.ObjectMeta{
+				Name:      "parent-statefulset",
+				Namespace: "some-ns",
 				OwnerReferences: []metav1.OwnerReference{
 					{
 						APIVersion: "eirini/v1",
@@ -63,8 +62,37 @@ var _ = Describe("K8s/Reconciler/AppCrash", func() {
 				},
 			},
 		}
-		statefulSetGetter.GetReturns(&statefulSet, nil)
-		eventsClient.GetByInstanceAndReasonReturns(nil, nil)
+		getStSetError = nil
+		podGetError = nil
+
+		client.GetStub = func(_ context.Context, _ types.NamespacedName, o k8sclient.Object) error {
+			stSetPtr, ok := o.(*appsv1.StatefulSet)
+			if ok {
+				if getStSetError != nil {
+					return getStSetError
+				}
+				statefulSet.DeepCopyInto(stSetPtr)
+
+				return nil
+			}
+
+			podPtr, ok := o.(*corev1.Pod)
+			if ok {
+				if podGetError != nil {
+					return podGetError
+				}
+				podPtr.Namespace = "some-ns"
+				podPtr.Name = "app-instance"
+				podPtr.OwnerReferences = podOwners
+				podPtr.Annotations = podAnnotations
+
+				return nil
+			}
+
+			Fail(fmt.Sprintf("Unsupported object: %v", o))
+
+			return nil
+		}
 
 		podGetError = nil
 		t := true
@@ -84,16 +112,6 @@ var _ = Describe("K8s/Reconciler/AppCrash", func() {
 	})
 
 	JustBeforeEach(func() {
-		controllerClient.GetStub = func(c context.Context, nn types.NamespacedName, o client.Object) error {
-			pod, ok := o.(*corev1.Pod)
-			Expect(ok).To(BeTrue())
-			pod.Namespace = "some-ns"
-			pod.Name = "app-instance"
-			pod.OwnerReferences = podOwners
-			pod.Annotations = podAnnotations
-
-			return podGetError
-		}
 		_, resultErr = podCrashReconciler.Reconcile(context.Background(), reconcile.Request{
 			NamespacedName: types.NamespacedName{
 				Namespace: "some-ns",
@@ -104,8 +122,8 @@ var _ = Describe("K8s/Reconciler/AppCrash", func() {
 
 	It("sends the correct pod info to the crash event generator", func() {
 		Expect(resultErr).NotTo(HaveOccurred())
-		Expect(controllerClient.GetCallCount()).To(Equal(1))
-		_, nsName, _ := controllerClient.GetArgsForCall(0)
+		Expect(client.GetCallCount()).To(Equal(1))
+		_, nsName, _ := client.GetArgsForCall(0)
 		Expect(nsName).To(Equal(types.NamespacedName{Namespace: "some-ns", Name: "app-instance"}))
 
 		Expect(crashEventGenerator.GenerateCallCount()).To(Equal(1))
@@ -116,11 +134,11 @@ var _ = Describe("K8s/Reconciler/AppCrash", func() {
 
 	When("no crash is generated", func() {
 		BeforeEach(func() {
-			crashEventGenerator.GenerateReturns(reconciler.CrashEvent{}, false)
+			crashEventGenerator.GenerateReturns(nil)
 		})
 
 		It("does not create a k8s event", func() {
-			Expect(eventsClient.CreateCallCount()).To(Equal(0))
+			Expect(client.CreateCallCount()).To(Equal(0))
 		})
 	})
 
@@ -129,7 +147,7 @@ var _ = Describe("K8s/Reconciler/AppCrash", func() {
 
 		BeforeEach(func() {
 			timestamp = time.Unix(time.Now().Unix(), 0)
-			crashEventGenerator.GenerateReturns(reconciler.CrashEvent{
+			crashEventGenerator.GenerateReturns(&reconciler.CrashEvent{
 				ProcessGUID: "process-guid",
 				AppCrashedRequest: cc_messages.AppCrashedRequest{
 					Instance:        "instance-name",
@@ -139,17 +157,16 @@ var _ = Describe("K8s/Reconciler/AppCrash", func() {
 					ExitDescription: "oops",
 					CrashTimestamp:  timestamp.Unix(),
 				},
-			}, true)
-		})
-
-		It("looks up the LRP via the stateful set", func() {
-			Expect(statefulSetGetter.GetCallCount()).To(Equal(1))
+			})
 		})
 
 		It("creates a k8s event", func() {
-			Expect(eventsClient.CreateCallCount()).To(Equal(1))
-			_, namespace, event := eventsClient.CreateArgsForCall(0)
-			Expect(namespace).To(Equal("some-ns"))
+			Expect(client.CreateCallCount()).To(Equal(1))
+			_, obj, _ := client.CreateArgsForCall(0)
+			event, ok := obj.(*corev1.Event)
+			Expect(ok).To(BeTrue())
+
+			Expect(event.Namespace).To(Equal("some-ns"))
 			Expect(event.GenerateName).To(Equal("instance-name-"))
 			Expect(event.Labels).To(HaveKeyWithValue("cloudfoundry.org/instance_index", "3"))
 			Expect(event.Annotations).To(HaveKeyWithValue("cloudfoundry.org/process_guid", "process-guid"))
@@ -177,9 +194,9 @@ var _ = Describe("K8s/Reconciler/AppCrash", func() {
 		})
 
 		It("records the crash timestamp as an annotation on the pod", func() {
-			Expect(controllerClient.PatchCallCount()).To(Equal(1))
+			Expect(client.PatchCallCount()).To(Equal(1))
 
-			_, p, patch, _ := controllerClient.PatchArgsForCall(0)
+			_, p, patch, _ := client.PatchArgsForCall(0)
 
 			pd, ok := p.(*corev1.Pod)
 			Expect(ok).To(BeTrue(), "didn't pass a *Pod to patch")
@@ -196,6 +213,16 @@ var _ = Describe("K8s/Reconciler/AppCrash", func() {
 			))
 		})
 
+		When("patching the pod errors", func() {
+			BeforeEach(func() {
+				client.PatchReturns(errors.New("boom"))
+			})
+
+			It("ignores the error", func() {
+				Expect(resultErr).NotTo(HaveOccurred())
+			})
+		})
+
 		When("the app crash has already been reported", func() {
 			BeforeEach(func() {
 				podAnnotations = map[string]string{
@@ -208,7 +235,7 @@ var _ = Describe("K8s/Reconciler/AppCrash", func() {
 			})
 
 			It("does not create an event", func() {
-				Expect(eventsClient.CreateCallCount()).To(Equal(0))
+				Expect(client.CreateCallCount()).To(Equal(0))
 			})
 		})
 
@@ -222,14 +249,13 @@ var _ = Describe("K8s/Reconciler/AppCrash", func() {
 			})
 
 			It("does not create an event", func() {
-				Expect(statefulSetGetter.GetCallCount()).To(Equal(0))
-				Expect(eventsClient.CreateCallCount()).To(Equal(0))
+				Expect(client.CreateCallCount()).To(Equal(0))
 			})
 		})
 
 		When("the associated stateful set doesn't have a LRP owner", func() {
 			BeforeEach(func() {
-				statefulSetGetter.GetReturns(&appsv1.StatefulSet{}, nil)
+				statefulSet = appsv1.StatefulSet{}
 			})
 
 			It("does not requeue", func() {
@@ -237,13 +263,13 @@ var _ = Describe("K8s/Reconciler/AppCrash", func() {
 			})
 
 			It("does not create an event", func() {
-				Expect(eventsClient.CreateCallCount()).To(Equal(0))
+				Expect(client.CreateCallCount()).To(Equal(0))
 			})
 		})
 
 		When("the statefulset getter fails to get", func() {
 			BeforeEach(func() {
-				statefulSetGetter.GetReturns(&appsv1.StatefulSet{}, errors.New("boom"))
+				getStSetError = errors.New("boom")
 			})
 
 			It("requeues the request", func() {
@@ -251,13 +277,13 @@ var _ = Describe("K8s/Reconciler/AppCrash", func() {
 			})
 
 			It("does not create an event", func() {
-				Expect(eventsClient.CreateCallCount()).To(Equal(0))
+				Expect(client.CreateCallCount()).To(Equal(0))
 			})
 		})
 
 		When("creating the event errors", func() {
 			BeforeEach(func() {
-				eventsClient.CreateReturns(nil, errors.New("boom"))
+				client.CreateReturns(errors.New("boom"))
 			})
 
 			It("requeues the request", func() {
@@ -277,19 +303,7 @@ var _ = Describe("K8s/Reconciler/AppCrash", func() {
 			timestampFirst = time.Unix(time.Now().Unix(), 0)
 			timestampSecond = timestampFirst.Add(10 * time.Second)
 
-			crashEventGenerator.GenerateReturns(reconciler.CrashEvent{
-				ProcessGUID: "process-guid",
-				AppCrashedRequest: cc_messages.AppCrashedRequest{
-					Instance:        "instance-name",
-					Index:           3,
-					Reason:          "Error",
-					ExitStatus:      6,
-					ExitDescription: "oops",
-					CrashTimestamp:  timestampFirst.Unix(),
-				},
-			}, true)
-
-			crashEventGenerator.GenerateReturnsOnCall(1, reconciler.CrashEvent{
+			crashEventGenerator.GenerateReturns(&reconciler.CrashEvent{
 				ProcessGUID: "process-guid",
 				AppCrashedRequest: cc_messages.AppCrashedRequest{
 					Instance:        "instance-name",
@@ -299,40 +313,54 @@ var _ = Describe("K8s/Reconciler/AppCrash", func() {
 					ExitDescription: "oops",
 					CrashTimestamp:  timestampSecond.Unix(),
 				},
-			}, true)
+			})
 
 			eventTime = metav1.MicroTime{Time: timestampFirst.Add(time.Second)}
-			eventsClient.GetByInstanceAndReasonReturnsOnCall(1, &corev1.Event{
-				ObjectMeta:     metav1.ObjectMeta{Name: "instance-name", Namespace: "some-ns"},
-				Count:          1,
-				Reason:         "Container: Error",
-				Message:        "Container terminated with exit code: 6",
-				FirstTimestamp: metav1.Time{Time: timestampFirst},
-				LastTimestamp:  metav1.Time{Time: timestampFirst},
-				EventTime:      eventTime,
-			}, nil)
+
+			client.ListStub = func(_ context.Context, list k8sclient.ObjectList, _ ...k8sclient.ListOption) error {
+				eventList, ok := list.(*corev1.EventList)
+				Expect(ok).To(BeTrue())
+				eventList.Items = append(eventList.Items, corev1.Event{
+					ObjectMeta:     metav1.ObjectMeta{Name: "instance-name", Namespace: "some-ns"},
+					Count:          1,
+					Reason:         "Container: Error",
+					Message:        "Container terminated with exit code: 6",
+					FirstTimestamp: metav1.Time{Time: timestampFirst},
+					LastTimestamp:  metav1.Time{Time: timestampFirst},
+					EventTime:      eventTime,
+				})
+
+				return nil
+			}
+		})
+
+		It("looks up the event with correct list options", func() {
+			_, _, actualListsOpts := client.ListArgsForCall(0)
+			Expect(actualListsOpts).To(ConsistOf(
+				k8sclient.MatchingLabels{
+					"cloudfoundry.org/instance_index": strconv.Itoa(3),
+				},
+				k8sclient.InNamespace("some-ns"),
+				k8sclient.MatchingFields{
+					reconciler.IndexEventInvolvedObjectName: "parent-lrp",
+				},
+				k8sclient.MatchingFields{
+					reconciler.IndexEventInvolvedObjectKind: "LRP",
+				},
+				k8sclient.MatchingFields{
+					reconciler.IndexEventReason: "Container: Error",
+				},
+			))
 		})
 
 		It("updates the existing event", func() {
-			_, resultErr = podCrashReconciler.Reconcile(context.Background(), reconcile.Request{
-				NamespacedName: types.NamespacedName{
-					Namespace: "some-ns",
-					Name:      "app-instance",
-				},
-			})
+			Expect(client.UpdateCallCount()).To(Equal(1))
+			_, object, _ := client.UpdateArgsForCall(0)
 
-			Expect(eventsClient.GetByInstanceAndReasonCallCount()).To(Equal(2))
-			_, namespace, ownerRef, instanceIndex, reason := eventsClient.GetByInstanceAndReasonArgsForCall(0)
-			Expect(namespace).To(Equal("some-ns"))
-			Expect(ownerRef.Kind).To(Equal("LRP"))
-			Expect(ownerRef.Name).To(Equal("parent-lrp"))
-			Expect(instanceIndex).To(Equal(3))
-			Expect(reason).To(Equal("Container: Error"))
+			event, ok := object.(*corev1.Event)
+			Expect(ok).To(BeTrue())
 
-			Expect(eventsClient.UpdateCallCount()).To(Equal(1))
-			_, ns, event := eventsClient.UpdateArgsForCall(0)
-
-			Expect(ns).To(Equal("some-ns"))
+			Expect(event.Namespace).To(Equal("some-ns"))
 			Expect(event.Reason).To(Equal("Container: Error"))
 			Expect(event.Message).To(Equal("Container terminated with exit code: 6"))
 			Expect(event.Count).To(BeNumerically("==", 2))
@@ -343,11 +371,11 @@ var _ = Describe("K8s/Reconciler/AppCrash", func() {
 
 		When("listing events errors", func() {
 			BeforeEach(func() {
-				eventsClient.GetByInstanceAndReasonReturns(nil, errors.New("oof"))
+				client.ListReturns(errors.New("oof"))
 			})
 
 			It("does not create an event", func() {
-				Expect(eventsClient.CreateCallCount()).To(Equal(0))
+				Expect(client.CreateCallCount()).To(Equal(0))
 			})
 
 			It("requeues the request", func() {
@@ -357,8 +385,7 @@ var _ = Describe("K8s/Reconciler/AppCrash", func() {
 
 		When("updating the event errors", func() {
 			BeforeEach(func() {
-				eventsClient.GetByInstanceAndReasonReturns(&corev1.Event{}, nil)
-				eventsClient.UpdateReturns(nil, errors.New("oof"))
+				client.UpdateReturns(errors.New("oof"))
 			})
 
 			It("requeues the request", func() {
@@ -373,8 +400,7 @@ var _ = Describe("K8s/Reconciler/AppCrash", func() {
 		})
 
 		It("does not create an event", func() {
-			Expect(statefulSetGetter.GetCallCount()).To(Equal(0))
-			Expect(eventsClient.CreateCallCount()).To(Equal(0))
+			Expect(client.CreateCallCount()).To(Equal(0))
 		})
 
 		It("requeues the request", func() {
@@ -387,8 +413,7 @@ var _ = Describe("K8s/Reconciler/AppCrash", func() {
 			})
 
 			It("does not create an event", func() {
-				Expect(statefulSetGetter.GetCallCount()).To(Equal(0))
-				Expect(eventsClient.CreateCallCount()).To(Equal(0))
+				Expect(client.CreateCallCount()).To(Equal(0))
 			})
 
 			It("does not requeue the request", func() {

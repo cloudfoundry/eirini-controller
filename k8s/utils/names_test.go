@@ -8,24 +8,6 @@ import (
 )
 
 var _ = Describe("Names", func() {
-	Describe("SanitizeName", func() {
-		It("should lower case the names", func() {
-			Expect(SanitizeName("ALL-CAPS-but-not", "guid")).To(Equal("all-caps-but-not"))
-		})
-
-		It("should replace underscores with minus", func() {
-			Expect(SanitizeName("under_score", "guid")).To(Equal("under-score"))
-		})
-
-		It("should fallback to give fallback string if name contains unsupported chracters", func() {
-			Expect(SanitizeName("डोरा-дора-dora", "guid")).To(Equal("guid"))
-		})
-
-		It("removes extra characters", func() {
-			Expect(SanitizeName("1234567890-123456789012345678901234567890123456789123456789123456789000", "guid")).To(HaveLen(40))
-		})
-	})
-
 	Describe("GetStatefulsetName", func() {
 		It("calculates the name of an app's backing statefulset", func() {
 			statefulsetName, err := GetStatefulsetName(&eiriniv1.LRP{
@@ -52,6 +34,46 @@ var _ = Describe("Names", func() {
 				})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(statefulsetName).To(Equal("very-long-app-name-space-with-very-very--077dc99e95"))
+			})
+		})
+	})
+
+	Describe("GetJobName", func() {
+		It("calculates the name of a task's backing job", func() {
+			jobName := GetJobName(&eiriniv1.Task{
+				Spec: eiriniv1.TaskSpec{
+					GUID:      "guid",
+					AppName:   "app",
+					SpaceName: "space",
+				},
+			})
+			Expect(jobName).To(Equal("app-space"))
+		})
+
+		When("the the task has a name", func() {
+			It("calculates the name of a task's backing job", func() {
+				jobName := GetJobName(&eiriniv1.Task{
+					Spec: eiriniv1.TaskSpec{
+						GUID:      "guid",
+						Name:      "foo",
+						AppName:   "app",
+						SpaceName: "space",
+					},
+				})
+				Expect(jobName).To(Equal("app-space-foo"))
+			})
+		})
+
+		When("the prefix is too long", func() {
+			It("calculates the name of an task's backing job", func() {
+				jobName := GetJobName(&eiriniv1.Task{
+					Spec: eiriniv1.TaskSpec{
+						GUID:      "guid",
+						AppName:   "very-long-app-name",
+						SpaceName: "space-with-very-very-very-very-very-very-very-very-very-long-name",
+					},
+				})
+				Expect(jobName).To(Equal("guid"))
 			})
 		})
 	})

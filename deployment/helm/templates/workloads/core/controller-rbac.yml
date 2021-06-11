@@ -25,21 +25,20 @@ rules:
   - statefulsets
   verbs:
   - create
-  - update
+  - patch
 - apiGroups:
   - batch
   resources:
   - jobs
   verbs:
   - create
-  - update
 - apiGroups:
   - policy
   resources:
   - poddisruptionbudgets
   verbs:
   - create
-  - delete
+  - deletecollection
 - apiGroups:
   - ""
   resources:

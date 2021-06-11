@@ -11,11 +11,7 @@ import (
 	eirinictrl "code.cloudfoundry.org/eirini-controller"
 	"code.cloudfoundry.org/eirini-controller/tests"
 	"github.com/gofrs/flock"
-
-	// nolint:golint,stylecheck,revive
 	. "github.com/onsi/ginkgo"
-
-	// nolint:golint,stylecheck,revive
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 	"gopkg.in/yaml.v2"
@@ -161,7 +157,7 @@ func (b *Binary) buildIfNecessary() {
 func (b *Binary) build() {
 	compiledPath, err := gexec.Build(b.PackagePath)
 	Expect(err).NotTo(HaveOccurred())
-	Expect(os.MkdirAll(filepath.Dir(b.BinPath), 0o755)).To(Succeed()) // nolint:gomnd
+	Expect(os.MkdirAll(filepath.Dir(b.BinPath), 0o755)).To(Succeed())
 
 	Expect(os.Link(compiledPath, b.BinPath)).To(Succeed())
 }

@@ -13,7 +13,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 //counterfeiter:generate . TaskToJobConverter
@@ -37,23 +40,20 @@ type SecretsClient interface {
 type Desirer struct {
 	logger             lager.Logger
 	taskToJobConverter TaskToJobConverter
-	jobCreator         JobCreator
-	secrets            SecretsClient
+	client             client.Client
 	scheme             *runtime.Scheme
 }
 
 func NewDesirer(
 	logger lager.Logger,
 	taskToJobConverter TaskToJobConverter,
-	jobCreator JobCreator,
-	secretCreator SecretsClient,
+	client client.Client,
 	scheme *runtime.Scheme,
-) Desirer {
-	return Desirer{
+) *Desirer {
+	return &Desirer{
 		logger:             logger,
 		taskToJobConverter: taskToJobConverter,
-		jobCreator:         jobCreator,
-		secrets:            secretCreator,
+		client:             client,
 		scheme:             scheme,
 	}
 }
@@ -81,7 +81,7 @@ func (d *Desirer) Desire(ctx context.Context, task *eiriniv1.Task) error {
 		return errors.Wrap(err, "failed to set controller reference")
 	}
 
-	job, err = d.jobCreator.Create(ctx, task.Namespace, job)
+	err = d.client.Create(ctx, job)
 	if err != nil {
 		logger.Error("failed-to-create-job", err)
 
@@ -89,8 +89,13 @@ func (d *Desirer) Desire(ctx context.Context, task *eiriniv1.Task) error {
 	}
 
 	if privateRegistrySecret != nil {
-		_, err = d.secrets.SetOwner(ctx, privateRegistrySecret, job)
-		if err != nil {
+		originalSecret := privateRegistrySecret.DeepCopy()
+
+		if err := controllerutil.SetOwnerReference(job, privateRegistrySecret, scheme.Scheme); err != nil {
+			return errors.Wrap(err, "secret-client-set-owner-ref-failed")
+		}
+
+		if err := d.client.Patch(ctx, privateRegistrySecret, client.MergeFrom(originalSecret)); err != nil {
 			return errors.Wrap(err, "failed-to-set-secret-ownership")
 		}
 	}
@@ -106,6 +111,7 @@ func (d *Desirer) createPrivateRegistrySecret(ctx context.Context, namespace str
 	secret := &corev1.Secret{}
 
 	secret.GenerateName = PrivateRegistrySecretGenerateName
+	secret.Namespace = namespace
 	secret.Type = corev1.SecretTypeDockerConfigJson
 
 	dockerConfig := dockerutils.NewDockerConfig(
@@ -123,14 +129,16 @@ func (d *Desirer) createPrivateRegistrySecret(ctx context.Context, namespace str
 		dockerutils.DockerConfigKey: dockerConfigJSON,
 	}
 
-	return d.secrets.Create(ctx, namespace, secret)
+	err = d.client.Create(ctx, secret)
+
+	return secret, err
 }
 
 func (d *Desirer) cleanupAndError(ctx context.Context, jobCreationError error, privateRegistrySecret *corev1.Secret) error {
 	resultError := multierror.Append(nil, jobCreationError)
 
 	if privateRegistrySecret != nil {
-		err := d.secrets.Delete(ctx, privateRegistrySecret.Namespace, privateRegistrySecret.Name)
+		err := d.client.Delete(ctx, privateRegistrySecret)
 		if err != nil {
 			resultError = multierror.Append(resultError, errors.Wrap(err, "failed to cleanup registry secret"))
 		}

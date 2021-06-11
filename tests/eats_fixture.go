@@ -4,11 +4,7 @@ import (
 	"context"
 
 	eirinictrl "code.cloudfoundry.org/eirini-controller"
-
-	// nolint:golint,stylecheck,revive
 	. "github.com/onsi/ginkgo"
-
-	// nolint:golint,stylecheck,revive
 	. "github.com/onsi/gomega"
 	"gopkg.in/yaml.v2"
 	rbacv1 "k8s.io/api/rbac/v1"

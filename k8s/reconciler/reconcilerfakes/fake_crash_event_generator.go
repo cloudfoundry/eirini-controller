@@ -11,7 +11,7 @@ import (
 )
 
 type FakeCrashEventGenerator struct {
-	GenerateStub        func(context.Context, *v1.Pod, lager.Logger) (reconciler.CrashEvent, bool)
+	GenerateStub        func(context.Context, *v1.Pod, lager.Logger) *reconciler.CrashEvent
 	generateMutex       sync.RWMutex
 	generateArgsForCall []struct {
 		arg1 context.Context
@@ -19,18 +19,16 @@ type FakeCrashEventGenerator struct {
 		arg3 lager.Logger
 	}
 	generateReturns struct {
-		result1 reconciler.CrashEvent
-		result2 bool
+		result1 *reconciler.CrashEvent
 	}
 	generateReturnsOnCall map[int]struct {
-		result1 reconciler.CrashEvent
-		result2 bool
+		result1 *reconciler.CrashEvent
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeCrashEventGenerator) Generate(arg1 context.Context, arg2 *v1.Pod, arg3 lager.Logger) (reconciler.CrashEvent, bool) {
+func (fake *FakeCrashEventGenerator) Generate(arg1 context.Context, arg2 *v1.Pod, arg3 lager.Logger) *reconciler.CrashEvent {
 	fake.generateMutex.Lock()
 	ret, specificReturn := fake.generateReturnsOnCall[len(fake.generateArgsForCall)]
 	fake.generateArgsForCall = append(fake.generateArgsForCall, struct {
@@ -46,9 +44,9 @@ func (fake *FakeCrashEventGenerator) Generate(arg1 context.Context, arg2 *v1.Pod
 		return stub(arg1, arg2, arg3)
 	}
 	if specificReturn {
-		return ret.result1, ret.result2
+		return ret.result1
 	}
-	return fakeReturns.result1, fakeReturns.result2
+	return fakeReturns.result1
 }
 
 func (fake *FakeCrashEventGenerator) GenerateCallCount() int {
@@ -57,7 +55,7 @@ func (fake *FakeCrashEventGenerator) GenerateCallCount() int {
 	return len(fake.generateArgsForCall)
 }
 
-func (fake *FakeCrashEventGenerator) GenerateCalls(stub func(context.Context, *v1.Pod, lager.Logger) (reconciler.CrashEvent, bool)) {
+func (fake *FakeCrashEventGenerator) GenerateCalls(stub func(context.Context, *v1.Pod, lager.Logger) *reconciler.CrashEvent) {
 	fake.generateMutex.Lock()
 	defer fake.generateMutex.Unlock()
 	fake.GenerateStub = stub
@@ -70,30 +68,27 @@ func (fake *FakeCrashEventGenerator) GenerateArgsForCall(i int) (context.Context
 	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
 }
 
-func (fake *FakeCrashEventGenerator) GenerateReturns(result1 reconciler.CrashEvent, result2 bool) {
+func (fake *FakeCrashEventGenerator) GenerateReturns(result1 *reconciler.CrashEvent) {
 	fake.generateMutex.Lock()
 	defer fake.generateMutex.Unlock()
 	fake.GenerateStub = nil
 	fake.generateReturns = struct {
-		result1 reconciler.CrashEvent
-		result2 bool
-	}{result1, result2}
+		result1 *reconciler.CrashEvent
+	}{result1}
 }
 
-func (fake *FakeCrashEventGenerator) GenerateReturnsOnCall(i int, result1 reconciler.CrashEvent, result2 bool) {
+func (fake *FakeCrashEventGenerator) GenerateReturnsOnCall(i int, result1 *reconciler.CrashEvent) {
 	fake.generateMutex.Lock()
 	defer fake.generateMutex.Unlock()
 	fake.GenerateStub = nil
 	if fake.generateReturnsOnCall == nil {
 		fake.generateReturnsOnCall = make(map[int]struct {
-			result1 reconciler.CrashEvent
-			result2 bool
+			result1 *reconciler.CrashEvent
 		})
 	}
 	fake.generateReturnsOnCall[i] = struct {
-		result1 reconciler.CrashEvent
-		result2 bool
-	}{result1, result2}
+		result1 *reconciler.CrashEvent
+	}{result1}
 }
 
 func (fake *FakeCrashEventGenerator) Invocations() map[string][][]interface{} {

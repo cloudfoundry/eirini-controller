@@ -8,40 +8,37 @@ import (
 	"code.cloudfoundry.org/lager"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
+	appsv1 "k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-//counterfeiter:generate . LRPWorkloadCLient
-//counterfeiter:generate -o reconcilerfakes/fake_controller_runtime_client.go sigs.k8s.io/controller-runtime/pkg/client.Client
-//counterfeiter:generate -o reconcilerfakes/fake_status_writer.go sigs.k8s.io/controller-runtime/pkg/client.StatusWriter
-//counterfeiter:generate . LRPsCrClient
+//counterfeiter:generate . LRPDesirer
+//counterfeiter:generate . LRPUpdater
 
-type LRPWorkloadCLient interface {
+type LRPDesirer interface {
 	Desire(ctx context.Context, lrp *eiriniv1.LRP) error
-	Update(ctx context.Context, lrp *eiriniv1.LRP) error
-	GetStatus(ctx context.Context, lrp *eiriniv1.LRP) (eiriniv1.LRPStatus, error)
 }
 
-type LRPsCrClient interface {
-	UpdateLRPStatus(context.Context, *eiriniv1.LRP, eiriniv1.LRPStatus) error
-	GetLRP(context.Context, string, string) (*eiriniv1.LRP, error)
+type LRPUpdater interface {
+	Update(ctx context.Context, lrp *eiriniv1.LRP, stSet *appsv1.StatefulSet) error
 }
 
-func NewLRP(logger lager.Logger, lrpsCrClient LRPsCrClient, workloadClient LRPWorkloadCLient, statefulsetGetter StatefulSetGetter) *LRP {
+func NewLRP(logger lager.Logger, client client.Client, desirer LRPDesirer, updater LRPUpdater) *LRP {
 	return &LRP{
-		logger:            logger,
-		lrpsCrClient:      lrpsCrClient,
-		workloadClient:    workloadClient,
-		statefulsetGetter: statefulsetGetter,
+		logger:  logger,
+		client:  client,
+		desirer: desirer,
+		updater: updater,
 	}
 }
 
 type LRP struct {
-	logger            lager.Logger
-	lrpsCrClient      LRPsCrClient
-	workloadClient    LRPWorkloadCLient
-	statefulsetGetter StatefulSetGetter
+	logger  lager.Logger
+	client  client.Client
+	desirer LRPDesirer
+	updater LRPUpdater
 }
 
 func (r *LRP) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
@@ -51,10 +48,12 @@ func (r *LRP) Reconcile(ctx context.Context, request reconcile.Request) (reconci
 			"namespace": request.NamespacedName.Namespace,
 		})
 
-	lrp, err := r.lrpsCrClient.GetLRP(ctx, request.Namespace, request.Name)
+	lrp := &eiriniv1.LRP{}
+
+	err := r.client.Get(ctx, request.NamespacedName, lrp)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			logger.Error("lrp-not-found", err)
+			logger.Debug("lrp-not-found")
 
 			return reconcile.Result{}, nil
 		}
@@ -78,9 +77,13 @@ func (r *LRP) do(ctx context.Context, lrp *eiriniv1.LRP) error {
 		return errors.Wrapf(err, "failed to determine statefulset name for lrp {%s}%s", lrp.Namespace, lrp.Name)
 	}
 
-	_, err = r.statefulsetGetter.Get(ctx, lrp.Namespace, stSetName)
+	stSet := &appsv1.StatefulSet{}
+
+	err = r.client.Get(ctx, client.ObjectKey{Namespace: lrp.Namespace, Name: stSetName}, stSet)
 	if apierrors.IsNotFound(err) {
-		return errors.Wrap(r.workloadClient.Desire(ctx, lrp), "failed to desire lrp")
+		desireErr := r.desirer.Desire(ctx, lrp)
+
+		return errors.Wrap(desireErr, "failed to desire lrp")
 	}
 
 	if err != nil {
@@ -89,20 +92,18 @@ func (r *LRP) do(ctx context.Context, lrp *eiriniv1.LRP) error {
 
 	var errs *multierror.Error
 
-	err = r.updateStatus(ctx, lrp)
+	err = r.updateLRPStatus(ctx, lrp, stSet)
 	errs = multierror.Append(errs, errors.Wrap(err, "failed to update lrp status"))
 
-	err = r.workloadClient.Update(ctx, lrp)
+	err = r.updater.Update(ctx, lrp, stSet)
 	errs = multierror.Append(errs, errors.Wrap(err, "failed to update app"))
 
 	return errs.ErrorOrNil()
 }
 
-func (r *LRP) updateStatus(ctx context.Context, lrp *eiriniv1.LRP) error {
-	lrpStatus, err := r.workloadClient.GetStatus(ctx, lrp)
-	if err != nil {
-		return err
-	}
+func (r *LRP) updateLRPStatus(ctx context.Context, lrp *eiriniv1.LRP, stSet *appsv1.StatefulSet) error {
+	originalLRP := lrp.DeepCopy()
+	lrp.Status.Replicas = stSet.Status.ReadyReplicas
 
-	return r.lrpsCrClient.UpdateLRPStatus(ctx, lrp, lrpStatus)
+	return r.client.Status().Patch(ctx, lrp, client.MergeFrom(originalLRP))
 }

@@ -13,15 +13,12 @@ import (
 	eiriniclient "code.cloudfoundry.org/eirini-controller/pkg/generated/clientset/versioned"
 	eirinischeme "code.cloudfoundry.org/eirini-controller/pkg/generated/clientset/versioned/scheme"
 	"github.com/hashicorp/go-multierror"
-
-	// nolint:golint,stylecheck,revive
 	. "github.com/onsi/ginkgo"
-
-	// nolint:golint,stylecheck,revive
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	kscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -77,6 +74,9 @@ func NewFixture(writer io.Writer) *Fixture {
 
 	lrpclientset, err := eiriniclient.NewForConfig(config)
 	Expect(err).NotTo(HaveOccurred(), "failed to create clientset")
+
+	err = kscheme.AddToScheme(eirinischeme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
 
 	runtimeClient, err := runtimeclient.New(config, runtimeclient.Options{Scheme: eirinischeme.Scheme})
 	Expect(err).NotTo(HaveOccurred(), "failed to create runtime client")

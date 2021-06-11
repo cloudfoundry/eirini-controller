@@ -1,15 +1,14 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 
 	eirinictrl "code.cloudfoundry.org/eirini-controller"
 	cmdcommons "code.cloudfoundry.org/eirini-controller/cmd"
 	"code.cloudfoundry.org/eirini-controller/k8s"
-	"code.cloudfoundry.org/eirini-controller/k8s/client"
-	"code.cloudfoundry.org/eirini-controller/k8s/crclient"
-	eirinievent "code.cloudfoundry.org/eirini-controller/k8s/informers/event"
+	eirinievent "code.cloudfoundry.org/eirini-controller/k8s/event"
 	"code.cloudfoundry.org/eirini-controller/k8s/jobs"
 	"code.cloudfoundry.org/eirini-controller/k8s/pdb"
 	"code.cloudfoundry.org/eirini-controller/k8s/reconciler"
@@ -25,12 +24,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/clock"
-	"k8s.io/client-go/kubernetes"
 	kscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/clientcmd"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -56,11 +54,7 @@ func main() {
 	kubeConfig, err := clientcmd.BuildConfigFromFlags("", cfg.ConfigPath)
 	cmdcommons.ExitfIfError(err, "Failed to build kubeconfig")
 
-	controllerClient, err := ctrlruntimeclient.New(kubeConfig, ctrlruntimeclient.Options{Scheme: eirinischeme.Scheme})
 	cmdcommons.ExitfIfError(err, "Failed to create k8s runtime client")
-
-	clientset, err := kubernetes.NewForConfig(kubeConfig)
-	cmdcommons.ExitfIfError(err, "Failed to create k8s clientset")
 
 	logger := lager.NewLogger("eirini-controller")
 	logger.RegisterSink(lager.NewPrettySink(os.Stdout, lager.DEBUG))
@@ -86,11 +80,11 @@ func main() {
 	mgr, err := manager.New(kubeConfig, managerOptions)
 	cmdcommons.ExitfIfError(err, "Failed to create k8s controller runtime manager")
 
-	lrpReconciler, err := createLRPReconciler(logger, controllerClient, clientset, cfg, mgr.GetScheme())
+	lrpReconciler, err := createLRPReconciler(logger, mgr.GetClient(), cfg, mgr.GetScheme())
 	cmdcommons.ExitfIfError(err, "Failed to create LRP reconciler")
 
-	taskReconciler := createTaskReconciler(logger, controllerClient, clientset, cfg, mgr.GetScheme())
-	podCrashReconciler := createPodCrashReconciler(logger, cfg.WorkloadsNamespace, controllerClient, clientset)
+	taskReconciler := createTaskReconciler(logger, mgr.GetClient(), cfg, mgr.GetScheme())
+	podCrashReconciler := createPodCrashReconciler(logger, cfg.WorkloadsNamespace, mgr.GetClient())
 
 	err = builder.
 		ControllerManagedBy(mgr).
@@ -106,6 +100,15 @@ func main() {
 		Complete(taskReconciler)
 	cmdcommons.ExitfIfError(err, "Failed to build Task reconciler")
 
+	err = mgr.GetFieldIndexer().IndexField(context.Background(), &corev1.Event{}, reconciler.IndexEventInvolvedObjectName, getEventInvolvedObjectName())
+	cmdcommons.ExitfIfError(err, fmt.Sprintf("Failed to create index %q", reconciler.IndexEventInvolvedObjectName))
+
+	err = mgr.GetFieldIndexer().IndexField(context.Background(), &corev1.Event{}, reconciler.IndexEventInvolvedObjectKind, getEventInvolvedObjectKind())
+	cmdcommons.ExitfIfError(err, fmt.Sprintf("Failed to create index %q", reconciler.IndexEventInvolvedObjectKind))
+
+	err = mgr.GetFieldIndexer().IndexField(context.Background(), &corev1.Event{}, reconciler.IndexEventReason, getEventReason())
+	cmdcommons.ExitfIfError(err, fmt.Sprintf("Failed to create index %q", reconciler.IndexEventReason))
+
 	predicates := []predicate.Predicate{reconciler.NewSourceTypeUpdatePredicate(stset.AppSourceType)}
 	err = builder.
 		ControllerManagedBy(mgr).
@@ -117,10 +120,35 @@ func main() {
 	cmdcommons.ExitfIfError(err, "Failed to start manager")
 }
 
+func getEventInvolvedObjectName() client.IndexerFunc {
+	return createEventOwnerIndexerFunc(func(event *corev1.Event) string {
+		return event.InvolvedObject.Name
+	})
+}
+
+func getEventInvolvedObjectKind() client.IndexerFunc {
+	return createEventOwnerIndexerFunc(func(event *corev1.Event) string {
+		return event.InvolvedObject.Kind
+	})
+}
+
+func getEventReason() client.IndexerFunc {
+	return createEventOwnerIndexerFunc(func(event *corev1.Event) string {
+		return event.Reason
+	})
+}
+
+func createEventOwnerIndexerFunc(getEventAttribute func(*corev1.Event) string) client.IndexerFunc {
+	return func(rawObj client.Object) []string {
+		event, _ := rawObj.(*corev1.Event)
+
+		return []string{getEventAttribute(event)}
+	}
+}
+
 func createLRPReconciler(
 	logger lager.Logger,
-	controllerClient ctrlruntimeclient.Client,
-	clientset kubernetes.Interface,
+	controllerClient client.Client,
 	cfg eirinictrl.ControllerConfig,
 	scheme *runtime.Scheme,
 ) (*reconciler.LRP, error) {
@@ -133,36 +161,27 @@ func createLRPReconciler(
 		k8s.CreateLivenessProbe,
 		k8s.CreateReadinessProbe,
 	)
-	workloadClient := k8s.NewLRPClient(
-		logger.Session("stateful-set-desirer"),
-		client.NewSecret(clientset),
-		client.NewStatefulSet(clientset, cfg.WorkloadsNamespace),
-		client.NewPod(clientset, cfg.WorkloadsNamespace),
-		pdb.NewUpdater(client.NewPodDisruptionBudget(clientset)),
-		client.NewEvent(clientset),
-		lrpToStatefulSetConverter,
-		eirinischeme.Scheme,
-	)
 
-	decoratedWorkloadClient, err := prometheus.NewLRPClientDecorator(logger.Session("prometheus-decorator"), workloadClient, metrics.Registry, clock.RealClock{})
+	pdbUpdater := pdb.NewUpdater(controllerClient)
+	desirer := stset.NewDesirer(logger, lrpToStatefulSetConverter, pdbUpdater, controllerClient, scheme)
+	updater := stset.NewUpdater(logger, controllerClient, pdbUpdater)
+
+	decoratedDesirer, err := prometheus.NewLRPDesirerDecorator(desirer, metrics.Registry, clock.RealClock{})
 	if err != nil {
 		return nil, err
 	}
 
-	lrpsCrClient := crclient.NewLRPs(controllerClient)
-
 	return reconciler.NewLRP(
 		logger,
-		lrpsCrClient,
-		decoratedWorkloadClient,
-		client.NewStatefulSet(clientset, cfg.WorkloadsNamespace),
+		controllerClient,
+		decoratedDesirer,
+		updater,
 	), nil
 }
 
 func createTaskReconciler(
 	logger lager.Logger,
-	controllerClient ctrlruntimeclient.Client,
-	clientset kubernetes.Interface,
+	controllerClient client.Client,
 	cfg eirinictrl.ControllerConfig,
 	scheme *runtime.Scheme,
 ) *reconciler.Task {
@@ -171,26 +190,15 @@ func createTaskReconciler(
 		cfg.RegistrySecretName,
 		cfg.UnsafeAllowAutomountServiceAccountToken,
 	)
-	workloadClient := k8s.NewTaskClient(
-		logger,
-		client.NewJob(clientset, cfg.WorkloadsNamespace),
-		client.NewSecret(clientset),
-		taskToJobConverter,
-		scheme,
-	)
-	tasksCrClient := crclient.NewTasks(controllerClient)
 
-	return reconciler.NewTask(logger, tasksCrClient, workloadClient, cfg.TaskTTLSeconds)
+	desirer := jobs.NewDesirer(logger, taskToJobConverter, controllerClient, scheme)
+	statusGetter := jobs.NewStatusGetter(logger)
+
+	return reconciler.NewTask(logger, controllerClient, desirer, statusGetter, cfg.TaskTTLSeconds)
 }
 
-func createPodCrashReconciler(
-	logger lager.Logger,
-	workloadsNamespace string,
-	controllerClient ctrlruntimeclient.Client,
-	clientset kubernetes.Interface) *reconciler.PodCrash {
-	eventsClient := client.NewEvent(clientset)
-	statefulSetClient := client.NewStatefulSet(clientset, workloadsNamespace)
-	crashEventGenerator := eirinievent.NewDefaultCrashEventGenerator(eventsClient)
+func createPodCrashReconciler(logger lager.Logger, workloadsNamespace string, controllerClient client.Client) *reconciler.PodCrash {
+	crashEventGenerator := eirinievent.NewDefaultCrashEventGenerator(controllerClient)
 
-	return reconciler.NewPodCrash(logger, controllerClient, crashEventGenerator, eventsClient, statefulSetClient)
+	return reconciler.NewPodCrash(logger, controllerClient, crashEventGenerator)
 }

@@ -2,7 +2,9 @@ package reconciler_test
 
 import (
 	"context"
+	"fmt"
 
+	"code.cloudfoundry.org/eirini-controller/k8s/k8sfakes"
 	"code.cloudfoundry.org/eirini-controller/k8s/reconciler"
 	"code.cloudfoundry.org/eirini-controller/k8s/reconciler/reconcilerfakes"
 	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
@@ -15,32 +17,43 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 var _ = Describe("reconciler.LRP", func() {
 	var (
-		logger            *lagertest.TestLogger
-		lrpsCrClient      *reconcilerfakes.FakeLRPsCrClient
-		workloadClient    *reconcilerfakes.FakeLRPWorkloadCLient
-		statefulsetGetter *reconcilerfakes.FakeStatefulSetGetter
-		lrpreconciler     *reconciler.LRP
-		resultErr         error
+		logger        *lagertest.TestLogger
+		client        *k8sfakes.FakeClient
+		statusWriter  *k8sfakes.FakeStatusWriter
+		desirer       *reconcilerfakes.FakeLRPDesirer
+		updater       *reconcilerfakes.FakeLRPUpdater
+		lrpreconciler *reconciler.LRP
+		resultErr     error
+
+		lrp           *eiriniv1.LRP
+		getLrpError   error
+		statefulSet   *appsv1.StatefulSet
+		getStSetError error
 	)
 
 	BeforeEach(func() {
-		lrpsCrClient = new(reconcilerfakes.FakeLRPsCrClient)
-		workloadClient = new(reconcilerfakes.FakeLRPWorkloadCLient)
-		statefulsetGetter = new(reconcilerfakes.FakeStatefulSetGetter)
-		logger = lagertest.NewTestLogger("lrp-reconciler")
-		lrpreconciler = reconciler.NewLRP(logger, lrpsCrClient, workloadClient, statefulsetGetter)
+		statusWriter = new(k8sfakes.FakeStatusWriter)
+		client = new(k8sfakes.FakeClient)
+		client.StatusReturns(statusWriter)
 
-		lrpsCrClient.GetLRPReturns(&eiriniv1.LRP{
+		desirer = new(reconcilerfakes.FakeLRPDesirer)
+		updater = new(reconcilerfakes.FakeLRPUpdater)
+		logger = lagertest.NewTestLogger("lrp-reconciler")
+		lrpreconciler = reconciler.NewLRP(logger, client, desirer, updater)
+
+		lrp = &eiriniv1.LRP{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "some-lrp",
 				Namespace: "some-ns",
 			},
 			Spec: eiriniv1.LRPSpec{
+
 				GUID:        "the-lrp-guid",
 				Version:     "the-lrp-version",
 				Command:     []string{"ls", "-la"},
@@ -98,9 +111,45 @@ var _ = Describe("reconciler.LRP", func() {
 					"user-annotaions.io": "yes",
 				},
 			},
-		}, nil)
+		}
 
-		statefulsetGetter.GetReturns(nil, apierrors.NewNotFound(schema.GroupResource{}, "foo"))
+		getLrpError = nil
+		getStSetError = apierrors.NewNotFound(schema.GroupResource{}, "not found")
+		client.GetStub = func(_ context.Context, _ types.NamespacedName, object k8sclient.Object) error {
+			lrpPtr, ok := object.(*eiriniv1.LRP)
+			if ok {
+				if getLrpError != nil {
+					return getLrpError
+				}
+
+				if lrp == nil {
+					return apierrors.NewNotFound(schema.GroupResource{}, "")
+				}
+
+				lrp.DeepCopyInto(lrpPtr)
+
+				return nil
+			}
+
+			stSetPtr, ok := object.(*appsv1.StatefulSet)
+			if ok {
+				if getStSetError != nil {
+					return getStSetError
+				}
+
+				if statefulSet == nil {
+					return apierrors.NewNotFound(schema.GroupResource{}, "")
+				}
+
+				statefulSet.DeepCopyInto(stSetPtr)
+
+				return nil
+			}
+
+			Fail(fmt.Sprintf("Unexpected object: %v", object))
+
+			return nil
+		}
 	})
 
 	JustBeforeEach(func() {
@@ -115,32 +164,32 @@ var _ = Describe("reconciler.LRP", func() {
 	It("creates a statefulset for each CRD", func() {
 		Expect(resultErr).NotTo(HaveOccurred())
 
-		Expect(workloadClient.UpdateCallCount()).To(Equal(0))
-		Expect(workloadClient.DesireCallCount()).To(Equal(1))
+		Expect(updater.UpdateCallCount()).To(Equal(0))
+		Expect(desirer.DesireCallCount()).To(Equal(1))
 
-		_, lrp := workloadClient.DesireArgsForCall(0)
-		Expect(lrp.Namespace).To(Equal("some-ns"))
-		Expect(lrp.Spec.GUID).To(Equal("the-lrp-guid"))
-		Expect(lrp.Spec.Version).To(Equal("the-lrp-version"))
-		Expect(lrp.Spec.Command).To(ConsistOf("ls", "-la"))
-		Expect(lrp.Spec.Instances).To(Equal(10))
-		Expect(lrp.Spec.PrivateRegistry).To(BeNil())
-		Expect(lrp.Spec.ProcessType).To(Equal("web"))
-		Expect(lrp.Spec.AppName).To(Equal("the-app"))
-		Expect(lrp.Spec.AppGUID).To(Equal("the-app-guid"))
-		Expect(lrp.Spec.OrgName).To(Equal("the-org"))
-		Expect(lrp.Spec.OrgGUID).To(Equal("the-org-guid"))
-		Expect(lrp.Spec.SpaceName).To(Equal("the-space"))
-		Expect(lrp.Spec.SpaceGUID).To(Equal("the-space-guid"))
-		Expect(lrp.Spec.Image).To(Equal("eirini/dorini"))
-		Expect(lrp.Spec.Env).To(Equal(map[string]string{
+		_, actualLRP := desirer.DesireArgsForCall(0)
+		Expect(actualLRP.Namespace).To(Equal("some-ns"))
+		Expect(actualLRP.Spec.GUID).To(Equal("the-lrp-guid"))
+		Expect(actualLRP.Spec.Version).To(Equal("the-lrp-version"))
+		Expect(actualLRP.Spec.Command).To(ConsistOf("ls", "-la"))
+		Expect(actualLRP.Spec.Instances).To(Equal(10))
+		Expect(actualLRP.Spec.PrivateRegistry).To(BeNil())
+		Expect(actualLRP.Spec.ProcessType).To(Equal("web"))
+		Expect(actualLRP.Spec.AppName).To(Equal("the-app"))
+		Expect(actualLRP.Spec.AppGUID).To(Equal("the-app-guid"))
+		Expect(actualLRP.Spec.OrgName).To(Equal("the-org"))
+		Expect(actualLRP.Spec.OrgGUID).To(Equal("the-org-guid"))
+		Expect(actualLRP.Spec.SpaceName).To(Equal("the-space"))
+		Expect(actualLRP.Spec.SpaceGUID).To(Equal("the-space-guid"))
+		Expect(actualLRP.Spec.Image).To(Equal("eirini/dorini"))
+		Expect(actualLRP.Spec.Env).To(Equal(map[string]string{
 			"FOO": "BAR",
 		}))
-		Expect(lrp.Spec.Ports).To(Equal([]int32{8080, 9090}))
-		Expect(lrp.Spec.MemoryMB).To(Equal(int64(1024)))
-		Expect(lrp.Spec.DiskMB).To(Equal(int64(512)))
-		Expect(lrp.Spec.CPUWeight).To(Equal(uint8(128)))
-		Expect(lrp.Spec.Sidecars).To(Equal([]eiriniv1.Sidecar{
+		Expect(actualLRP.Spec.Ports).To(Equal([]int32{8080, 9090}))
+		Expect(actualLRP.Spec.MemoryMB).To(Equal(int64(1024)))
+		Expect(actualLRP.Spec.DiskMB).To(Equal(int64(512)))
+		Expect(actualLRP.Spec.CPUWeight).To(Equal(uint8(128)))
+		Expect(actualLRP.Spec.Sidecars).To(Equal([]eiriniv1.Sidecar{
 			{
 				Name:     "hello-sidecar",
 				Command:  []string{"sh", "-c", "echo hello"},
@@ -158,7 +207,7 @@ var _ = Describe("reconciler.LRP", func() {
 				},
 			},
 		}))
-		Expect(lrp.Spec.VolumeMounts).To(Equal([]eiriniv1.VolumeMount{
+		Expect(actualLRP.Spec.VolumeMounts).To(Equal([]eiriniv1.VolumeMount{
 			{
 				MountPath: "/path/to/mount",
 				ClaimName: "claim-q1",
@@ -168,55 +217,56 @@ var _ = Describe("reconciler.LRP", func() {
 				ClaimName: "claim-c2",
 			},
 		}))
-		Expect(lrp.Spec.Health).To(Equal(eiriniv1.Healthcheck{
+		Expect(actualLRP.Spec.Health).To(Equal(eiriniv1.Healthcheck{
 			Type:      "http",
 			Port:      9090,
 			Endpoint:  "/heath",
 			TimeoutMs: 80,
 		}))
-		Expect(lrp.Spec.UserDefinedAnnotations).To(Equal(map[string]string{
+		Expect(actualLRP.Spec.UserDefinedAnnotations).To(Equal(map[string]string{
 			"user-annotaions.io": "yes",
 		}))
 	})
 
 	It("does not update the LRP CR", func() {
-		Expect(lrpsCrClient.UpdateLRPStatusCallCount()).To(BeZero())
+		Expect(statusWriter.PatchCallCount()).To(BeZero())
+		Expect(statusWriter.UpdateCallCount()).To(BeZero())
 	})
 
 	When("the statefulset for the LRP already exists", func() {
 		BeforeEach(func() {
-			statefulsetGetter.GetReturns(&appsv1.StatefulSet{}, nil)
-
-			workloadClient.GetStatusReturns(eiriniv1.LRPStatus{
+			getStSetError = nil
+			statefulSet = &appsv1.StatefulSet{}
+			lrp.Status = eiriniv1.LRPStatus{
 				Replicas: 9,
-			}, nil)
+			}
 		})
 
 		It("updates the CR status accordingly", func() {
 			Expect(resultErr).NotTo(HaveOccurred())
 
-			Expect(lrpsCrClient.UpdateLRPStatusCallCount()).To(Equal(1))
-			_, actualLrp, actualLrpStatus := lrpsCrClient.UpdateLRPStatusArgsForCall(0)
+			Expect(statusWriter.PatchCallCount()).To(Equal(1))
+			_, actualObject, _, _ := statusWriter.PatchArgsForCall(0)
+			actualLrp, ok := actualObject.(*eiriniv1.LRP)
+			Expect(ok).To(BeTrue())
 			Expect(actualLrp.Name).To(Equal("some-lrp"))
-			Expect(actualLrpStatus.Replicas).To(Equal(int32(9)))
+			Expect(updater.UpdateCallCount()).To(Equal(1))
 		})
 
-		When("gettting the LRP status fails", func() {
+		When("the workload client fails to update the app", func() {
 			BeforeEach(func() {
-				workloadClient.GetStatusReturns(eiriniv1.LRPStatus{}, errors.New("boom"))
+				updater.UpdateReturns(errors.New("boom"))
 			})
 
-			It("does not update the statefulset status", func() {
+			It("returns an error", func() {
 				Expect(resultErr).To(MatchError(ContainSubstring("boom")))
-				Expect(workloadClient.UpdateCallCount()).To(Equal(1))
-				Expect(lrpsCrClient.UpdateLRPStatusCallCount()).To(BeZero())
 			})
 		})
 	})
 
 	When("private registry credentials are specified in the LRP CRD", func() {
 		BeforeEach(func() {
-			lrpsCrClient.GetLRPReturns(&eiriniv1.LRP{
+			lrp = &eiriniv1.LRP{
 				Spec: eiriniv1.LRPSpec{
 					Image: "private-registry.com:5000/repo/app-image:latest",
 					PrivateRegistry: &eiriniv1.PrivateRegistry{
@@ -224,12 +274,13 @@ var _ = Describe("reconciler.LRP", func() {
 						Password: "docker-password",
 					},
 				},
-			}, nil)
+			}
 		})
 
 		It("configures a private registry", func() {
-			_, lrp := workloadClient.DesireArgsForCall(0)
-			privateRegistry := lrp.Spec.PrivateRegistry
+			Expect(desirer.DesireCallCount()).To(Equal(1))
+			_, actualLRP := desirer.DesireArgsForCall(0)
+			privateRegistry := actualLRP.Spec.PrivateRegistry
 			Expect(privateRegistry).NotTo(BeNil())
 			Expect(privateRegistry.Username).To(Equal("docker-user"))
 			Expect(privateRegistry.Password).To(Equal("docker-password"))
@@ -238,7 +289,7 @@ var _ = Describe("reconciler.LRP", func() {
 
 	When("the LRP doesn't exist", func() {
 		BeforeEach(func() {
-			lrpsCrClient.GetLRPReturns(nil, apierrors.NewNotFound(schema.GroupResource{}, "my-lrp"))
+			lrp = nil
 		})
 
 		It("does not return an error", func() {
@@ -248,7 +299,7 @@ var _ = Describe("reconciler.LRP", func() {
 
 	When("the controller client fails to get the CRD", func() {
 		BeforeEach(func() {
-			lrpsCrClient.GetLRPReturns(nil, errors.New("boom"))
+			getLrpError = errors.New("boom")
 		})
 
 		It("returns an error", func() {
@@ -258,7 +309,7 @@ var _ = Describe("reconciler.LRP", func() {
 
 	When("the getting the statefulset fails", func() {
 		BeforeEach(func() {
-			statefulsetGetter.GetReturns(nil, errors.New("boom"))
+			getStSetError = errors.New("boom")
 		})
 
 		It("returns an error", func() {
@@ -268,22 +319,11 @@ var _ = Describe("reconciler.LRP", func() {
 
 	When("the workload client fails to desire the app", func() {
 		BeforeEach(func() {
-			workloadClient.DesireReturns(errors.New("boom"))
+			desirer.DesireReturns(errors.New("boom"))
 		})
 
 		It("returns an error", func() {
 			Expect(resultErr).To(MatchError("failed to desire lrp: boom"))
-		})
-	})
-
-	When("the workload client fails to update the app", func() {
-		BeforeEach(func() {
-			statefulsetGetter.GetReturns(&appsv1.StatefulSet{}, nil)
-			workloadClient.UpdateReturns(errors.New("boom"))
-		})
-
-		It("returns an error", func() {
-			Expect(resultErr).To(MatchError(ContainSubstring("boom")))
 		})
 	})
 })
