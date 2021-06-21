@@ -34,5 +34,5 @@ resource_validator:
   certs_secret_name: eirini-resource-validator-certs
 
 images:
-    eirini_controller: eirini/eirini-controller@sha256:aa6cfdd9a08118c8d30cb07e8f990b54607843219ed1108e1345d7327d061121
-    resource_validator: eirini/resource-validator@sha256:62d8a72fb3a20d513440332a839cd8c0427b09adf1bc9b683750984d372d4b48
+    eirini_controller: eirini/eirini-controller
+    resource_validator: eirini/resource-validator

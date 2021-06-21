@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
-SCRIPT_DIR="$ROOT_DIR/scripts"
+SCRIPT_DIR="$ROOT_DIR/deployment/scripts"
 
 export KUBECONFIG
 KUBECONFIG=${KUBECONFIG:-$HOME/.kube/config}
@@ -21,6 +21,7 @@ source "$SCRIPT_DIR/helpers/print.sh"
 
 main() {
   print_disclaimer
+  "$ROOT_DIR"/deployment/scripts/build.sh
   generate_secrets
   install_prometheus
   install_eirini_controller "$@"
@@ -45,7 +46,7 @@ install_eirini_controller() {
   helm upgrade eirini-controller \
     --install "$ROOT_DIR/deployment/helm" \
     --namespace "$SYSTEM_NAMESPACE" \
-    --values "$SCRIPT_DIR/assets/value-overrides.yml" \
+    --values "$SCRIPT_DIR/assets/value-overrides.yaml" \
     --set "resource_validator_ca_bundle=$resource_validator_ca_bundle" \
     --wait \
     "$@"

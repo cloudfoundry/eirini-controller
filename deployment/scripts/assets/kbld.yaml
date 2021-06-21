@@ -1,0 +1,26 @@
+---
+apiVersion: kbld.k14s.io/v1alpha1
+kind: Config
+searchRules:
+- keyMatcher:
+    path: [images, eirini_controller]
+- keyMatcher:
+    path: [images, resource_validator]
+sources:
+- image: eirini/eirini-controller
+  path: .
+  docker:
+    build:
+      file: docker/eirini-controller/Dockerfile
+      rawOptions: ["--build-arg", "GIT_SHA=eirini-controller-dirty", "--tag", "eirini-controller"]
+      buildkit: true
+- image: eirini/resource-validator
+  path: .
+  docker:
+    build:
+      file: docker/resource-validator/Dockerfile
+      rawOptions: ["--build-arg", "GIT_SHA=resource-validator-dirty", "--tag", "resource-validator"]
+      buildkit: true
+destinations:
+- image: eirini/eirini-controller
+- image: eirini/resource-validator

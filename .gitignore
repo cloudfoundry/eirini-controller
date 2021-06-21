@@ -1,3 +1,2 @@
-cmd/opi/opi
 telepresence.log
-scripts/values
+deployment/helm/values.yaml
