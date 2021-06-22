@@ -14,7 +14,11 @@ main() {
 }
 
 build_eirini_controller() {
-  kbld -f "$SCRIPT_DIR"/assets/kbld.yaml -f "$DEPLOYMENT_DIR"/helm/values-template.yaml >"$DEPLOYMENT_DIR"/helm/values.yaml
+  pushd "$ROOT_DIR"
+  {
+    kbld -f "$SCRIPT_DIR"/assets/kbld.yaml -f "$DEPLOYMENT_DIR"/helm/values-template.yaml >"$DEPLOYMENT_DIR"/helm/values.yaml
+  }
+  popd
 }
 
 main "$@"

@@ -12,7 +12,7 @@ warning=$(
   cat <<EOF
 ** WARNING **
 
-This an example script used to manage a standalone Eirini deployment.
+This an example script used to manage a standalone Eirini-Controller deployment.
 It is used internally for testing, but is not supported for external use.
 
 EOF
