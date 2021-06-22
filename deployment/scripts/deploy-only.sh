@@ -35,7 +35,7 @@ install_prometheus() {
   helm repo update
   helm upgrade prometheus \
     --install prometheus-community/prometheus \
-    --namespace "$SYSTEM_NAMESPACE" \
+    --namespace "eirini-core" \
     --wait
 }
 
