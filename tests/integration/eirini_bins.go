@@ -159,7 +159,7 @@ func (b *Binary) buildIfNecessary() {
 func (b *Binary) build() {
 	compiledPath, err := gexec.Build(b.PackagePath)
 	Expect(err).NotTo(HaveOccurred())
-	Expect(os.MkdirAll(filepath.Dir(b.BinPath), 0o755)).To(Succeed())
+	Expect(os.MkdirAll(filepath.Dir(b.BinPath), 0o755)).To(Succeed()) // nolint:gomnd
 
 	Expect(os.Link(compiledPath, b.BinPath)).To(Succeed())
 }
