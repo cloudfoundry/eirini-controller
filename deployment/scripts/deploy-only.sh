@@ -17,6 +17,8 @@ fi
 
 readonly SYSTEM_NAMESPACE=eirini-controller
 
+readonly HELM_VALUES=${HELM_VALUES:-"$ROOT_DIR/deployment/helm/values.yaml"}
+
 source "$SCRIPT_DIR/helpers/print.sh"
 
 main() {
@@ -45,6 +47,7 @@ install_eirini_controller() {
   helm upgrade eirini-controller \
     --install "$ROOT_DIR/deployment/helm" \
     --namespace "$SYSTEM_NAMESPACE" \
+    --values "$HELM_VALUES" \
     --values "$SCRIPT_DIR/assets/value-overrides.yaml" \
     --set "resource_validator_ca_bundle=$resource_validator_ca_bundle" \
     --wait \
