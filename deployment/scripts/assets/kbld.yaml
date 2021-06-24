@@ -6,6 +6,8 @@ searchRules:
     path: [images, eirini_controller]
 - keyMatcher:
     path: [images, resource_validator]
+- keyMatcher:
+    path: [images, instance_index_env_injector]
 sources:
 - image: eirini/eirini-controller
   path: .
@@ -21,6 +23,14 @@ sources:
       file: docker/resource-validator/Dockerfile
       rawOptions: ["--build-arg", "GIT_SHA=resource-validator-dirty", "--tag", "resource-validator"]
       buildkit: true
+- image: eirini/instance-index-env-injector
+  path: .
+  docker:
+    build:
+      file: docker/instance-index-env-injector/Dockerfile
+      rawOptions: ["--build-arg", "GIT_SHA=instance-index-env-injector-dirty", "--tag", "instance-index-env-injector"]
+      buildkit: true
 destinations:
 - image: eirini/eirini-controller
 - image: eirini/resource-validator
+- image: eirini/instance-index-env-injector
