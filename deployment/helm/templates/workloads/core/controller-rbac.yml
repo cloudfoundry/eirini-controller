@@ -32,6 +32,8 @@ rules:
   - jobs
   verbs:
   - create
+  - delete
+  - deletecollection
 - apiGroups:
   - policy
   resources:

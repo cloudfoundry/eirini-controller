@@ -133,7 +133,6 @@ rules:
   - get
   - watch
   - list
-  - delete
 - apiGroups:
   - ""
   resources:
