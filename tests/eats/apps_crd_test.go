@@ -139,10 +139,10 @@ var _ = Describe("Apps CRDs [needs-logs-for: eirini-controller]", func() {
 			Eventually(tests.RequestServiceFn(fixture.Namespace, appServiceName, 8080, "/")).Should(ContainSubstring("Hi, I'm not Dora!"))
 		})
 
-		It("updates the CRD status", func() {
+		FIt("updates the CRD status", func() {
 			Eventually(func() int32 {
 				return getLRP().Status.Replicas
-			}).Should(Equal(int32(1)))
+			}, 3600).Should(Equal(int32(1)))
 		})
 
 		Describe("Prometheus metrics", func() {
