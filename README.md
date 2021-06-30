@@ -1,5 +1,3 @@
-# **This is a copy of the Eirini README, should be updated with with the eirini controller is all about**
-
 <h1 align="center">
   <img src="logo.jpg" alt="Eirini">
 </h1>
@@ -7,63 +5,77 @@
 <!-- A spacer -->
 <div>&nbsp;</div>
 
-[![Build Status](https://travis-ci.org/cloudfoundry-incubator/eirini.svg?branch=master)](https://travis-ci.org/cloudfoundry-incubator/eirini)
-[![Maintainability](https://api.codeclimate.com/v1/badges/e624538795c9e66d8667/maintainability)](https://codeclimate.com/github/cloudfoundry-incubator/eirini/maintainability)
-[![Test Coverage](https://api.codeclimate.com/v1/badges/e624538795c9e66d8667/test_coverage)](https://codeclimate.com/github/cloudfoundry-incubator/eirini/test_coverage)
-[![Go Report Card](https://goreportcard.com/badge/github.com/cloudfoundry-incubator/eirini)](https://goreportcard.com/report/github.com/cloudfoundry-incubator/eirini)
-[![Slack Status](https://slack.cloudfoundry.org/badge.svg)](https://slack.cloudfoundry.org)
+## What is Eirini Controller?
 
-## What is Eirini?
+Eirini Controller is a Kubernetes controller that aims to enable Cloud Foundry
+to deploy applications as Pods on a Kubernetes cluster. It brings the CF model
+to Kubernetes by definig well known Diego abstractions such as Long Running
+Processes (LRPs) and Tasks as custom Kubernetes resources.
 
-_Eirini_ is a thin layer of abstraction on top of Kubernetes that allows Cloud
-Foundry to deploy applications as Pods on a Kubernetes cluster. Eirini uses the
-Diego abstractions of _Long Running Processes (LRPs)_ and _Tasks_ to capture Cloud
-Foundry's notion of long running processes and one-off tasks.
+## Installation
 
-Deployment instructions are available at:
-[cloudfoundry-incubator/eirini-release](https://github.com/cloudfoundry-incubator/eirini-release).
+### Prerequisites
 
-## Components
+- A Kubernetes cluster ([kind](https://kind.sigs.k8s.io/docs/user/quick-start/#installation) works fine)
+- [kubectl](https://kubernetes.io/docs/tasks/tools/)
+- [helm](https://helm.sh/docs/intro/install/)
+- The eirini-controller system and workloads namespaces need to be created upfront
 
-![Eirini Overview Diagram](docs/architecture/EiriniOverview.png)
+```
+kubectl create ns eirini-controller
+kubectl create ns cf-workloads
+```
 
----
+- Secrets containing certificates for the webhooks need to be created. We have
+  a script that does that for local dev and testing purposes
 
-Eirini is composed of:
+```
+curl https://raw.githubusercontent.com/cloudfoundry-incubator/eirini-controller/master/deployment/scripts/generate-secrets.sh | bash -s - "*.eirini-controller.svc"
+```
 
-- `api`: The main component, provides the REST API used by
-  the [Cloud Controller](https://github.com/cloudfoundry/cloud_controller_ng/).
-  It's responsible for starting LRPs and tasks.
+### Installing an eirini-controllers release
 
-- `event-reporter`: A Kubernetes reconciler that watches for LRP instance
-  crashes and reports them to the [Cloud
-  Controller](https://github.com/cloudfoundry/cloud_controller_ng/).
+```bash
+VERSION=x.y.z; \
+WEBHOOK_CA_BUNDLE="$(kubectl get secret -n eirini-controller eirini-instance-index-env-injector-certs -o jsonpath="{.data['tls\.ca']}")"; \
+RESOURCE_VALIDATOR_CA_BUNDLE="$(kubectl get secret -n eirini-controller eirini-resource-validator-certs -o jsonpath="{.data['tls\.ca']}")" \
+helm install eirini-controller https://github.com/cloudfoundry-incubator/eirini-controller/releases/download/v$VERSION/eirini-controller-$VERSION.tgz \
+  --namespace eirini-controller \
+  --set "webhook_ca_bundle=$WEBHOOK_CA_BUNDLE" \
+  --set "resource_validator_ca_bundle=$RESOURCE_VALIDATOR_CA_BUNDLE"
+```
 
-- `instance-index-env-injector`: A Kubernetes webhook that inserts the
-  [`CF_INSTANCE_INDEX`](https://docs.cloudfoundry.org/devguide/deploy-apps/environment-variable.html#CF-INSTANCE-INDEX)
-  environment variable into every LRP instance (pod).
+## Usage
 
-- `task-reporter`: A Kubernetes reconciler that reports the outcome of tasks to
-  the [Cloud Controller](https://github.com/cloudfoundry/cloud_controller_ng/)
-  and deletes the underlying Kubernetes Jobs after a configurable TTL has
-  elapsed.
+### Running an LRP
 
-- `eirini-controller`: A Kubernetes reconciler that acts on
-  create/delete/update operations on Eirini's own Custom Resouce Definitions
-  (CRDs). This is still experimental.
+```bash
+cat <<EOF | kubectl apply -f -
+apiVersion: eirini.cloudfoundry.org/v1
+kind: LRP
+metadata:
+  name: mylrp
+  namespace: cf-workloads
+spec:
+  GUID: $(uuidgen)
+  diskMB: 256
+  image: eirini/dorini
+EOF
 
-## CI Pipelines
+```
 
-We use Concourse. Our pipelines can be found
-[here](https://jetson.eirini.cf-app.com/).
+### Running a Task
 
-## Contributing
-
-Please read [CONTRIBUTING.md](.github/contributing.md) for details.
-
-## Have a question or feedback? Reach out to us!
-
-We can be found in our Slack channel
-[#eirini-dev](https://cloudfoundry.slack.com/archives/C8RU3BZ26) in the Cloud
-Foundry workspace. Please hit us up with any questions you may have or to share
-your experience with Eirini!
+```bash
+cat <<EOF | kubectl apply -f -
+apiVersion: eirini.cloudfoundry.org/v1
+kind: Task
+metadata:
+  name: mytask
+  namespace: cf-workloads
+spec:
+  GUID: $(uuidgen)
+  image: eirini/busybox
+  command: [/bin/sleep 10]
+EOF
+```
