@@ -76,6 +76,11 @@ A `statefulset` and a `pod` should appear. Eirini does not provide a network lay
 so if you want to access your LRP you have to do it from within the cluster or 
 use [telepresence](https://www.telepresence.io/).
 
+```
+POD_IP=$(kubectl get pod -n cf-workloads --selector=cloudfoundry.org/source_type=APP -o jsonpath="{.items[0].status.podIP}")
+telepresence --run curl http://$POD_IP:8080/ 2>/dev/null
+```
+
 ### Running a Task
 
 ```bash
