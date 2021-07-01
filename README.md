@@ -64,8 +64,17 @@ spec:
   diskMB: 256
   image: eirini/dorini
 EOF
+```
+
+You can see the resources created by eirini by running
 
 ```
+kubectl get all -n cf-workloads
+```
+
+A `statefulset` and a `pod` should appear. Eirini does not provide a network layer,
+so if you want to access your LRP you have to do it from within the cluster or 
+use [telepresence](https://www.telepresence.io/).
 
 ### Running a Task
 
@@ -79,6 +88,11 @@ metadata:
 spec:
   GUID: $(uuidgen)
   image: eirini/busybox
-  command: [/bin/sleep 10]
+  command: ["/bin/echo", "Hello!"]
 EOF
+```
+In order to see the greeting message, run the following command
+
+```
+kubectl logs -n cf-workloads --selector=cloudfoundry.org/source_type=TASK
 ```
