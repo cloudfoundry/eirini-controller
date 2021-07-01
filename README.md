@@ -35,6 +35,9 @@ curl https://raw.githubusercontent.com/cloudfoundry-incubator/eirini-controller/
 
 ### Installing an eirini-controllers release
 
+In ordrer to install eirini-controller to your k8s cluster, run the command below,
+replacing `x.y.z` with a [valid release version](https://github.com/cloudfoundry-incubator/eirini-controller/releases)
+
 ```bash
 VERSION=x.y.z; \
 WEBHOOK_CA_BUNDLE="$(kubectl get secret -n eirini-controller eirini-instance-index-env-injector-certs -o jsonpath="{.data['tls\.ca']}")"; \
