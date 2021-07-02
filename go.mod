@@ -3,7 +3,7 @@ module code.cloudfoundry.org/eirini-controller
 go 1.16
 
 require (
-	cloud.google.com/go v0.84.0 // indirect
+	cloud.google.com/go v0.86.0 // indirect
 	code.cloudfoundry.org/bbs v0.0.0-20210615140220-2942e7d25726 // indirect
 	code.cloudfoundry.org/cfhttp/v2 v2.0.0
 	code.cloudfoundry.org/clock v1.0.0 // indirect
@@ -44,12 +44,9 @@ require (
 	github.com/tedsuo/ifrit v0.0.0-20191009134036-9a97d0632f00 // indirect
 	golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e // indirect
 	golang.org/x/net v0.0.0-20210614182718-04defd469f4e // indirect
-	golang.org/x/oauth2 v0.0.0-20210622215436-a8dc77f794b6 // indirect
-	golang.org/x/sys v0.0.0-20210616094352-59db8d763f22 // indirect
+	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c // indirect
 	golang.org/x/term v0.0.0-20210615171337-6886f2dfbf5b // indirect
-	golang.org/x/tools v0.1.4 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.2.0
-	google.golang.org/protobuf v1.27.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.21.2
 	k8s.io/apimachinery v0.21.2
@@ -57,7 +54,8 @@ require (
 	k8s.io/code-generator v0.21.2
 	k8s.io/klog/v2 v2.9.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20210527164424-3c818078ee3d // indirect
+	k8s.io/utils v0.0.0-20210629042839-4a2b36d8d73f // indirect
 	sigs.k8s.io/controller-runtime v0.9.2
 	sigs.k8s.io/controller-tools v0.6.0
-	sigs.k8s.io/structured-merge-diff/v4 v4.1.1 // indirect
+	sigs.k8s.io/structured-merge-diff/v4 v4.1.2 // indirect
 )
