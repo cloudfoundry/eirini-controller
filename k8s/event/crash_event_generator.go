@@ -7,7 +7,6 @@ import (
 	"code.cloudfoundry.org/eirini-controller/k8s/stset"
 	"code.cloudfoundry.org/eirini-controller/util"
 	"code.cloudfoundry.org/lager"
-	"code.cloudfoundry.org/runtimeschema/cc_messages"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -61,11 +60,11 @@ func (g DefaultCrashEventGenerator) Generate(ctx context.Context, pod *corev1.Po
 	}
 
 	if appStatus.LastTerminationState.Terminated != nil {
-		exitStatus := int(appStatus.LastTerminationState.Terminated.ExitCode)
-		exitDescription := appStatus.LastTerminationState.Terminated.Reason
+		reason := appStatus.LastTerminationState.Terminated.Reason
+		exitCode := int(appStatus.LastTerminationState.Terminated.ExitCode)
 		crashTimestamp := appStatus.LastTerminationState.Terminated.FinishedAt.Unix()
 
-		return generateReport(pod, appStatus.LastTerminationState.Terminated.Reason, exitStatus, exitDescription, crashTimestamp, calculateCrashCount(appStatus))
+		return generateReport(pod, reason, exitCode, crashTimestamp, calculateCrashCount(appStatus))
 	}
 
 	logger.Debug("skipping-pod-healthy")
@@ -89,7 +88,7 @@ func (g DefaultCrashEventGenerator) generateReportForTerminatedPod(ctx context.C
 
 	terminated := status.State.Terminated
 
-	return generateReport(pod, terminated.Reason, int(terminated.ExitCode), terminated.Reason, terminated.FinishedAt.Unix(), calculateCrashCount(status))
+	return generateReport(pod, terminated.Reason, int(terminated.ExitCode), terminated.FinishedAt.Unix(), calculateCrashCount(status))
 }
 
 func (g DefaultCrashEventGenerator) getByPod(ctx context.Context, pod corev1.Pod) ([]corev1.Event, error) {
@@ -112,24 +111,20 @@ func (g DefaultCrashEventGenerator) getByPod(ctx context.Context, pod corev1.Pod
 func generateReport(
 	pod *corev1.Pod,
 	reason string,
-	exitStatus int,
-	exitDescription string,
+	exitCode int,
 	crashTimestamp int64,
 	restartCount int,
 ) *reconciler.CrashEvent {
 	index, _ := util.ParseAppIndex(pod.Name)
 
 	return &reconciler.CrashEvent{
-		ProcessGUID: pod.Annotations[stset.AnnotationProcessGUID],
-		AppCrashedRequest: cc_messages.AppCrashedRequest{
-			Reason:          reason,
-			Instance:        pod.Name,
-			Index:           index,
-			ExitStatus:      exitStatus,
-			ExitDescription: exitDescription,
-			CrashTimestamp:  crashTimestamp,
-			CrashCount:      restartCount,
-		},
+		ProcessGUID:    pod.Annotations[stset.AnnotationProcessGUID],
+		Reason:         reason,
+		Instance:       pod.Name,
+		Index:          index,
+		ExitCode:       exitCode,
+		CrashTimestamp: crashTimestamp,
+		CrashCount:     restartCount,
 	}
 }
 

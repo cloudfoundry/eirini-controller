@@ -11,7 +11,6 @@ import (
 	"code.cloudfoundry.org/eirini-controller/k8s/reconciler"
 	"code.cloudfoundry.org/eirini-controller/k8s/stset"
 	"code.cloudfoundry.org/lager/lagertest"
-	"code.cloudfoundry.org/runtimeschema/cc_messages"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
@@ -44,16 +43,13 @@ var _ = Describe("CrashEventGenerator", func() {
 		It("should generate a crashed report", func() {
 			report := generator.Generate(ctx, pod, logger)
 			Expect(report).To(PointTo(Equal(reconciler.CrashEvent{
-				ProcessGUID: "test-pod-anno",
-				AppCrashedRequest: cc_messages.AppCrashedRequest{
-					Reason:          "better luck next time",
-					Instance:        "test-pod-0",
-					Index:           0,
-					ExitStatus:      0,
-					ExitDescription: "better luck next time",
-					CrashCount:      9,
-					CrashTimestamp:  crashTime.Time.Unix(),
-				},
+				ProcessGUID:    "test-pod-anno",
+				Reason:         "better luck next time",
+				Instance:       "test-pod-0",
+				Index:          0,
+				ExitCode:       0,
+				CrashCount:     9,
+				CrashTimestamp: crashTime.Time.Unix(),
 			})))
 		})
 
@@ -146,16 +142,13 @@ var _ = Describe("CrashEventGenerator", func() {
 			It("sends a crash report", func() {
 				report := generator.Generate(ctx, pod, logger)
 				Expect(report).To(PointTo(Equal(reconciler.CrashEvent{
-					ProcessGUID: "test-pod-anno",
-					AppCrashedRequest: cc_messages.AppCrashedRequest{
-						Reason:          "better luck next time",
-						Instance:        "test-pod-0",
-						Index:           0,
-						ExitStatus:      0,
-						ExitDescription: "better luck next time",
-						CrashCount:      8,
-						CrashTimestamp:  crashTime.Time.Unix(),
-					},
+					ProcessGUID:    "test-pod-anno",
+					Reason:         "better luck next time",
+					Instance:       "test-pod-0",
+					Index:          0,
+					ExitCode:       0,
+					CrashCount:     8,
+					CrashTimestamp: crashTime.Time.Unix(),
 				})))
 			})
 		})
@@ -256,15 +249,12 @@ var _ = Describe("CrashEventGenerator", func() {
 		It("should return a crashed report", func() {
 			report := generator.Generate(ctx, pod, logger)
 			Expect(report).To(PointTo(Equal(reconciler.CrashEvent{
-				ProcessGUID: "test-pod-anno",
-				AppCrashedRequest: cc_messages.AppCrashedRequest{
-					Reason:          "better luck next time",
-					Instance:        "test-pod-0",
-					ExitDescription: "better luck next time",
-					ExitStatus:      1,
-					CrashCount:      2,
-					CrashTimestamp:  crashTime.Unix(),
-				},
+				ProcessGUID:    "test-pod-anno",
+				Reason:         "better luck next time",
+				Instance:       "test-pod-0",
+				ExitCode:       1,
+				CrashCount:     2,
+				CrashTimestamp: crashTime.Unix(),
 			})))
 		})
 	})

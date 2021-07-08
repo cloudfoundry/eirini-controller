@@ -11,7 +11,6 @@ import (
 	"code.cloudfoundry.org/eirini-controller/k8s/reconciler/reconcilerfakes"
 	"code.cloudfoundry.org/eirini-controller/k8s/stset"
 	"code.cloudfoundry.org/lager/lagertest"
-	"code.cloudfoundry.org/runtimeschema/cc_messages"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
@@ -148,15 +147,12 @@ var _ = Describe("K8s/Reconciler/AppCrash", func() {
 		BeforeEach(func() {
 			timestamp = time.Unix(time.Now().Unix(), 0)
 			crashEventGenerator.GenerateReturns(&reconciler.CrashEvent{
-				ProcessGUID: "process-guid",
-				AppCrashedRequest: cc_messages.AppCrashedRequest{
-					Instance:        "instance-name",
-					Index:           3,
-					Reason:          "Error",
-					ExitStatus:      6,
-					ExitDescription: "oops",
-					CrashTimestamp:  timestamp.Unix(),
-				},
+				ProcessGUID:    "process-guid",
+				Instance:       "instance-name",
+				Index:          3,
+				Reason:         "Error",
+				ExitCode:       6,
+				CrashTimestamp: timestamp.Unix(),
 			})
 		})
 
@@ -304,15 +300,12 @@ var _ = Describe("K8s/Reconciler/AppCrash", func() {
 			timestampSecond = timestampFirst.Add(10 * time.Second)
 
 			crashEventGenerator.GenerateReturns(&reconciler.CrashEvent{
-				ProcessGUID: "process-guid",
-				AppCrashedRequest: cc_messages.AppCrashedRequest{
-					Instance:        "instance-name",
-					Index:           3,
-					Reason:          "Error",
-					ExitStatus:      6,
-					ExitDescription: "oops",
-					CrashTimestamp:  timestampSecond.Unix(),
-				},
+				ProcessGUID:    "process-guid",
+				Instance:       "instance-name",
+				Index:          3,
+				Reason:         "Error",
+				ExitCode:       6,
+				CrashTimestamp: timestampSecond.Unix(),
 			})
 
 			eventTime = metav1.MicroTime{Time: timestampFirst.Add(time.Second)}

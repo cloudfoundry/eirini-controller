@@ -8,7 +8,6 @@ import (
 
 	"code.cloudfoundry.org/eirini-controller/k8s/stset"
 	"code.cloudfoundry.org/lager"
-	"code.cloudfoundry.org/runtimeschema/cc_messages"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -34,8 +33,13 @@ type CrashEventGenerator interface {
 }
 
 type CrashEvent struct {
-	ProcessGUID string
-	cc_messages.AppCrashedRequest
+	ProcessGUID    string
+	Reason         string
+	Instance       string
+	Index          int
+	ExitCode       int
+	CrashCount     int
+	CrashTimestamp int64
 }
 
 type PodCrash struct {
@@ -193,7 +197,7 @@ func (r PodCrash) createEvent(ctx context.Context, logger lager.Logger, ownerRef
 			FieldPath:  "spec.containers{opi}",
 		},
 		Reason:  failureReason(crashEvent),
-		Message: fmt.Sprintf("Container terminated with exit code: %d", crashEvent.ExitStatus),
+		Message: fmt.Sprintf("Container terminated with exit code: %d", crashEvent.ExitCode),
 		Source: corev1.EventSource{
 			Component: eiriniControllerSource,
 		},
