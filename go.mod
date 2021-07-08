@@ -4,7 +4,6 @@ go 1.16
 
 require (
 	cloud.google.com/go v0.86.0 // indirect
-	code.cloudfoundry.org/cfhttp/v2 v2.0.0
 	code.cloudfoundry.org/lager v2.0.0+incompatible
 	code.cloudfoundry.org/tlsconfig v0.0.0-20210615191307-5d92ef3894a7
 	github.com/Azure/go-autorest/autorest v0.11.19 // indirect

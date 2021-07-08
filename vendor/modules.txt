@@ -1,9 +1,6 @@
 # cloud.google.com/go v0.86.0
 ## explicit
 cloud.google.com/go/compute/metadata
-# code.cloudfoundry.org/cfhttp/v2 v2.0.0
-## explicit
-code.cloudfoundry.org/cfhttp/v2
 # code.cloudfoundry.org/lager v2.0.0+incompatible
 ## explicit
 code.cloudfoundry.org/lager

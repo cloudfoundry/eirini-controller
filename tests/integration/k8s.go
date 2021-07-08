@@ -6,12 +6,13 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
-	"code.cloudfoundry.org/cfhttp/v2"
 	eirinictrl "code.cloudfoundry.org/eirini-controller"
 	"code.cloudfoundry.org/eirini-controller/k8s/jobs"
 	"code.cloudfoundry.org/eirini-controller/k8s/stset"
@@ -107,14 +108,23 @@ func MakeTestHTTPClient(certsPath string) (*http.Client, error) {
 		return nil, err
 	}
 
-	tlsConfig := &tls.Config{
+	return newTlsClient(&tls.Config{
 		MinVersion:   tls.VersionTLS12,
 		RootCAs:      certPool,
 		Certificates: []tls.Certificate{clientCert},
-	}
-	httpClient := cfhttp.NewClient(cfhttp.WithTLSConfig(tlsConfig))
+	}), nil
+}
 
-	return httpClient, nil
+func newTlsClient(tlsConfig *tls.Config) *http.Client {
+	return &http.Client{
+		Transport: &http.Transport{
+			DialContext: (&net.Dialer{
+				Timeout: 5 * time.Second,
+			}).DialContext,
+			IdleConnTimeout: 90 * time.Second,
+			TLSClientConfig: tlsConfig,
+		},
+	}
 }
 
 func DefaultAPIConfig(namespace string, tlsPort int) *eirinictrl.APIConfig {
