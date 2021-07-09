@@ -127,35 +127,17 @@ func newTlsClient(tlsConfig *tls.Config) *http.Client {
 	}
 }
 
-func DefaultAPIConfig(namespace string, tlsPort int) *eirinictrl.APIConfig {
-	return &eirinictrl.APIConfig{
-		CommonConfig: eirinictrl.CommonConfig{
-			KubeConfig: eirinictrl.KubeConfig{
-				ConfigPath: tests.GetKubeconfig(),
-			},
-
-			ApplicationServiceAccount: tests.GetApplicationServiceAccount(),
-			RegistrySecretName:        "registry-secret",
-			WorkloadsNamespace:        namespace,
-		},
-		DefaultWorkloadsNamespace: namespace,
-		TLSPort:                   tlsPort,
-	}
-}
-
 func DefaultControllerConfig(namespace string) *eirinictrl.ControllerConfig {
 	return &eirinictrl.ControllerConfig{
-		CommonConfig: eirinictrl.CommonConfig{
-			KubeConfig: eirinictrl.KubeConfig{
-				ConfigPath: tests.GetKubeconfig(),
-			},
-			ApplicationServiceAccount: tests.GetApplicationServiceAccount(),
-			RegistrySecretName:        "registry-secret",
-			WorkloadsNamespace:        namespace,
+		KubeConfig: eirinictrl.KubeConfig{
+			ConfigPath: tests.GetKubeconfig(),
 		},
-		TaskTTLSeconds:          5,
-		LeaderElectionID:        fmt.Sprintf("test-eirini-%d", ginkgo.GinkgoParallelNode()),
-		LeaderElectionNamespace: namespace,
+		ApplicationServiceAccount: tests.GetApplicationServiceAccount(),
+		RegistrySecretName:        "registry-secret",
+		WorkloadsNamespace:        namespace,
+		TaskTTLSeconds:            5,
+		LeaderElectionID:          fmt.Sprintf("test-eirini-%d", ginkgo.GinkgoParallelNode()),
+		LeaderElectionNamespace:   namespace,
 	}
 }
 

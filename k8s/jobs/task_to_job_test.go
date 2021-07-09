@@ -42,9 +42,7 @@ var _ = Describe("TaskToJob", func() {
 		Expect(container.ImagePullPolicy).To(Equal(corev1.PullAlways))
 
 		Expect(container.Env).To(ContainElements(
-			corev1.EnvVar{Name: eirinictrl.EnvDownloadURL, Value: "example.com/download"},
-			corev1.EnvVar{Name: eirinictrl.EnvDropletUploadURL, Value: "example.com/upload"},
-			corev1.EnvVar{Name: eirinictrl.EnvAppID, Value: "env-app-id"},
+			corev1.EnvVar{Name: "my-env-var", Value: "env"},
 			corev1.EnvVar{Name: eirinictrl.EnvCFInstanceGUID, ValueFrom: expectedValFrom("metadata.uid")},
 			corev1.EnvVar{Name: eirinictrl.EnvCFInstanceInternalIP, ValueFrom: expectedValFrom("status.podIP")},
 			corev1.EnvVar{Name: eirinictrl.EnvCFInstanceIP, ValueFrom: expectedValFrom("status.hostIP")},
@@ -72,9 +70,7 @@ var _ = Describe("TaskToJob", func() {
 				OrgGUID:   "org-id",
 				GUID:      taskGUID,
 				Env: map[string]string{
-					eirinictrl.EnvDownloadURL:      "example.com/download",
-					eirinictrl.EnvDropletUploadURL: "example.com/upload",
-					eirinictrl.EnvAppID:            "env-app-id",
+					"my-env-var": "env",
 				},
 				MemoryMB:  1,
 				CPUWeight: 2,

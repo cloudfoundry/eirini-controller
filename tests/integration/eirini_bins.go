@@ -93,7 +93,6 @@ func (b *Binary) Run(config interface{}, envVars ...string) (*gexec.Session, str
 	}
 
 	env := []string{
-		fmt.Sprintf("%s=%s", eirinictrl.EnvCCCertDir, b.CertsPath),
 		fmt.Sprintf("%s=%s", eirinictrl.EnvServerCertDir, b.CertsPath),
 	}
 	env = append(env, envVars...)

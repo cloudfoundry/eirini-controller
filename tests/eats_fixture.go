@@ -3,10 +3,8 @@ package tests
 import (
 	"context"
 
-	eirinictrl "code.cloudfoundry.org/eirini-controller"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gopkg.in/yaml.v2"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/dynamic"
@@ -39,18 +37,6 @@ func (f *EATSFixture) TearDown() {
 	}
 
 	f.Fixture.TearDown()
-}
-
-func (f *EATSFixture) GetEiriniWorkloadsNamespace() string {
-	cm, err := f.Clientset.CoreV1().ConfigMaps(GetEiriniSystemNamespace()).Get(context.Background(), "api", metav1.GetOptions{})
-	Expect(err).NotTo(HaveOccurred())
-
-	apiYml := cm.Data["api.yml"]
-	config := eirinictrl.APIConfig{}
-
-	Expect(yaml.Unmarshal([]byte(apiYml), &config)).To(Succeed())
-
-	return config.DefaultWorkloadsNamespace
 }
 
 func (f *EATSFixture) GetNATSPassword() string {

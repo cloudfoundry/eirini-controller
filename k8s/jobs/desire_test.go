@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"fmt"
 
-	eirinictrl "code.cloudfoundry.org/eirini-controller"
 	"code.cloudfoundry.org/eirini-controller/k8s/jobs"
 	"code.cloudfoundry.org/eirini-controller/k8s/jobs/jobsfakes"
 	"code.cloudfoundry.org/eirini-controller/k8s/k8sfakes"
@@ -65,11 +64,6 @@ var _ = Describe("Desire", func() {
 				SpaceGUID: "space-id",
 				OrgGUID:   "org-id",
 				GUID:      taskGUID,
-				Env: map[string]string{
-					eirinictrl.EnvDownloadURL:      "example.com/download",
-					eirinictrl.EnvDropletUploadURL: "example.com/upload",
-					eirinictrl.EnvAppID:            "env-app-id",
-				},
 				MemoryMB:  1,
 				CPUWeight: 2,
 				DiskMB:    3,

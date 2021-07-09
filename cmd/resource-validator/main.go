@@ -40,7 +40,7 @@ func main() {
 
 	certDir := cmdcommons.GetEnvOrDefault(
 		eirinictrl.EnvResourceValidatorCertDir,
-		eirinictrl.ResourceValidatorCertDir,
+		eirinictrl.EiriniCertsDir,
 	)
 
 	mgr, err := manager.New(kubeConfig, manager.Options{
