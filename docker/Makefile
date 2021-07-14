@@ -1,4 +1,4 @@
-IMAGES = eirini-controller resource-validator instance-index-env-injector
+IMAGES = eirini-controller
 
 TAG ?= latest
 DOCKER_DIR := ${CURDIR}

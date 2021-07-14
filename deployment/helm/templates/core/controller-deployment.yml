@@ -28,6 +28,9 @@ spec:
         image: {{ .Values.images.eirini_controller }}
         args: [ "--config", "/etc/eirini/config/controller.yml" ]
         imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8443
+          name: https
         resources:
           requests:
             cpu: 15m
@@ -38,7 +41,12 @@ spec:
         volumeMounts:
         - name: config-map
           mountPath: /etc/eirini/config
+        - name: certs
+          mountPath: /etc/eirini/certs
       volumes:
         - name: config-map
           configMap:
             name: eirini-controller
+        - name: certs
+          secret:
+            secretName: {{ .Values.webhooks.certs_secret_name }}

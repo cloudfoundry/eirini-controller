@@ -14,9 +14,9 @@ webhooks:
   clientConfig:
     service:
       namespace: {{ .Release.Namespace }}
-      name: eirini-resource-validator
+      name: eirini-webhooks
       path: "/lrps"
-    caBundle: {{ .Values.resource_validator_ca_bundle }}
+    caBundle: {{ .Values.webhooks.ca_bundle }}
   admissionReviewVersions: ["v1beta1"]
   sideEffects: None
   timeoutSeconds: 10

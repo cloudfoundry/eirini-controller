@@ -38,3 +38,6 @@ data:
     # task_ttl_seconds is the number of seconds Eirini will wait before
     # deleting the Job associated to a completed Task.
     task_ttl_seconds: {{ .Values.controller.tasks.ttl_seconds }}
+
+    # webhook_port is the port at which webhooks will serve traffic
+    webhook_port: 8443
