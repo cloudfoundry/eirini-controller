@@ -19,7 +19,7 @@ ensure_kind_cluster() {
   local cluster_name
   cluster_name="$1"
   if ! kind get clusters | grep -q "$cluster_name"; then
-    current_cluster="$(kubectl config current-context)" || true
+    current_cluster="$(KUBECONFIG="$HOME/.kube/config" kubectl config current-context)" || true
     kindConfig=$(mktemp)
     cat <<EOF >>"$kindConfig"
 kind: Cluster
@@ -30,9 +30,11 @@ EOF
     flock -x "$clusterLock" kind create cluster --name "$cluster_name" --config "$kindConfig" --wait 5m
     rm -f "$kindConfig"
     if [[ -n "$current_cluster" ]]; then
-      kubectl config use-context "$current_cluster"
+      KUBECONFIG="$HOME/.kube/config" kind export kubeconfig --name "$cluster_name"
+      KUBECONFIG="$HOME/.kube/config" kubectl config use-context "$current_cluster"
     fi
   fi
+
   kind export kubeconfig --name "$cluster_name" --kubeconfig "$HOME/.kube/$cluster_name.yml"
 }
 
