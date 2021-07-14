@@ -30,13 +30,12 @@ workloads:
     namespaces: []
     create_namespaces: false
 
-resource_validator:
-  certs_secret_name: eirini-resource-validator-certs
+webhooks:
+  # the name of the secret containing the certificate of the controller webhooks
+  certs_secret_name: eirini-webhooks-certs
 
-instance_index_env_injector:
-  certs_secret_name: eirini-instance-index-env-injector-certs
+  # the CA of the webhooks certificate
+  #ca_bundle:
 
 images:
     eirini_controller: eirini/eirini-controller
-    resource_validator: eirini/resource-validator
-    instance_index_env_injector: eirini/instance-index-env-injector

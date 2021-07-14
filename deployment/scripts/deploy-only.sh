@@ -43,15 +43,13 @@ install_prometheus() {
 
 install_eirini_controller() {
   local resource_validator_ca_bundle env_injector_ca_bundle
-  resource_validator_ca_bundle="$(kubectl get secret -n $SYSTEM_NAMESPACE eirini-resource-validator-certs -o jsonpath="{.data['tls\.ca']}")"
-  env_injector_ca_bundle="$(kubectl get secret -n eirini-controller eirini-instance-index-env-injector-certs -o jsonpath="{.data['tls\.ca']}")"
+  webhook_ca_bundle="$(kubectl get secret -n $SYSTEM_NAMESPACE eirini-webhooks-certs -o jsonpath="{.data['tls\.ca']}")"
   helm upgrade eirini-controller \
     --install "$ROOT_DIR/deployment/helm" \
     --namespace "$SYSTEM_NAMESPACE" \
     --values "$HELM_VALUES" \
     --values "$SCRIPT_DIR/assets/value-overrides.yaml" \
-    --set "resource_validator_ca_bundle=$resource_validator_ca_bundle" \
-    --set "webhook_ca_bundle=$env_injector_ca_bundle" \
+    --set "webhooks.ca_bundle=$webhook_ca_bundle" \
     --wait \
     "$@"
 }

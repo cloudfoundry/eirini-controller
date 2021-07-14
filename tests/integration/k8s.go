@@ -135,6 +135,7 @@ func DefaultControllerConfig(namespace string) *eirinictrl.ControllerConfig {
 		ApplicationServiceAccount: tests.GetApplicationServiceAccount(),
 		RegistrySecretName:        "registry-secret",
 		WorkloadsNamespace:        namespace,
+		WebhookPort:               int32(8080 + ginkgo.GinkgoParallelNode()),
 		TaskTTLSeconds:            5,
 		LeaderElectionID:          fmt.Sprintf("test-eirini-%d", ginkgo.GinkgoParallelNode()),
 		LeaderElectionNamespace:   namespace,

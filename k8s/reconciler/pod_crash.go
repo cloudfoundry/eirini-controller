@@ -160,7 +160,7 @@ func (r PodCrash) setEvent(ctx context.Context, logger lager.Logger, kubeEvent *
 }
 
 func (r PodCrash) eventAlreadyEmitted(crashEvent *CrashEvent, pod *corev1.Pod) bool {
-	return strconv.FormatInt(crashEvent.CrashTimestamp, 10) == pod.Annotations[stset.AnnotationLastReportedLRPCrash] // nolint:gomnd
+	return strconv.FormatInt(crashEvent.CrashTimestamp, 10) == pod.Annotations[stset.AnnotationLastReportedLRPCrash]
 }
 
 func (r PodCrash) setCrashTimestampOnPod(ctx context.Context, logger lager.Logger, pod *corev1.Pod, crashEvent *CrashEvent) {
@@ -169,7 +169,7 @@ func (r PodCrash) setCrashTimestampOnPod(ctx context.Context, logger lager.Logge
 		newPod.Annotations = map[string]string{}
 	}
 
-	newPod.Annotations[stset.AnnotationLastReportedLRPCrash] = strconv.FormatInt(crashEvent.CrashTimestamp, 10) // nolint:gomnd
+	newPod.Annotations[stset.AnnotationLastReportedLRPCrash] = strconv.FormatInt(crashEvent.CrashTimestamp, 10)
 
 	if err := r.client.Patch(ctx, newPod, client.MergeFrom(pod)); err != nil {
 		logger.Error("failed-to-set-last-crash-time-on-pod", err)

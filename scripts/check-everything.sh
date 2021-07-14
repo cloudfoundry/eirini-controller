@@ -145,16 +145,14 @@ redeploy_prometheus() {
 redeploy_eirini_controller() {
   render_dir=$(mktemp -d)
   trap "rm -rf $render_dir" EXIT
-  env_injector_ca_bundle="$(kubectl get secret -n eirini-controller eirini-instance-index-env-injector-certs -o jsonpath="{.data['tls\.ca']}")"
-  ca_bundle="$(kubectl get secret -n eirini-controller eirini-resource-validator-certs -o jsonpath="{.data['tls\.ca']}")"
+  webhooks_ca_bundle="$(kubectl get secret -n eirini-controller eirini-webhooks-certs -o jsonpath="{.data['tls\.ca']}")"
   kbld -f "$EIRINI_CONTROLLER_DIR/scripts/kbld.yml" \
     -f "$EIRINI_CONTROLLER_DIR/deployment/helm/values-template.yaml" \
     >"$EIRINI_CONTROLLER_DIR/deployment/helm/values.yaml"
 
   "$EIRINI_CONTROLLER_DIR/deployment/scripts/render-templates.sh" eirini-controller "$render_dir" \
     --values "$EIRINI_CONTROLLER_DIR/deployment/scripts/assets/value-overrides.yaml" \
-    --set "webhook_ca_bundle=$env_injector_ca_bundle" \
-    --set "resource_validator_ca_bundle=$ca_bundle"
+    --set "webhooks.ca_bundle=$webhooks_ca_bundle"
   for img in $(grep -oh "kbld:.*" "$EIRINI_CONTROLLER_DIR/deployment/helm/values.yaml"); do
     kind load docker-image --name eats "$img"
   done

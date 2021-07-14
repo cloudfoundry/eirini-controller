@@ -27,24 +27,24 @@ func TestInstanceIndexInjector(t *testing.T) {
 var (
 	fixture        *tests.Fixture
 	eiriniBins     integration.EiriniBinaries
-	config         *eirinictrl.InstanceIndexEnvInjectorConfig
+	config         *eirinictrl.ControllerConfig
 	configFilePath string
 	hookSession    *gexec.Session
 	fingerprint    string
-	certDir        string
 )
 
 var _ = SynchronizedBeforeSuite(func() []byte {
 	fixture = tests.NewFixture(GinkgoWriter)
-
-	eiriniBins = integration.NewEiriniBinaries()
+	fixture.SetUp()
 
 	port := int32(tests.GetTelepresencePort())
 	telepresenceService := tests.GetTelepresenceServiceName()
 	telepresenceDomain := fmt.Sprintf("%s.default.svc", telepresenceService)
 	fingerprint = "instance-id-" + tests.GenerateGUID()[:8]
-	var caBundle []byte
-	certDir, caBundle = tests.GenerateKeyPairDir("tls", telepresenceDomain)
+
+	eiriniBins = integration.NewEiriniBinaries()
+	eiriniBins.EiriniController.Build()
+
 	sideEffects := arv1.SideEffectClassNone
 	scope := arv1.NamespacedScope
 
@@ -62,7 +62,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 							Name:      telepresenceService,
 							Port:      &port,
 						},
-						CABundle: caBundle,
+						CABundle: eiriniBins.CABundle,
 					},
 					SideEffects:             &sideEffects,
 					AdmissionReviewVersions: []string{"v1beta1"},
@@ -82,14 +82,10 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		}, metav1.CreateOptions{})
 	Expect(err).NotTo(HaveOccurred())
 
-	config = &eirinictrl.InstanceIndexEnvInjectorConfig{
-		Port: port,
-		KubeConfig: eirinictrl.KubeConfig{
-			ConfigPath: fixture.KubeConfigPath,
-		},
-	}
-	env := fmt.Sprintf("%s=%s", eirinictrl.EnvInstanceEnvInjectorCertDir, certDir)
-	hookSession, configFilePath = eiriniBins.InstanceIndexEnvInjector.Run(config, env)
+	config = integration.DefaultControllerConfig(fixture.Namespace)
+	config.WebhookPort = port
+
+	hookSession, configFilePath = eiriniBins.EiriniController.Run(config)
 
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -123,8 +119,6 @@ var _ = SynchronizedAfterSuite(func() {
 	}
 	err := fixture.Clientset.AdmissionregistrationV1().MutatingWebhookConfigurations().Delete(context.Background(), fingerprint+"-mutating-hook", metav1.DeleteOptions{})
 	Expect(err).NotTo(HaveOccurred())
-
-	Expect(os.RemoveAll(certDir)).To(Succeed())
 
 	eiriniBins.TearDown()
 	fixture.Destroy()

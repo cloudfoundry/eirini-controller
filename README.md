@@ -40,12 +40,10 @@ replacing `x.y.z` with a [valid release version](https://github.com/cloudfoundry
 
 ```bash
 VERSION=x.y.z; \
-WEBHOOK_CA_BUNDLE="$(kubectl get secret -n eirini-controller eirini-instance-index-env-injector-certs -o jsonpath="{.data['tls\.ca']}")"; \
-RESOURCE_VALIDATOR_CA_BUNDLE="$(kubectl get secret -n eirini-controller eirini-resource-validator-certs -o jsonpath="{.data['tls\.ca']}")" \
+WEBHOOK_CA_BUNDLE="$(kubectl get secret -n eirini-controller eirini-webhooks-certs -o jsonpath="{.data['tls\.ca']}")"; \
 helm install eirini-controller https://github.com/cloudfoundry-incubator/eirini-controller/releases/download/v$VERSION/eirini-controller-$VERSION.tgz \
   --namespace eirini-controller \
-  --set "webhook_ca_bundle=$WEBHOOK_CA_BUNDLE" \
-  --set "resource_validator_ca_bundle=$RESOURCE_VALIDATOR_CA_BUNDLE"
+  --set "webhooks.ca_bundle=$WEBHOOK_CA_BUNDLE"
 ```
 
 ## Usage
@@ -73,7 +71,7 @@ kubectl get all -n cf-workloads
 ```
 
 A `statefulset` and a `pod` should appear. Eirini does not provide a network layer,
-so if you want to access your LRP you have to do it from within the cluster or 
+so if you want to access your LRP you have to do it from within the cluster or
 use [telepresence](https://www.telepresence.io/).
 
 ```
@@ -96,6 +94,7 @@ spec:
   command: ["/bin/echo", "Hello!"]
 EOF
 ```
+
 In order to see the greeting message, run the following command
 
 ```

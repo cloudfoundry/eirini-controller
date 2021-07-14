@@ -4,9 +4,7 @@ import "errors"
 
 const (
 	// Environment Variable Names
-	EnvInstanceEnvInjectorCertDir = "INSTANCE_ENV_INJECTOR_CERTS_DIR"
-	EnvResourceValidatorCertDir   = "RESOURCE_VALIDATOR_CERTS_DIR"
-	EnvServerCertDir              = "SERVER_CERTS_DIR"
+	EnvEiriniCertsDir = "EIRINI_CERTS_DIR"
 
 	EnvPodName              = "POD_NAME"
 	EnvCFInstanceIP         = "CF_INSTANCE_IP"
@@ -40,18 +38,10 @@ type ControllerConfig struct {
 
 	LeaderElectionID        string
 	LeaderElectionNamespace string
+
+	WebhookPort int32 `yaml:"webhook_port"`
 }
 
 type KubeConfig struct {
 	ConfigPath string `yaml:"kube_config_path"`
-}
-
-type InstanceIndexEnvInjectorConfig struct {
-	Port       int32 `yaml:"service_port"`
-	KubeConfig `yaml:",inline"`
-}
-
-type ResourceValidatorConfig struct {
-	Port       int32 `yaml:"service_port"`
-	KubeConfig `yaml:",inline"`
 }

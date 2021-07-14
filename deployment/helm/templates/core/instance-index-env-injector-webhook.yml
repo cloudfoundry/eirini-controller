@@ -17,8 +17,8 @@ webhooks:
   clientConfig:
     service:
       namespace: {{ .Release.Namespace }}
-      name: eirini-instance-index-env-injector
-    caBundle: {{ .Values.webhook_ca_bundle }}
+      name: eirini-webhooks
+    caBundle: {{ .Values.webhooks.ca_bundle }}
   admissionReviewVersions: ["v1beta1"]
   sideEffects: None
   timeoutSeconds: 10

@@ -18,23 +18,23 @@ import (
 )
 
 type EiriniBinaries struct {
-	EiriniController         Binary `json:"eirini_controller"`
-	ResourceValidator        Binary `json:"resource_validator"`
-	InstanceIndexEnvInjector Binary `json:"instance_index_env_injector"`
-	ExternalBinsPath         bool
-	BinsPath                 string
-	CertsPath                string
+	EiriniController Binary `json:"eirini_controller"`
+	ExternalBinsPath bool
+	BinsPath         string
+	CertsPath        string
+	CABundle         []byte
 }
 
 func NewEiriniBinaries() EiriniBinaries {
 	bins := EiriniBinaries{}
 
-	bins.CertsPath, _ = tests.GenerateKeyPairDir("tls", "localhost")
+	telepresenceService := tests.GetTelepresenceServiceName()
+	telepresenceDomain := fmt.Sprintf("%s.default.svc", telepresenceService)
+
+	bins.CertsPath, bins.CABundle = tests.GenerateKeyPairDir("tls", telepresenceDomain)
 
 	bins.setBinsPath()
-	bins.EiriniController = NewBinary("code.cloudfoundry.org/eirini-controller/cmd/eirini-controller", bins.BinsPath, bins.CertsPath)
-	bins.ResourceValidator = NewBinary("code.cloudfoundry.org/eirini-controller/cmd/resource-validator", bins.BinsPath, bins.CertsPath)
-	bins.InstanceIndexEnvInjector = NewBinary("code.cloudfoundry.org/eirini-controller/cmd/instance-index-env-injector", bins.BinsPath, bins.CertsPath)
+	bins.EiriniController = NewBinary("code.cloudfoundry.org/eirini-controller/cmd", bins.BinsPath, bins.CertsPath)
 
 	return bins
 }
@@ -93,7 +93,7 @@ func (b *Binary) Run(config interface{}, envVars ...string) (*gexec.Session, str
 	}
 
 	env := []string{
-		fmt.Sprintf("%s=%s", eirinictrl.EnvServerCertDir, b.CertsPath),
+		fmt.Sprintf("%s=%s", eirinictrl.EnvEiriniCertsDir, b.CertsPath),
 	}
 	env = append(env, envVars...)
 
