@@ -5,7 +5,7 @@ go 1.16
 replace github.com/go-logr/logr v1.0.0 => github.com/go-logr/logr v0.4.0
 
 require (
-	cloud.google.com/go v0.88.0 // indirect
+	cloud.google.com/go v0.89.0 // indirect
 	code.cloudfoundry.org/lager v2.0.0+incompatible
 	code.cloudfoundry.org/tlsconfig v0.0.0-20210615191307-5d92ef3894a7
 	github.com/Azure/go-autorest/autorest v0.11.19 // indirect
@@ -26,22 +26,19 @@ require (
 	github.com/onsi/gomega v1.14.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.11.0
-	github.com/prometheus/common v0.29.0
+	github.com/prometheus/common v0.30.0
 	github.com/prometheus/procfs v0.7.1 // indirect
 	golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97 // indirect
-	golang.org/x/net v0.0.0-20210716203947-853a461950ff // indirect
-	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c // indirect
+	golang.org/x/net v0.0.0-20210726213435-c6fcb2dbf985 // indirect
 	golang.org/x/term v0.0.0-20210615171337-6886f2dfbf5b // indirect
 	gomodules.xyz/jsonpatch/v2 v2.2.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.21.3
-	k8s.io/apiextensions-apiserver v0.21.3 // indirect
 	k8s.io/apimachinery v0.21.3
 	k8s.io/client-go v0.21.3
 	k8s.io/code-generator v0.21.3
 	k8s.io/klog/v2 v2.10.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20210527164424-3c818078ee3d // indirect
-	k8s.io/utils v0.0.0-20210722164352-7f3ee0f31471 // indirect
-	sigs.k8s.io/controller-runtime v0.9.3
+	sigs.k8s.io/controller-runtime v0.9.5
 	sigs.k8s.io/controller-tools v0.6.0
 )
