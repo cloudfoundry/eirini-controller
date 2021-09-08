@@ -51,7 +51,7 @@ var _ = Describe("Desire", func() {
 			HaveKeyWithValue(stset.LabelAppGUID, "the-app-guid"),
 		))
 
-		Expect(statefulset.Spec.Replicas).To(Equal(int32ptr(lrp.Spec.Instances)))
+		Expect(statefulset.Spec.Replicas).To(Equal(int32ptr(lrp.Spec.Replicas)))
 		Expect(statefulset.Spec.Template.Spec.SecurityContext.RunAsNonRoot).To(PointTo(BeTrue()))
 		Expect(statefulset.Spec.Template.Spec.Containers[0].Command).To(Equal(lrp.Spec.Command))
 		Expect(statefulset.Spec.Template.Spec.Containers[0].Image).To(Equal(lrp.Spec.Image))
@@ -65,9 +65,9 @@ var _ = Describe("Desire", func() {
 			podNames = podNamesFromPods(listPods(lrp))
 
 			return podNames
-		}).Should(HaveLen(lrp.Spec.Instances))
+		}).Should(HaveLen(lrp.Spec.Replicas))
 
-		for i := 0; i < lrp.Spec.Instances; i++ {
+		for i := 0; i < lrp.Spec.Replicas; i++ {
 			podIndex := i
 			Expect(podNames[podIndex]).To(ContainSubstring("odin-space-foo"))
 
@@ -92,7 +92,7 @@ var _ = Describe("Desire", func() {
 
 	When("the lrp has 1 instance", func() {
 		BeforeEach(func() {
-			lrp.Spec.Instances = 1
+			lrp.Spec.Replicas = 1
 		})
 
 		It("should not create a pod disruption budget for the lrp", func() {
@@ -129,7 +129,7 @@ var _ = Describe("Desire", func() {
 
 	When("the app has more than one instances", func() {
 		BeforeEach(func() {
-			lrp.Spec.Instances = 2
+			lrp.Spec.Replicas = 2
 		})
 
 		It("should schedule app pods on different nodes", func() {
@@ -174,9 +174,9 @@ var _ = Describe("Desire", func() {
 		It("sets the ImagePullSecret correctly in the pod template", func() {
 			Eventually(func() []corev1.Pod {
 				return listPods(lrp)
-			}).Should(HaveLen(lrp.Spec.Instances))
+			}).Should(HaveLen(lrp.Spec.Replicas))
 
-			for i := 0; i < lrp.Spec.Instances; i++ {
+			for i := 0; i < lrp.Spec.Replicas; i++ {
 				podIndex := i
 				Eventually(func() string {
 					return getPodPhase(podIndex, lrp)
@@ -209,9 +209,9 @@ var _ = Describe("Desire", func() {
 				podNames = podNamesFromPods(listPods(lrp))
 
 				return podNames
-			}).Should(HaveLen(lrp.Spec.Instances))
+			}).Should(HaveLen(lrp.Spec.Replicas))
 
-			for i := 0; i < lrp.Spec.Instances; i++ {
+			for i := 0; i < lrp.Spec.Replicas; i++ {
 				podIndex := i
 				Eventually(func() string {
 					return getPodPhase(podIndex, lrp)
@@ -220,13 +220,13 @@ var _ = Describe("Desire", func() {
 
 			Eventually(func() int32 {
 				return getStatefulSetForLRP(lrp).Status.ReadyReplicas
-			}).Should(BeNumerically("==", lrp.Spec.Instances))
+			}).Should(BeNumerically("==", lrp.Spec.Replicas))
 		})
 	})
 
 	When("the LRP has 0 target instances", func() {
 		BeforeEach(func() {
-			lrp.Spec.Instances = 0
+			lrp.Spec.Replicas = 0
 		})
 
 		It("still creates a statefulset, with 0 replicas", func() {

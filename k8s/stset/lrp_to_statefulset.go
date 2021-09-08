@@ -122,7 +122,7 @@ func (c *LRPToStatefulSet) Convert(statefulSetName string, lrp *eiriniv1.LRP, pr
 		},
 		Spec: appsv1.StatefulSetSpec{
 			PodManagementPolicy: "Parallel",
-			Replicas:            int32ptr(lrp.Spec.Instances),
+			Replicas:            int32ptr(lrp.Spec.Replicas),
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
 					Containers:         containers,
@@ -158,20 +158,21 @@ func (c *LRPToStatefulSet) Convert(statefulSetName string, lrp *eiriniv1.LRP, pr
 		},
 	}
 
-	labels := map[string]string{
-		LabelOrgGUID:     lrp.Spec.OrgGUID,
-		LabelOrgName:     lrp.Spec.OrgName,
-		LabelSpaceGUID:   lrp.Spec.SpaceGUID,
-		LabelSpaceName:   lrp.Spec.SpaceName,
-		LabelGUID:        lrp.Spec.GUID,
-		LabelProcessType: lrp.Spec.ProcessType,
-		LabelVersion:     lrp.Spec.Version,
-		LabelAppGUID:     lrp.Spec.AppGUID,
-		LabelSourceType:  AppSourceType,
-	}
+	// labels := map[string]string{
+	// 	LabelOrgGUID:     lrp.Spec.OrgGUID,
+	// 	LabelOrgName:     lrp.Spec.OrgName,
+	// 	LabelSpaceGUID:   lrp.Spec.SpaceGUID,
+	// 	LabelSpaceName:   lrp.Spec.SpaceName,
+	// 	LabelGUID:        lrp.Spec.GUID,
+	// 	LabelProcessType: lrp.Spec.ProcessType,
+	// 	LabelVersion:     lrp.Spec.Version,
+	// 	LabelAppGUID:     lrp.Spec.AppGUID,
+	// 	LabelSourceType:  AppSourceType,
+	// }
 
-	statefulSet.Spec.Template.Labels = labels
-	statefulSet.Labels = labels
+	statefulSet.Spec.Template.Labels = lrp.Spec.Selector.MatchLabels
+	// statefulSet.Spec.Template.Labels = labels
+	// statefulSet.Labels = labels
 
 	annotations := map[string]string{
 		AnnotationSpaceName:   lrp.Spec.SpaceName,
@@ -304,11 +305,12 @@ func toLabelSelectorRequirements(selector *metav1.LabelSelector) []metav1.LabelS
 }
 
 func StatefulSetLabelSelector(lrp *eiriniv1.LRP) *metav1.LabelSelector {
-	return &metav1.LabelSelector{
-		MatchLabels: map[string]string{
-			LabelGUID:       lrp.Spec.GUID,
-			LabelVersion:    lrp.Spec.Version,
-			LabelSourceType: AppSourceType,
-		},
+	selector := &metav1.LabelSelector{
+		MatchLabels: make(map[string]string),
 	}
+	for l, v := range lrp.Spec.Selector.MatchLabels {
+		selector.MatchLabels[l] = v
+	}
+
+	return selector
 }

@@ -57,6 +57,9 @@ github.com/fatih/color
 # github.com/fsnotify/fsnotify v1.5.1
 ## explicit; go 1.13
 github.com/fsnotify/fsnotify
+# github.com/ghodss/yaml v1.0.0
+## explicit
+github.com/ghodss/yaml
 # github.com/go-logr/logr v1.1.0 => github.com/go-logr/logr v0.4.0
 ## explicit; go 1.14
 github.com/go-logr/logr
@@ -66,6 +69,9 @@ github.com/go-openapi/jsonpointer
 # github.com/go-openapi/jsonreference v0.19.5
 ## explicit; go 1.13
 github.com/go-openapi/jsonreference
+# github.com/go-openapi/spec v0.19.5
+## explicit; go 1.13
+github.com/go-openapi/spec
 # github.com/go-openapi/swag v0.19.14
 ## explicit; go 1.11
 github.com/go-openapi/swag
@@ -507,6 +513,8 @@ k8s.io/api/storage/v1beta1
 k8s.io/apiextensions-apiserver/pkg/apis/apiextensions
 k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1
 k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1
+k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/scheme
+k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1
 # k8s.io/apimachinery v0.22.1
 ## explicit; go 1.16
 k8s.io/apimachinery/pkg/api/equality
@@ -748,6 +756,9 @@ k8s.io/kube-openapi/pkg/generators/rules
 k8s.io/kube-openapi/pkg/util/proto
 k8s.io/kube-openapi/pkg/util/sets
 k8s.io/kube-openapi/pkg/validation/spec
+# k8s.io/kubectl v0.21.2
+## explicit; go 1.16
+k8s.io/kubectl/pkg/util/openapi
 # k8s.io/utils v0.0.0-20210820185131-d34e5cb4466e
 ## explicit; go 1.12
 k8s.io/utils/buffer
@@ -811,6 +822,22 @@ sigs.k8s.io/controller-tools/pkg/schemapatcher
 sigs.k8s.io/controller-tools/pkg/schemapatcher/internal/yaml
 sigs.k8s.io/controller-tools/pkg/version
 sigs.k8s.io/controller-tools/pkg/webhook
+# sigs.k8s.io/kubefed v0.8.1
+## explicit; go 1.16
+sigs.k8s.io/kubefed/pkg/apis
+sigs.k8s.io/kubefed/pkg/apis/core/common
+sigs.k8s.io/kubefed/pkg/apis/core/typeconfig
+sigs.k8s.io/kubefed/pkg/apis/core/v1alpha1
+sigs.k8s.io/kubefed/pkg/apis/core/v1beta1
+sigs.k8s.io/kubefed/pkg/apis/scheduling/v1alpha1
+sigs.k8s.io/kubefed/pkg/client/generic
+sigs.k8s.io/kubefed/pkg/client/generic/scheme
+sigs.k8s.io/kubefed/pkg/controller/util
+sigs.k8s.io/kubefed/pkg/kubefedctl/enable
+sigs.k8s.io/kubefed/pkg/kubefedctl/federate
+sigs.k8s.io/kubefed/pkg/kubefedctl/options
+sigs.k8s.io/kubefed/pkg/kubefedctl/util
+sigs.k8s.io/kubefed/pkg/metrics
 # sigs.k8s.io/structured-merge-diff/v4 v4.1.2
 ## explicit; go 1.13
 sigs.k8s.io/structured-merge-diff/v4/fieldpath

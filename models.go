@@ -40,6 +40,8 @@ type ControllerConfig struct {
 	LeaderElectionNamespace string
 
 	WebhookPort int32 `yaml:"webhook_port"`
+
+	Federated bool `json:"federated"`
 }
 
 type KubeConfig struct {

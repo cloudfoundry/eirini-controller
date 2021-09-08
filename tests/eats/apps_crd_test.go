@@ -96,7 +96,7 @@ var _ = Describe("Apps CRDs [needs-logs-for: eirini-controller]", func() {
 				MemoryMB:               256,
 				DiskMB:                 256,
 				CPUWeight:              10,
-				Instances:              1,
+				Replicas:              1,
 				Ports:                  []int32{8080},
 				VolumeMounts:           []eiriniv1.VolumeMount{},
 				UserDefinedAnnotations: map[string]string{},
@@ -247,7 +247,7 @@ var _ = Describe("Apps CRDs [needs-logs-for: eirini-controller]", func() {
 
 		When("updating the instance count", func() {
 			BeforeEach(func() {
-				lrp.Spec.Instances = 3
+				lrp.Spec.Replicas = 3
 			})
 
 			It("succeeds", func() {

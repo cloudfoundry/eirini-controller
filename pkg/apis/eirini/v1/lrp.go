@@ -42,15 +42,16 @@ type LRPSpec struct {
 	Health          Healthcheck       `json:"health"`
 	Ports           []int32           `json:"ports,omitempty"`
 	// +kubebuilder:default:=1
-	Instances int   `json:"instances"`
-	MemoryMB  int64 `json:"memoryMB"`
+	Replicas int   `json:"replicas"`
+	MemoryMB int64 `json:"memoryMB"`
 	// +kubebuilder:validation:Minimum:=1
 	// +kubebuilder:validation:Required
 	DiskMB int64 `json:"diskMB"`
 	// +kubebuilder:validation:Format:=uint8
-	CPUWeight              uint8             `json:"cpuWeight"`
-	VolumeMounts           []VolumeMount     `json:"volumeMounts,omitempty"`
-	UserDefinedAnnotations map[string]string `json:"userDefinedAnnotations,omitempty"`
+	CPUWeight              uint8                  `json:"cpuWeight"`
+	VolumeMounts           []VolumeMount          `json:"volumeMounts,omitempty"`
+	UserDefinedAnnotations map[string]string      `json:"userDefinedAnnotations,omitempty"`
+	Selector               *meta_v1.LabelSelector `json:"selector"`
 }
 
 type LRPStatus struct {

@@ -36,7 +36,7 @@ var _ = Describe("InstanceIndexEnvInjector [needs-logs-for: eirini-api, instance
 				MemoryMB:               256,
 				DiskMB:                 256,
 				CPUWeight:              10,
-				Instances:              3,
+				Replicas:              3,
 				Ports:                  []int32{8080},
 				VolumeMounts:           []eiriniv1.VolumeMount{},
 				UserDefinedAnnotations: map[string]string{},

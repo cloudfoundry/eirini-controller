@@ -39,7 +39,7 @@ var _ = Describe("ResourceValidator", func() {
 					MemoryMB:               256,
 					DiskMB:                 256,
 					CPUWeight:              10,
-					Instances:              1,
+					Replicas:              1,
 					Ports:                  []int32{8080},
 					VolumeMounts:           []eiriniv1.VolumeMount{{MountPath: "path", ClaimName: "name"}},
 					UserDefinedAnnotations: map[string]string{},
@@ -62,7 +62,7 @@ var _ = Describe("ResourceValidator", func() {
 
 	When("the instance count is updated", func() {
 		BeforeEach(func() {
-			lrp.Spec.Instances = 2
+			lrp.Spec.Replicas = 2
 		})
 
 		It("allows the change", func() {

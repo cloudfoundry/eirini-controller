@@ -29,7 +29,7 @@ func NewUpdater(client client.Client) *Updater {
 }
 
 func (c *Updater) Update(ctx context.Context, statefulSet *appsv1.StatefulSet, lrp *eiriniv1.LRP) error {
-	if lrp.Spec.Instances > 1 {
+	if lrp.Spec.Replicas > 1 {
 		return c.createPDB(ctx, statefulSet, lrp)
 	}
 

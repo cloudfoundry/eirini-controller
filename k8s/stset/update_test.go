@@ -38,7 +38,7 @@ var _ = Describe("Update", func() {
 				Version:   "version_1234",
 				AppName:   "baldur",
 				SpaceName: "space-foo",
-				Instances: 5,
+				Replicas: 5,
 				Image:     "new/image",
 			},
 		}

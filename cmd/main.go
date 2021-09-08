@@ -19,6 +19,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	fedschedulingv1a1 "sigs.k8s.io/kubefed/pkg/apis/scheduling/v1alpha1"
 )
 
 type options struct {
@@ -27,19 +28,27 @@ type options struct {
 
 type wiringFunc func(loger lager.Logger, manager manager.Manager, config eirinictrl.ControllerConfig) error
 
-func getWirings() []wiringFunc {
-	return []wiringFunc{
+func getWirings(cfg eirinictrl.ControllerConfig) []wiringFunc {
+	wirings := []wiringFunc{
 		wiring.LRPReconciler,
 		wiring.PodCrashReconciler,
 		wiring.TaskReconciler,
 		wiring.ResourceValidator,
 		wiring.InstanceIndexEnvInjector,
 	}
+	if cfg.Federated {
+		wirings = append(wirings, wiring.LRPFederator)
+	}
+
+	return wirings
 }
 
 func main() {
 	if err := kscheme.AddToScheme(eirinischeme.Scheme); err != nil {
 		exitf("failed to add the k8s scheme to the LRP CRD scheme: %v", err)
+	}
+	if err := fedschedulingv1a1.AddToScheme(eirinischeme.Scheme); err != nil {
+		exitf("failed to add the kubefed scheme to the LRP CRD scheme: %v", err)
 	}
 
 	var opts options
@@ -87,7 +96,7 @@ func main() {
 	mgr, err := manager.New(kubeConfig, managerOptions)
 	exitfIfError(err, "Failed to create k8s controller runtime manager")
 
-	for _, wire := range getWirings() {
+	for _, wire := range getWirings(cfg) {
 		exitfIfError(wire(logger, mgr, cfg), "wiring failure")
 	}
 

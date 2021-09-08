@@ -57,7 +57,7 @@ var _ = Describe("reconciler.LRP", func() {
 				GUID:        "the-lrp-guid",
 				Version:     "the-lrp-version",
 				Command:     []string{"ls", "-la"},
-				Instances:   10,
+				Replicas:   10,
 				ProcessType: "web",
 				AppName:     "the-app",
 				AppGUID:     "the-app-guid",
@@ -172,7 +172,7 @@ var _ = Describe("reconciler.LRP", func() {
 		Expect(actualLRP.Spec.GUID).To(Equal("the-lrp-guid"))
 		Expect(actualLRP.Spec.Version).To(Equal("the-lrp-version"))
 		Expect(actualLRP.Spec.Command).To(ConsistOf("ls", "-la"))
-		Expect(actualLRP.Spec.Instances).To(Equal(10))
+		Expect(actualLRP.Spec.Replicas).To(Equal(10))
 		Expect(actualLRP.Spec.PrivateRegistry).To(BeNil())
 		Expect(actualLRP.Spec.ProcessType).To(Equal("web"))
 		Expect(actualLRP.Spec.AppName).To(Equal("the-app"))

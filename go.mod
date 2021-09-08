@@ -47,6 +47,7 @@ require (
 	k8s.io/utils v0.0.0-20210820185131-d34e5cb4466e // indirect
 	sigs.k8s.io/controller-runtime v0.10.0
 	sigs.k8s.io/controller-tools v0.6.0
+	sigs.k8s.io/kubefed v0.8.1
 )
 
 require (
@@ -63,8 +64,10 @@ require (
 	github.com/evanphx/json-patch v4.11.0+incompatible // indirect
 	github.com/fatih/color v1.12.0 // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
+	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/jsonreference v0.19.5 // indirect
+	github.com/go-openapi/spec v0.19.5 // indirect
 	github.com/go-openapi/swag v0.19.14 // indirect
 	github.com/gobuffalo/flect v0.2.2 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
@@ -102,6 +105,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 	k8s.io/component-base v0.22.1 // indirect
 	k8s.io/gengo v0.0.0-20201214224949-b6c5ce23f027 // indirect
+	k8s.io/kubectl v0.21.2 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.1.2 // indirect
 	sigs.k8s.io/yaml v1.2.0 // indirect
 )

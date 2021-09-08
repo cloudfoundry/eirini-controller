@@ -4,7 +4,7 @@ set -euo pipefail
 
 EIRINI_CONTROLLER_ROOT=$(dirname "${BASH_SOURCE[0]}")/..
 EIRINI_TMP_CRD="$EIRINI_CONTROLLER_ROOT/code.cloudfoundry.org/crds"
-EIRINI_RELEASE="$EIRINI_CONTROLLER_ROOT/../eirini-release"
+EIRINI_DEPLOYMENT_DIR="$EIRINI_CONTROLLER_ROOT/deployment"
 CODEGEN_PKG=${CODEGEN_PKG:-$(
   cd "${EIRINI_CONTROLLER_ROOT}"
   ls -d -1 ./vendor/k8s.io/code-generator 2>/dev/null || echo ../code-generator
@@ -43,7 +43,7 @@ mkdir -p "$EIRINI_TMP_CRD"
 pushd "$EIRINI_CONTROLLER_ROOT"
 {
   go run vendor/sigs.k8s.io/controller-tools/cmd/controller-gen/main.go crd output:dir="$EIRINI_TMP_CRD" paths=./pkg/apis/...
-  cp "$EIRINI_TMP_CRD/eirini.cloudfoundry.org_lrps.yaml" "$EIRINI_RELEASE/helm/templates/core/lrp-crd.yml"
-  cp "$EIRINI_TMP_CRD/eirini.cloudfoundry.org_tasks.yaml" "$EIRINI_RELEASE/helm/templates/core/task-crd.yml"
+  cp "$EIRINI_TMP_CRD/eirini.cloudfoundry.org_lrps.yaml" "$EIRINI_DEPLOYMENT_DIR/helm/templates/core/lrp-crd.yml"
+  cp "$EIRINI_TMP_CRD/eirini.cloudfoundry.org_tasks.yaml" "$EIRINI_DEPLOYMENT_DIR/helm/templates/core/task-crd.yml"
 }
 popd

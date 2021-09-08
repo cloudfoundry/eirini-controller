@@ -27,7 +27,7 @@ func NewUpdater(logger lager.Logger, client client.Client, pdbUpdater PodDisrupt
 func (u *Updater) Update(ctx context.Context, lrp *eiriniv1.LRP, stSet *appsv1.StatefulSet) error {
 	logger := u.logger.Session("update", lager.Data{"guid": lrp.Spec.GUID, "version": lrp.Spec.Version})
 
-	updatedStatefulSet, updated := u.getUpdatedStatefulSetObj(stSet, lrp.Spec.Instances, lrp.Spec.Image)
+	updatedStatefulSet, updated := u.getUpdatedStatefulSetObj(stSet, lrp.Spec.Replicas, lrp.Spec.Image)
 
 	if !updated {
 		return nil

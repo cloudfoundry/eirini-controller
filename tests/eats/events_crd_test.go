@@ -48,7 +48,7 @@ var _ = Describe("PodCrashEvents [needs-logs-for: eirini-api, eirini-controller]
 					MemoryMB:  256,
 					DiskMB:    256,
 					CPUWeight: 10,
-					Instances: 1,
+					Replicas: 1,
 					Command:   []string{"sh", "-c", `sleep 1; exit 3`},
 				},
 			}

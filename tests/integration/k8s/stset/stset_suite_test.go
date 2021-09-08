@@ -140,7 +140,7 @@ func createLRP(namespace, name string) *eiriniv1.LRP {
 			AppName:   name,
 			AppGUID:   "the-app-guid",
 			SpaceName: "space-foo",
-			Instances: 2,
+			Replicas: 2,
 			Image:     "eirini/busybox",
 			DiskMB:    2047,
 			Env: map[string]string{

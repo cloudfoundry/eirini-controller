@@ -8,6 +8,24 @@ metadata:
   namespace: {{ . }}
 rules:
 - apiGroups:
+  - types.kubefed.io
+  resources:
+  - federatedlrps
+  verbs:
+  - create
+- apiGroups:
+  - scheduling.kubefed.io
+  resources:
+  - replicaschedulingpreferences
+  verbs:
+  - create
+- apiGroups:
+  - eirini.cloudfoundry.org
+  resources:
+  - lrps
+  verbs:
+  - patch
+- apiGroups:
   - eirini.cloudfoundry.org
   resources:
   - lrps/status

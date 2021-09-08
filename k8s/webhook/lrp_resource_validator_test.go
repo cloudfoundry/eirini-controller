@@ -94,7 +94,7 @@ var _ = Describe("LRPResourceValidator", func() {
 						8080,
 						9090,
 					},
-					Instances: 1,
+					Replicas: 1,
 					MemoryMB:  1024,
 					DiskMB:    512,
 					CPUWeight: 3,
@@ -135,7 +135,7 @@ var _ = Describe("LRPResourceValidator", func() {
 
 	When("the intstance count is updated", func() {
 		BeforeEach(func() {
-			updatedLRP.Spec.Instances = 2
+			updatedLRP.Spec.Replicas = 2
 		})
 
 		It("allows the change", func() {

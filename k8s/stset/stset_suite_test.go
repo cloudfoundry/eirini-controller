@@ -35,7 +35,7 @@ func createLRP(namespace, name string) *eiriniv1.LRP {
 			AppGUID:     "premium_app_guid_1234",
 			SpaceName:   "space-foo",
 			SpaceGUID:   "space-guid",
-			Instances:   1,
+			Replicas:   1,
 			OrgName:     "org-foo",
 			OrgGUID:     "org-guid",
 			Command: []string{

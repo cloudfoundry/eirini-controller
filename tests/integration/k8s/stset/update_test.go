@@ -45,10 +45,10 @@ var _ = Describe("Update", func() {
 		})
 
 		JustBeforeEach(func() {
-			lrp.Spec.Instances = instancesBefore
+			lrp.Spec.Replicas = instancesBefore
 			Expect(desirer.Desire(ctx, lrp)).To(Succeed())
 
-			lrp.Spec.Instances = instancesAfter
+			lrp.Spec.Replicas = instancesAfter
 			statefulset = getStatefulSetForLRP(lrp)
 			Expect(updater.Update(ctx, lrp, statefulset)).To(Succeed())
 			statefulset = getStatefulSetForLRP(lrp)

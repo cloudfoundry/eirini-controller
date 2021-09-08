@@ -1,4 +1,6 @@
 controller:
+  federated: false
+
   # registry_secret_name is the name of the secret containing the docker
   # credentials to pull LRP images
   registry_secret_name: app-registry-credentials

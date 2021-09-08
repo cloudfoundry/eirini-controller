@@ -46,7 +46,7 @@ var _ = Describe("PDB", func() {
 				Version:   "version",
 				AppName:   "appName",
 				SpaceName: "spaceName",
-				Instances: 2,
+				Replicas: 2,
 			},
 		}
 
@@ -96,7 +96,7 @@ var _ = Describe("PDB", func() {
 
 		When("the LRP has less than 2 target instances", func() {
 			BeforeEach(func() {
-				lrp.Spec.Instances = 1
+				lrp.Spec.Replicas = 1
 			})
 
 			It("does not create but does try to delete pdb", func() {

@@ -46,7 +46,7 @@ var _ = Describe("App", func() {
 				MemoryMB:               256,
 				DiskMB:                 256,
 				CPUWeight:              10,
-				Instances:              1,
+				Replicas:              1,
 				Ports:                  []int32{8080},
 				VolumeMounts:           []eiriniv1.VolumeMount{},
 				UserDefinedAnnotations: map[string]string{},
@@ -152,7 +152,7 @@ var _ = Describe("App", func() {
 
 		BeforeEach(func() {
 			updatedLRP = lrp.DeepCopy()
-			updatedLRP.Spec.Instances = 3
+			updatedLRP.Spec.Replicas = 3
 		})
 
 		JustBeforeEach(func() {
