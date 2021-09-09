@@ -112,6 +112,10 @@ func (r *LRPFederator) do(ctx context.Context, lrp *eiriniv1.LRP) error {
 		return errors.Wrap(err, "failed to federate lrp")
 	}
 
+	if lrp.Labels != nil && lrp.Labels["isolationSegment"] != "" {
+		unstructured.SetNestedField(unstructuredFederatedLRP[0].Object, lrp.Labels["isolationSegment"], "spec", "placement", "clusterSelector", "matchLabels", "isolationSegment")
+	}
+
 	federatedLrpRes := schema.GroupVersionResource{Group: "types.kubefed.io", Version: "v1beta1", Resource: "federatedlrps"}
 	_, err = r.dynamicClient.Resource(federatedLrpRes).Namespace(lrp.Namespace).Create(ctx, unstructuredFederatedLRP[0], metav1.CreateOptions{})
 	if err != nil {
