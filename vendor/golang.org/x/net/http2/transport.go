@@ -1539,11 +1539,19 @@ func (cs *clientStream) writeRequestBody(req *http.Request) (err error) {
 				return err
 			}
 		}
-		if err == io.EOF {
-			sawEOF = true
-			err = nil
-		} else if err != nil {
-			return err
+		if err != nil {
+			cc.mu.Lock()
+			bodyClosed := cs.reqBodyClosed
+			cc.mu.Unlock()
+			switch {
+			case bodyClosed:
+				return errStopReqBodyWrite
+			case err == io.EOF:
+				sawEOF = true
+				err = nil
+			default:
+				return err
+			}
 		}
 
 		remain := buf[:n]
@@ -2000,7 +2008,13 @@ func (rl *clientConnReadLoop) cleanup() {
 	}
 	cc.closed = true
 	for _, cs := range cc.streams {
-		cs.abortStreamLocked(err)
+		select {
+		case <-cs.peerClosed:
+			// The server closed the stream before closing the conn,
+			// so no need to interrupt it.
+		default:
+			cs.abortStreamLocked(err)
+		}
 	}
 	cc.cond.Broadcast()
 	cc.mu.Unlock()
