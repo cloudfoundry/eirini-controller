@@ -147,7 +147,7 @@ func (r PodCrash) getByInstanceAndReason(ctx context.Context, namespace string, 
 		return &kubeEvents.Items[0], nil
 	}
 
-	return nil, nil
+	return nil, nil // nolint:nilnil // this is a private function, no need to create a custom not found error
 }
 
 func (r PodCrash) setEvent(ctx context.Context, logger lager.Logger, kubeEvent *corev1.Event, lrpRef metav1.OwnerReference,
