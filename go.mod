@@ -11,8 +11,8 @@ require (
 	cloud.google.com/go v0.97.0 // indirect
 	code.cloudfoundry.org/lager v2.0.0+incompatible
 	code.cloudfoundry.org/tlsconfig v0.0.0-20210615191307-5d92ef3894a7
-	github.com/Azure/go-autorest/autorest v0.11.21 // indirect
-	github.com/Azure/go-autorest/autorest/adal v0.9.16 // indirect
+	github.com/Azure/go-autorest/autorest v0.11.22 // indirect
+	github.com/Azure/go-autorest/autorest/adal v0.9.17 // indirect
 	github.com/go-logr/logr v1.2.0
 	github.com/gofrs/flock v0.8.1
 	github.com/google/go-cmp v0.5.6
@@ -24,15 +24,15 @@ require (
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.4.1
 	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/gomega v1.16.0
+	github.com/onsi/gomega v1.17.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.11.0
 	github.com/prometheus/common v0.32.1
 	github.com/prometheus/procfs v0.7.3 // indirect
-	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519 // indirect
-	golang.org/x/net v0.0.0-20211020060615-d418f374d309 // indirect
-	golang.org/x/oauth2 v0.0.0-20211028175245-ba495a64dcb5 // indirect
-	golang.org/x/sys v0.0.0-20211025201205-69cdffdb9359 // indirect
+	golang.org/x/crypto v0.0.0-20211108221036-ceb1ce70b4fa // indirect
+	golang.org/x/net v0.0.0-20211109214657-ef0fda0de508 // indirect
+	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8 // indirect
+	golang.org/x/sys v0.0.0-20211110154304-99a53858aa08 // indirect
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.2.0
@@ -43,9 +43,9 @@ require (
 	k8s.io/client-go v0.22.3
 	k8s.io/code-generator v0.22.3
 	k8s.io/klog/v2 v2.30.0 // indirect
-	k8s.io/kube-openapi v0.0.0-20211027214312-a3aade5e6f4b // indirect
+	k8s.io/kube-openapi v0.0.0-20211109043139-026bd182f079 // indirect
 	k8s.io/utils v0.0.0-20210930125809-cb0fa318a74b // indirect
-	sigs.k8s.io/controller-runtime v0.10.2
+	sigs.k8s.io/controller-runtime v0.10.3
 	sigs.k8s.io/controller-tools v0.6.0
 )
 
@@ -98,6 +98,6 @@ require (
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 	k8s.io/component-base v0.22.3 // indirect
 	k8s.io/gengo v0.0.0-20210813121822-485abfe95c7c // indirect
-	sigs.k8s.io/structured-merge-diff/v4 v4.1.2 // indirect
+	sigs.k8s.io/structured-merge-diff/v4 v4.2.0 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )

@@ -87,18 +87,6 @@ func (e Extensions) GetObject(key string, out interface{}) error {
 	return nil
 }
 
-// CELValidationRules defines the format of the x-kubernetes-validator schema extension.
-type CELValidationRules []CELValidationRule
-
-// CELValidationRule defines the format of each rule in CELValidationRules.
-// ref: https://github.com/google/cel-spec
-type CELValidationRule struct {
-	// Rule represents the validation rule which will be evaluated by CEL.
-	Rule string `json:"rule"`
-	// Message represents the message displayed when validation failed.
-	Message string `json:"message"`
-}
-
 // VendorExtensible composition block.
 type VendorExtensible struct {
 	Extensions Extensions
