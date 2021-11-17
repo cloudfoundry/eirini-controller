@@ -5,26 +5,26 @@ package stset
 const (
 	AppSourceType = "APP"
 
-	AnnotationAppName              = "cloudfoundry.org/application_name"
-	AnnotationVersion              = "cloudfoundry.org/version"
-	AnnotationAppID                = "cloudfoundry.org/application_id"
-	AnnotationSpaceName            = "cloudfoundry.org/space_name"
-	AnnotationOrgName              = "cloudfoundry.org/org_name"
-	AnnotationOrgGUID              = "cloudfoundry.org/org_guid"
-	AnnotationSpaceGUID            = "cloudfoundry.org/space_guid"
-	AnnotationProcessGUID          = "cloudfoundry.org/process_guid"
-	AnnotationLastReportedAppCrash = "cloudfoundry.org/last_reported_app_crash"
-	AnnotationLastReportedLRPCrash = "cloudfoundry.org/last_reported_lrp_crash"
+	AnnotationAppName              = "workloads.cloudfoundry.org/application-name"
+	AnnotationVersion              = "workloads.cloudfoundry.org/version"
+	AnnotationAppID                = "workloads.cloudfoundry.org/application-id"
+	AnnotationSpaceName            = "workloads.cloudfoundry.org/space-name"
+	AnnotationOrgName              = "workloads.cloudfoundry.org/org-name"
+	AnnotationOrgGUID              = "workloads.cloudfoundry.org/org-guid"
+	AnnotationSpaceGUID            = "workloads.cloudfoundry.org/space-guid"
+	AnnotationProcessGUID          = "workloads.cloudfoundry.org/process-guid"
+	AnnotationLastReportedAppCrash = "workloads.cloudfoundry.org/last-reported-app-crash"
+	AnnotationLastReportedLRPCrash = "workloads.cloudfoundry.org/last-reported-lrp-crash"
 
-	LabelGUID        = "cloudfoundry.org/guid"
+	LabelGUID        = "workloads.cloudfoundry.org/guid"
 	LabelOrgGUID     = AnnotationOrgGUID
 	LabelOrgName     = AnnotationOrgName
 	LabelSpaceGUID   = AnnotationSpaceGUID
 	LabelSpaceName   = AnnotationSpaceName
-	LabelVersion     = "cloudfoundry.org/version"
-	LabelAppGUID     = "cloudfoundry.org/app_guid"
-	LabelProcessType = "cloudfoundry.org/process_type"
-	LabelSourceType  = "cloudfoundry.org/source_type"
+	LabelVersion     = "workloads.cloudfoundry.org/version"
+	LabelAppGUID     = "workloads.cloudfoundry.org/app-guid"
+	LabelProcessType = "workloads.cloudfoundry.org/process-type"
+	LabelSourceType  = "workloads.cloudfoundry.org/source-type"
 
 	ApplicationContainerName = "opi"
 

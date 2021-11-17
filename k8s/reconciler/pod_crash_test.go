@@ -164,8 +164,8 @@ var _ = Describe("K8s/Reconciler/AppCrash", func() {
 
 			Expect(event.Namespace).To(Equal("some-ns"))
 			Expect(event.GenerateName).To(Equal("instance-name-"))
-			Expect(event.Labels).To(HaveKeyWithValue("cloudfoundry.org/instance_index", "3"))
-			Expect(event.Annotations).To(HaveKeyWithValue("cloudfoundry.org/process_guid", "process-guid"))
+			Expect(event.Labels).To(HaveKeyWithValue("workloads.cloudfoundry.org/instance-index", "3"))
+			Expect(event.Annotations).To(HaveKeyWithValue("workloads.cloudfoundry.org/process-guid", "process-guid"))
 
 			Expect(event.LastTimestamp).To(Equal(metav1.NewTime(timestamp)))
 			Expect(event.FirstTimestamp).To(Equal(metav1.NewTime(timestamp)))
@@ -331,7 +331,7 @@ var _ = Describe("K8s/Reconciler/AppCrash", func() {
 			_, _, actualListsOpts := client.ListArgsForCall(0)
 			Expect(actualListsOpts).To(ConsistOf(
 				k8sclient.MatchingLabels{
-					"cloudfoundry.org/instance_index": strconv.Itoa(3),
+					"workloads.cloudfoundry.org/instance-index": strconv.Itoa(3),
 				},
 				k8sclient.InNamespace("some-ns"),
 				k8sclient.MatchingFields{
