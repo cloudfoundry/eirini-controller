@@ -9,22 +9,22 @@ import (
 const (
 	TaskSourceType = "TASK"
 
-	AnnotationGUID                        = "cloudfoundry.org/guid"
+	AnnotationGUID                        = "workloads.cloudfoundry.org/guid"
 	AnnotationAppName                     = stset.AnnotationAppName
 	AnnotationAppID                       = stset.AnnotationAppID
 	AnnotationOrgName                     = stset.AnnotationOrgName
 	AnnotationOrgGUID                     = stset.AnnotationOrgGUID
 	AnnotationSpaceName                   = stset.AnnotationSpaceName
 	AnnotationSpaceGUID                   = stset.AnnotationSpaceGUID
-	AnnotationTaskContainerName           = "cloudfoundry.org/opi-task-container-name"
-	AnnotationTaskCompletionReportCounter = "cloudfoundry.org/task_completion_report_counter"
-	AnnotationCCAckedTaskCompletion       = "cloudfoundry.org/cc_acked_task_completion"
+	AnnotationTaskContainerName           = "workloads.cloudfoundry.org/opi-task-container-name"
+	AnnotationTaskCompletionReportCounter = "workloads.cloudfoundry.org/task_completion_report_counter"
+	AnnotationCCAckedTaskCompletion       = "workloads.cloudfoundry.org/cc_acked_task_completion"
 
 	LabelGUID          = stset.LabelGUID
-	LabelName          = "cloudfoundry.org/name"
+	LabelName          = "workloads.cloudfoundry.org/name"
 	LabelAppGUID       = stset.LabelAppGUID
 	LabelSourceType    = stset.LabelSourceType
-	LabelTaskCompleted = "cloudfoundry.org/task_completed"
+	LabelTaskCompleted = "workloads.cloudfoundry.org/task_completed"
 
 	TaskCompletedTrue                 = "true"
 	PrivateRegistrySecretGenerateName = stset.PrivateRegistrySecretGenerateName

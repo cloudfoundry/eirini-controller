@@ -75,7 +75,7 @@ so if you want to access your LRP you have to do it from within the cluster or
 use [telepresence](https://www.telepresence.io/).
 
 ```
-POD_IP=$(kubectl get pod -n cf-workloads --selector=cloudfoundry.org/source_type=APP -o jsonpath="{.items[0].status.podIP}")
+POD_IP=$(kubectl get pod -n cf-workloads --selector=workloads.cloudfoundry.org/source-type=APP -o jsonpath="{.items[0].status.podIP}")
 telepresence --run curl http://$POD_IP:8080/ 2>/dev/null
 ```
 
@@ -98,5 +98,5 @@ EOF
 In order to see the greeting message, run the following command
 
 ```
-kubectl logs -n cf-workloads --selector=cloudfoundry.org/source_type=TASK
+kubectl logs -n cf-workloads --selector=workloads.cloudfoundry.org/source-type=TASK
 ```

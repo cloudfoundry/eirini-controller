@@ -7,7 +7,7 @@ webhooks:
 - name: instance-index-env-injector.eirini.cloudfoundry.org
   objectSelector:
     matchLabels:
-      cloudfoundry.org/source_type: APP
+      workloads.cloudfoundry.org/source-type: APP
   rules:
   - apiGroups: [""]
     apiVersions: ["v1"]
