@@ -39,7 +39,7 @@ func CreateReadinessProbe(lrp *eiriniv1.LRP) *v1.Probe {
 
 func createPortProbe(lrp *eiriniv1.LRP, initialDelay, failureThreshold int32) *v1.Probe {
 	return &v1.Probe{
-		Handler: v1.Handler{
+		ProbeHandler: v1.ProbeHandler{
 			TCPSocket: tcpSocketAction(lrp),
 		},
 		InitialDelaySeconds: initialDelay,
@@ -49,7 +49,7 @@ func createPortProbe(lrp *eiriniv1.LRP, initialDelay, failureThreshold int32) *v
 
 func createHTTPProbe(lrp *eiriniv1.LRP, initialDelay, failureThreshold int32) *v1.Probe {
 	return &v1.Probe{
-		Handler: v1.Handler{
+		ProbeHandler: v1.ProbeHandler{
 			HTTPGet: httpGetAction(lrp),
 		},
 		InitialDelaySeconds: initialDelay,
