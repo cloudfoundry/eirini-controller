@@ -12,7 +12,7 @@ import (
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
 	appsv1 "k8s.io/api/apps/v1"
-	policyv1 "k8s.io/api/policy/v1"
+	"k8s.io/api/policy/v1beta1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -68,8 +68,8 @@ var _ = Describe("PDB", func() {
 
 			_, obj, createOpts := k8sClient.CreateArgsForCall(0)
 
-			Expect(obj).To(BeAssignableToTypeOf(&policyv1.PodDisruptionBudget{}))
-			pdb := obj.(*policyv1.PodDisruptionBudget)
+			Expect(obj).To(BeAssignableToTypeOf(&v1beta1.PodDisruptionBudget{}))
+			pdb := obj.(*v1beta1.PodDisruptionBudget)
 
 			Expect(pdb.Namespace).To(Equal("namespace"))
 			Expect(pdb.Name).To(Equal("name"))
