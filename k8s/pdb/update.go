@@ -7,7 +7,7 @@ import (
 	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
-	"k8s.io/api/policy/v1beta1"
+	policyv1 "k8s.io/api/policy/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -39,7 +39,7 @@ func (c *Updater) Update(ctx context.Context, statefulSet *appsv1.StatefulSet, l
 func (c *Updater) createPDB(ctx context.Context, statefulSet *appsv1.StatefulSet, lrp *eiriniv1.LRP) error {
 	minAvailable := intstr.FromString(PdbMinAvailableInstances)
 
-	pdb := &v1beta1.PodDisruptionBudget{
+	pdb := &policyv1.PodDisruptionBudget{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      statefulSet.Name,
 			Namespace: statefulSet.Namespace,
@@ -48,7 +48,7 @@ func (c *Updater) createPDB(ctx context.Context, statefulSet *appsv1.StatefulSet
 				stset.LabelVersion: lrp.Spec.Version,
 			},
 		},
-		Spec: v1beta1.PodDisruptionBudgetSpec{
+		Spec: policyv1.PodDisruptionBudgetSpec{
 			MinAvailable: &minAvailable,
 			Selector:     stset.StatefulSetLabelSelector(lrp),
 		},
@@ -68,7 +68,7 @@ func (c *Updater) createPDB(ctx context.Context, statefulSet *appsv1.StatefulSet
 }
 
 func (c *Updater) deletePDB(ctx context.Context, statefulSet *appsv1.StatefulSet) error {
-	err := c.client.DeleteAllOf(ctx, &v1beta1.PodDisruptionBudget{}, client.InNamespace(statefulSet.Namespace), client.MatchingFields{"metadata.name": statefulSet.Name})
+	err := c.client.DeleteAllOf(ctx, &policyv1.PodDisruptionBudget{}, client.InNamespace(statefulSet.Namespace), client.MatchingFields{"metadata.name": statefulSet.Name})
 
 	return errors.Wrap(err, "failed to delete pod distruption budget")
 }

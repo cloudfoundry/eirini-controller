@@ -12,7 +12,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
-	policyv1 "k8s.io/api/policy/v1beta1"
+	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -44,7 +44,7 @@ func createNamespace(namespace string, clientset kubernetes.Interface) {
 }
 
 func CreatePodCreationPSP(namespace, pspName, serviceAccountName string, clientset kubernetes.Interface) error {
-	_, err := clientset.PolicyV1beta1().PodSecurityPolicies().Create(context.Background(), &policyv1.PodSecurityPolicy{
+	_, err := clientset.PolicyV1beta1().PodSecurityPolicies().Create(context.Background(), &policyv1beta1.PodSecurityPolicy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: pspName,
 			Annotations: map[string]string{
@@ -52,22 +52,22 @@ func CreatePodCreationPSP(namespace, pspName, serviceAccountName string, clients
 				"seccomp.security.alpha.kubernetes.io/defaultProfileName":  "runtime/default",
 			},
 		},
-		Spec: policyv1.PodSecurityPolicySpec{
+		Spec: policyv1beta1.PodSecurityPolicySpec{
 			Privileged: false,
-			RunAsUser: policyv1.RunAsUserStrategyOptions{
-				Rule: policyv1.RunAsUserStrategyRunAsAny,
+			RunAsUser: policyv1beta1.RunAsUserStrategyOptions{
+				Rule: policyv1beta1.RunAsUserStrategyRunAsAny,
 			},
-			SELinux: policyv1.SELinuxStrategyOptions{
-				Rule: policyv1.SELinuxStrategyRunAsAny,
+			SELinux: policyv1beta1.SELinuxStrategyOptions{
+				Rule: policyv1beta1.SELinuxStrategyRunAsAny,
 			},
-			SupplementalGroups: policyv1.SupplementalGroupsStrategyOptions{
-				Rule: policyv1.SupplementalGroupsStrategyRunAsAny,
+			SupplementalGroups: policyv1beta1.SupplementalGroupsStrategyOptions{
+				Rule: policyv1beta1.SupplementalGroupsStrategyRunAsAny,
 			},
-			FSGroup: policyv1.FSGroupStrategyOptions{
-				Rule: policyv1.FSGroupStrategyRunAsAny,
+			FSGroup: policyv1beta1.FSGroupStrategyOptions{
+				Rule: policyv1beta1.FSGroupStrategyRunAsAny,
 			},
-			Volumes: []policyv1.FSType{
-				policyv1.EmptyDir, policyv1.Projected, policyv1.Secret,
+			Volumes: []policyv1beta1.FSType{
+				policyv1beta1.EmptyDir, policyv1beta1.Projected, policyv1beta1.Secret,
 			},
 		},
 	}, metav1.CreateOptions{})

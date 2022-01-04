@@ -18,7 +18,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	policy_v1beta1_types "k8s.io/client-go/kubernetes/typed/policy/v1beta1"
+	policy_v1_types "k8s.io/client-go/kubernetes/typed/policy/v1"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 )
 
@@ -86,8 +86,8 @@ func listPods(lrp *eiriniv1.LRP) []corev1.Pod {
 	return listPodsByLabel(labelSelector(lrp))
 }
 
-func podDisruptionBudgets() policy_v1beta1_types.PodDisruptionBudgetInterface {
-	return fixture.Clientset.PolicyV1beta1().PodDisruptionBudgets(fixture.Namespace)
+func podDisruptionBudgets() policy_v1_types.PodDisruptionBudgetInterface {
+	return fixture.Clientset.PolicyV1().PodDisruptionBudgets(fixture.Namespace)
 }
 
 func podNamesFromPods(pods []corev1.Pod) []string {
