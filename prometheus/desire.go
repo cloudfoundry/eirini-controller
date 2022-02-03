@@ -77,7 +77,7 @@ func registerCounter(registry prometheus_api.Registerer, name, help string) (pro
 
 	var are prometheus_api.AlreadyRegisteredError
 	if errors.As(err, &are) {
-		return are.ExistingCollector.(prometheus_api.Counter), nil
+		return are.ExistingCollector.(prometheus_api.Counter), nil //nolint:forcetypeassert
 	}
 
 	return nil, err
@@ -96,7 +96,7 @@ func registerHistogram(registry prometheus_api.Registerer, name, help string) (p
 
 	var are prometheus_api.AlreadyRegisteredError
 	if errors.As(err, &are) {
-		return are.ExistingCollector.(prometheus_api.Histogram), nil
+		return are.ExistingCollector.(prometheus_api.Histogram), nil //nolint:forcetypeassert
 	}
 
 	return nil, err
