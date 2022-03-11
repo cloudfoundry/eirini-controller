@@ -25,10 +25,10 @@ require (
 	github.com/prometheus/client_golang v1.12.1
 	github.com/prometheus/common v0.32.1
 	github.com/prometheus/procfs v0.7.3 // indirect
-	golang.org/x/crypto v0.0.0-20220214200702-86341886e292 // indirect
+	golang.org/x/crypto v0.0.0-20220307211146-efcb8507fb70 // indirect
 	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect
-	golang.org/x/oauth2 v0.0.0-20220223155221-ee480838109b // indirect
-	golang.org/x/sys v0.0.0-20220227234510-4e6760a101f9 // indirect
+	golang.org/x/oauth2 v0.0.0-20220309155454-6242fa91716a // indirect
+	golang.org/x/sys v0.0.0-20220310020820-b874c991c1a5 // indirect
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.2.0
@@ -39,7 +39,7 @@ require (
 	k8s.io/client-go v0.23.4
 	k8s.io/code-generator v0.23.4
 	k8s.io/klog/v2 v2.40.1 // indirect
-	k8s.io/kube-openapi v0.0.0-20220124234850-424119656bbf // indirect
+	k8s.io/kube-openapi v0.0.0-20220310132336-3f90b8c54bbb // indirect
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9 // indirect
 	sigs.k8s.io/controller-runtime v0.11.1
 	sigs.k8s.io/controller-tools v0.6.0
