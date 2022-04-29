@@ -9,7 +9,7 @@ require (
 	code.cloudfoundry.org/tlsconfig v0.0.0-20211123175040-23cc9f05b6b3
 	github.com/go-logr/logr v1.2.3
 	github.com/gofrs/flock v0.8.1
-	github.com/google/go-cmp v0.5.7
+	github.com/google/go-cmp v0.5.8
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/go-uuid v1.0.3
 	github.com/jessevdk/go-flags v1.5.0
@@ -45,7 +45,7 @@ require (
 	github.com/emicklei/go-restful v2.9.5+incompatible // indirect
 	github.com/evanphx/json-patch v5.6.0+incompatible // indirect
 	github.com/fatih/color v1.12.0 // indirect
-	github.com/fsnotify/fsnotify v1.5.3 // indirect
+	github.com/fsnotify/fsnotify v1.5.4 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/jsonreference v0.19.5 // indirect
 	github.com/go-openapi/swag v0.19.14 // indirect
@@ -74,9 +74,9 @@ require (
 	github.com/spf13/cobra v1.2.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/square/certstrap v1.2.0 // indirect
-	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4 // indirect
+	golang.org/x/crypto v0.0.0-20220427172511-eb4f295cb31f // indirect
 	golang.org/x/mod v0.6.0-dev.0.20220106191415-9b9b3d81d5e3 // indirect
-	golang.org/x/net v0.0.0-20220421235706-1d1ef9303861 // indirect
+	golang.org/x/net v0.0.0-20220425223048-2871e0cb64e4 // indirect
 	golang.org/x/oauth2 v0.0.0-20220411215720-9780585627b5 // indirect
 	golang.org/x/sys v0.0.0-20220422013727-9388b58f7150 // indirect
 	golang.org/x/term v0.0.0-20220411215600-e5f449aeb171 // indirect
