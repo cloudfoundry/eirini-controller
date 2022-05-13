@@ -1,6 +1,7 @@
 package v1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -25,9 +26,11 @@ type TaskSpec struct {
 	GUID string `json:"GUID"`
 	Name string `json:"name"`
 	// +kubebuilder:validation:Required
-	Image           string            `json:"image"`
-	PrivateRegistry *PrivateRegistry  `json:"privateRegistry,omitempty"`
-	Env             map[string]string `json:"env,omitempty"`
+	Image           string           `json:"image"`
+	PrivateRegistry *PrivateRegistry `json:"privateRegistry,omitempty"`
+	// deprecated: Env is deprecated. Use Environment instead
+	Env         map[string]string `json:"env,omitempty"`
+	Environment []corev1.EnvVar   `json:"environment,omitempty"`
 	// +kubebuilder:validation:Required
 	Command   []string `json:"command,omitempty"`
 	AppName   string   `json:"appName"`

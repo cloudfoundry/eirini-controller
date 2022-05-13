@@ -320,6 +320,13 @@ func (in *TaskSpec) DeepCopyInto(out *TaskSpec) {
 			(*out)[key] = val
 		}
 	}
+	if in.Environment != nil {
+		in, out := &in.Environment, &out.Environment
+		*out = make([]corev1.EnvVar, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
 	if in.Command != nil {
 		in, out := &in.Command, &out.Command
 		*out = make([]string, len(*in))
