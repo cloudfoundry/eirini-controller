@@ -13,6 +13,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	admissionv1 "k8s.io/api/admission/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -84,6 +85,15 @@ var _ = Describe("LRPResourceValidator", func() {
 					Env: map[string]string{
 						"FOO": "BAR",
 					},
+					Environment: []corev1.EnvVar{{
+						Name: "bruce",
+						ValueFrom: &corev1.EnvVarSource{
+							SecretKeyRef: &corev1.SecretKeySelector{
+								LocalObjectReference: corev1.LocalObjectReference{Name: "john"},
+								Key:                  "foo",
+							},
+						},
+					}},
 					Health: eiriniv1.Healthcheck{
 						Type:      "http",
 						Port:      8080,

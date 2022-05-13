@@ -2,6 +2,7 @@
 package v1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -34,13 +35,15 @@ type LRPSpec struct {
 	SpaceName   string `json:"spaceName"`
 	SpaceGUID   string `json:"spaceGUID"`
 	// +kubebuilder:validation:Required
-	Image           string            `json:"image"`
-	Command         []string          `json:"command,omitempty"`
-	Sidecars        []Sidecar         `json:"sidecars,omitempty"`
-	PrivateRegistry *PrivateRegistry  `json:"privateRegistry,omitempty"`
-	Env             map[string]string `json:"env,omitempty"`
-	Health          Healthcheck       `json:"health"`
-	Ports           []int32           `json:"ports,omitempty"`
+	Image           string           `json:"image"`
+	Command         []string         `json:"command,omitempty"`
+	Sidecars        []Sidecar        `json:"sidecars,omitempty"`
+	PrivateRegistry *PrivateRegistry `json:"privateRegistry,omitempty"`
+	// deprecated: Env is deprecated. Use Environment instead
+	Env         map[string]string `json:"env,omitempty"`
+	Environment []corev1.EnvVar   `json:"environment,omitempty"`
+	Health      Healthcheck       `json:"health"`
+	Ports       []int32           `json:"ports,omitempty"`
 	// +kubebuilder:default:=1
 	Instances int   `json:"instances"`
 	MemoryMB  int64 `json:"memoryMB"`

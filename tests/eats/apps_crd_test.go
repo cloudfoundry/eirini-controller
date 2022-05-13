@@ -14,6 +14,7 @@ import (
 	"github.com/prometheus/client_golang/api"
 	prometheusv1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/common/model"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -27,6 +28,7 @@ var _ = Describe("Apps CRDs [needs-logs-for: eirini-controller]", func() {
 		lrp              *eiriniv1.LRP
 		prometheusClient api.Client
 		prometheusAPI    prometheusv1.API
+		envSecret        *corev1.Secret
 	)
 
 	getLRP := func() *eiriniv1.LRP {
@@ -80,19 +82,42 @@ var _ = Describe("Apps CRDs [needs-logs-for: eirini-controller]", func() {
 		Expect(connErr).NotTo(HaveOccurred())
 		prometheusAPI = prometheusv1.NewAPI(prometheusClient)
 
+		var err error
+		envSecret, err = fixture.Clientset.CoreV1().Secrets(fixture.Namespace).
+			Create(context.Background(), &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{Name: tests.GenerateGUID()},
+				StringData: map[string]string{"password": "my-password"},
+			}, metav1.CreateOptions{})
+		Expect(err).NotTo(HaveOccurred())
+
+		false_pointer := false
 		lrp = &eiriniv1.LRP{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: lrpName,
 			},
 			Spec: eiriniv1.LRPSpec{
-				GUID:                   lrpGUID,
-				Version:                lrpVersion,
-				Image:                  "eirini/dorini",
-				AppGUID:                "the-app-guid",
-				AppName:                "k-2so",
-				SpaceName:              "s",
-				OrgName:                "o",
-				Env:                    map[string]string{"FOO": "BAR"},
+				GUID:      lrpGUID,
+				Version:   lrpVersion,
+				Image:     "eirini/dorini",
+				AppGUID:   "the-app-guid",
+				AppName:   "k-2so",
+				SpaceName: "s",
+				OrgName:   "o",
+				Env:       map[string]string{"FOO": "BAR"},
+				Environment: []corev1.EnvVar{
+					{
+						Name: "PASSWORD",
+						ValueFrom: &corev1.EnvVarSource{
+							SecretKeyRef: &corev1.SecretKeySelector{
+								LocalObjectReference: corev1.LocalObjectReference{
+									Name: envSecret.Name,
+								},
+								Key:      "password",
+								Optional: &false_pointer,
+							},
+						},
+					},
+				},
 				MemoryMB:               256,
 				DiskMB:                 256,
 				CPUWeight:              10,
@@ -137,6 +162,10 @@ var _ = Describe("Apps CRDs [needs-logs-for: eirini-controller]", func() {
 
 		It("starts the app", func() {
 			Eventually(tests.RequestServiceFn(fixture.Namespace, appServiceName, 8080, "/")).Should(ContainSubstring("Hi, I'm not Dora!"))
+		})
+
+		It("gets the env var via the secret", func() {
+			Eventually(tests.RequestServiceFn(fixture.Namespace, appServiceName, 8080, "/env")).Should(ContainSubstring("PASSWORD=my-password"))
 		})
 
 		It("updates the CRD status", func() {

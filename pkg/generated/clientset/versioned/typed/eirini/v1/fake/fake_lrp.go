@@ -117,7 +117,7 @@ func (c *FakeLRPs) UpdateStatus(ctx context.Context, lRP *eiriniv1.LRP, opts v1.
 // Delete takes name of the lRP and deletes it. Returns an error if one occurs.
 func (c *FakeLRPs) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewDeleteAction(lrpsResource, c.ns, name), &eiriniv1.LRP{})
+		Invokes(testing.NewDeleteActionWithOptions(lrpsResource, c.ns, name, opts), &eiriniv1.LRP{})
 
 	return err
 }

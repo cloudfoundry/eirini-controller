@@ -244,6 +244,41 @@ var _ = Describe("LRP to StatefulSet Converter", func() {
 		))
 	})
 
+	When("the app has environment set", func() {
+		BeforeEach(func() {
+			lrp.Spec.Environment = []corev1.EnvVar{
+				{
+					Name: "bobs",
+					ValueFrom: &corev1.EnvVarSource{
+						SecretKeyRef: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "your",
+							},
+							Key: "uncle",
+						},
+					},
+				},
+			}
+		})
+
+		It("is included in the stateful set env vars", func() {
+			Expect(statefulSet.Spec.Template.Spec.Containers).To(HaveLen(1))
+			container := statefulSet.Spec.Template.Spec.Containers[0]
+			Expect(container.Env).To(ContainElements(
+				corev1.EnvVar{Name: eirinictrl.EnvPodName, ValueFrom: expectedValFrom("metadata.name")},
+				corev1.EnvVar{Name: eirinictrl.EnvCFInstanceGUID, ValueFrom: expectedValFrom("metadata.uid")},
+				corev1.EnvVar{Name: eirinictrl.EnvCFInstanceInternalIP, ValueFrom: expectedValFrom("status.podIP")},
+				corev1.EnvVar{Name: eirinictrl.EnvCFInstanceIP, ValueFrom: expectedValFrom("status.hostIP")},
+				corev1.EnvVar{Name: "bobs", ValueFrom: &corev1.EnvVarSource{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{Name: "your"},
+						Key:                  "uncle",
+					},
+				}},
+			))
+		})
+	})
+
 	When("the app has sidecars", func() {
 		BeforeEach(func() {
 			lrp.Spec.Sidecars = []eiriniv1.Sidecar{
