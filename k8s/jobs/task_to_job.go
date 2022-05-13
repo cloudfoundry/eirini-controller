@@ -41,6 +41,7 @@ func (m *Converter) Convert(task *eiriniv1.Task, privateRegistrySecret *corev1.S
 	job.Spec.Template.Annotations[AnnotationTaskContainerName] = taskContainerName
 
 	envs := getEnvs(task)
+	envs = append(envs, task.Spec.Environment...)
 	containers := []corev1.Container{
 		{
 			Name:            taskContainerName,

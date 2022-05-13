@@ -8,6 +8,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -20,6 +21,7 @@ var _ = Describe("Tasks CRD [needs-logs-for: eirini-controller]", func() {
 		taskServiceName string
 		port            int32
 		ctx             context.Context
+		envSecret       *corev1.Secret
 	)
 
 	BeforeEach(func() {
@@ -27,6 +29,15 @@ var _ = Describe("Tasks CRD [needs-logs-for: eirini-controller]", func() {
 
 		taskName = tests.GenerateGUID()
 		taskGUID = tests.GenerateGUID()
+		var err error
+		envSecret, err = fixture.Clientset.CoreV1().Secrets(fixture.Namespace).
+			Create(context.Background(), &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{Name: tests.GenerateGUID()},
+				StringData: map[string]string{"password": "my-password"},
+			}, metav1.CreateOptions{})
+		Expect(err).NotTo(HaveOccurred())
+
+		false_pointer := false
 		task = &eiriniv1.Task{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: taskName,
@@ -40,6 +51,20 @@ var _ = Describe("Tasks CRD [needs-logs-for: eirini-controller]", func() {
 				OrgName:   "the-org",
 				Env: map[string]string{
 					"FOO": "BAR",
+				},
+				Environment: []corev1.EnvVar{
+					{
+						Name: "PASSWORD",
+						ValueFrom: &corev1.EnvVarSource{
+							SecretKeyRef: &corev1.SecretKeySelector{
+								LocalObjectReference: corev1.LocalObjectReference{
+									Name: envSecret.Name,
+								},
+								Key:      "password",
+								Optional: &false_pointer,
+							},
+						},
+					},
 				},
 				Image:   "eirini/dorini",
 				Command: []string{"/notdora"},
@@ -79,6 +104,10 @@ var _ = Describe("Tasks CRD [needs-logs-for: eirini-controller]", func() {
 				"ExecutionStatus": Equal(eiriniv1.TaskRunning),
 				"StartTime":       Not(BeZero()),
 			}))
+		})
+
+		It("gets the env var via the secret", func() {
+			Eventually(tests.RequestServiceFn(fixture.Namespace, taskServiceName, port, "/env")).Should(ContainSubstring("PASSWORD=my-password"))
 		})
 
 		When("the task image lives in a private registry", func() {

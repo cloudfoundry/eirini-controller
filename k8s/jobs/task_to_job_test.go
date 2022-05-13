@@ -145,6 +145,37 @@ var _ = Describe("TaskToJob", func() {
 		})
 	})
 
+	When("the task has environment set", func() {
+		BeforeEach(func() {
+			task.Spec.Environment = []corev1.EnvVar{
+				{
+					Name: "bobs",
+					ValueFrom: &corev1.EnvVarSource{
+						SecretKeyRef: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "your",
+							},
+							Key: "uncle",
+						},
+					},
+				},
+			}
+		})
+
+		It("is included in the stateful set env vars", func() {
+			Expect(job.Spec.Template.Spec.Containers).To(HaveLen(1))
+			container := job.Spec.Template.Spec.Containers[0]
+			Expect(container.Env).To(ContainElement(
+				corev1.EnvVar{Name: "bobs", ValueFrom: &corev1.EnvVarSource{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{Name: "your"},
+						Key:                  "uncle",
+					},
+				}},
+			))
+		})
+	})
+
 	When("allowAutomountServiceAccountToken is true", func() {
 		BeforeEach(func() {
 			allowAutomountServiceAccountToken = true
