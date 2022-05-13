@@ -117,7 +117,7 @@ func (c *FakeTasks) UpdateStatus(ctx context.Context, task *eiriniv1.Task, opts 
 // Delete takes name of the task and deletes it. Returns an error if one occurs.
 func (c *FakeTasks) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewDeleteAction(tasksResource, c.ns, name), &eiriniv1.Task{})
+		Invokes(testing.NewDeleteActionWithOptions(tasksResource, c.ns, name, opts), &eiriniv1.Task{})
 
 	return err
 }

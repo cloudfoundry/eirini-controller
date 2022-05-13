@@ -4,7 +4,7 @@ set -euo pipefail
 
 EIRINI_CONTROLLER_ROOT=$(dirname "${BASH_SOURCE[0]}")/..
 EIRINI_TMP_CRD="$EIRINI_CONTROLLER_ROOT/code.cloudfoundry.org/crds"
-EIRINI_RELEASE="$EIRINI_CONTROLLER_ROOT/../eirini-release"
+EIRINI_RELEASE="$EIRINI_CONTROLLER_ROOT/deployment"
 CODEGEN_PKG=${CODEGEN_PKG:-$(
   cd "${EIRINI_CONTROLLER_ROOT}"
   ls -d -1 ./vendor/k8s.io/code-generator 2>/dev/null || echo ../code-generator

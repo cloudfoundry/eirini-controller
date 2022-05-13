@@ -47,6 +47,7 @@ func NewLRPToStatefulSetConverter(
 
 func (c *LRPToStatefulSet) Convert(statefulSetName string, lrp *eiriniv1.LRP, privateRegistrySecret *corev1.Secret) (*appsv1.StatefulSet, error) {
 	envs := utils.MapToEnvVar(lrp.Spec.Env)
+	envs = append(envs, lrp.Spec.Environment...)
 	fieldEnvs := []corev1.EnvVar{
 		{
 			Name: eirinictrl.EnvPodName,

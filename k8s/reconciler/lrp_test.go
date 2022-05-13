@@ -13,6 +13,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -53,7 +54,6 @@ var _ = Describe("reconciler.LRP", func() {
 				Namespace: "some-ns",
 			},
 			Spec: eiriniv1.LRPSpec{
-
 				GUID:        "the-lrp-guid",
 				Version:     "the-lrp-version",
 				Command:     []string{"ls", "-la"},
@@ -69,6 +69,15 @@ var _ = Describe("reconciler.LRP", func() {
 				Env: map[string]string{
 					"FOO": "BAR",
 				},
+				Environment: []corev1.EnvVar{{
+					Name: "PASSWORD",
+					ValueFrom: &corev1.EnvVarSource{
+						SecretKeyRef: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{Name: "jim"},
+							Key:                  "password",
+						},
+					},
+				}},
 				Ports:     []int32{8080, 9090},
 				MemoryMB:  1024,
 				DiskMB:    512,
@@ -185,6 +194,7 @@ var _ = Describe("reconciler.LRP", func() {
 		Expect(actualLRP.Spec.Env).To(Equal(map[string]string{
 			"FOO": "BAR",
 		}))
+		Expect(actualLRP.Spec.Environment).To(HaveLen(1))
 		Expect(actualLRP.Spec.Ports).To(Equal([]int32{8080, 9090}))
 		Expect(actualLRP.Spec.MemoryMB).To(Equal(int64(1024)))
 		Expect(actualLRP.Spec.DiskMB).To(Equal(int64(512)))
