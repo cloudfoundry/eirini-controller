@@ -171,15 +171,13 @@ var _ = Describe("LRP to StatefulSet Converter", func() {
 	})
 
 	It("should set memory limit", func() {
-		expectedLimit := resource.NewScaledQuantity(1024, resource.Mega)
 		actualLimit := statefulSet.Spec.Template.Spec.Containers[0].Resources.Limits.Memory()
-		Expect(actualLimit).To(Equal(expectedLimit))
+		Expect(actualLimit.String()).To(Equal("1Gi"))
 	})
 
 	It("should set memory request", func() {
-		expectedLimit := resource.NewScaledQuantity(1024, resource.Mega)
 		actualLimit := statefulSet.Spec.Template.Spec.Containers[0].Resources.Requests.Memory()
-		Expect(actualLimit).To(Equal(expectedLimit))
+		Expect(actualLimit.String()).To(Equal("1Gi"))
 	})
 
 	It("should set cpu request", func() {
@@ -189,9 +187,8 @@ var _ = Describe("LRP to StatefulSet Converter", func() {
 	})
 
 	It("should set disk limit", func() {
-		expectedLimit := resource.NewScaledQuantity(2048, resource.Mega)
 		actualLimit := statefulSet.Spec.Template.Spec.Containers[0].Resources.Limits.StorageEphemeral()
-		Expect(actualLimit).To(Equal(expectedLimit))
+		Expect(actualLimit.String()).To(Equal("2Gi"))
 	})
 
 	It("should set user defined annotations", func() {
@@ -313,11 +310,11 @@ var _ = Describe("LRP to StatefulSet Converter", func() {
 					Env:     []corev1.EnvVar{{Name: "FOO", Value: "BAR"}},
 					Resources: corev1.ResourceRequirements{
 						Limits: corev1.ResourceList{
-							corev1.ResourceMemory:           *resource.NewScaledQuantity(101, resource.Mega),
-							corev1.ResourceEphemeralStorage: *resource.NewScaledQuantity(lrp.Spec.DiskMB, resource.Mega),
+							corev1.ResourceMemory:           stset.NewMebibyteQuantity(101),
+							corev1.ResourceEphemeralStorage: stset.NewMebibyteQuantity(lrp.Spec.DiskMB),
 						},
 						Requests: corev1.ResourceList{
-							corev1.ResourceMemory: *resource.NewScaledQuantity(101, resource.Mega),
+							corev1.ResourceMemory: stset.NewMebibyteQuantity(101),
 							corev1.ResourceCPU:    *resource.NewScaledQuantity(int64(lrp.Spec.CPUWeight), resource.Milli),
 						},
 					},
@@ -329,11 +326,11 @@ var _ = Describe("LRP to StatefulSet Converter", func() {
 					Env:     []corev1.EnvVar{{Name: "FOO", Value: "BAZ"}},
 					Resources: corev1.ResourceRequirements{
 						Limits: corev1.ResourceList{
-							corev1.ResourceMemory:           *resource.NewScaledQuantity(102, resource.Mega),
-							corev1.ResourceEphemeralStorage: *resource.NewScaledQuantity(lrp.Spec.DiskMB, resource.Mega),
+							corev1.ResourceMemory:           stset.NewMebibyteQuantity(102),
+							corev1.ResourceEphemeralStorage: stset.NewMebibyteQuantity(lrp.Spec.DiskMB),
 						},
 						Requests: corev1.ResourceList{
-							corev1.ResourceMemory: *resource.NewScaledQuantity(102, resource.Mega),
+							corev1.ResourceMemory: stset.NewMebibyteQuantity(102),
 							corev1.ResourceCPU:    *resource.NewScaledQuantity(int64(lrp.Spec.CPUWeight), resource.Milli),
 						},
 					},
