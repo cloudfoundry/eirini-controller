@@ -310,11 +310,11 @@ var _ = Describe("LRP to StatefulSet Converter", func() {
 					Env:     []corev1.EnvVar{{Name: "FOO", Value: "BAR"}},
 					Resources: corev1.ResourceRequirements{
 						Limits: corev1.ResourceList{
-							corev1.ResourceMemory:           stset.NewMebibyteQuantity(101),
-							corev1.ResourceEphemeralStorage: stset.NewMebibyteQuantity(lrp.Spec.DiskMB),
+							corev1.ResourceMemory:           stset.MebibyteQuantity(101),
+							corev1.ResourceEphemeralStorage: stset.MebibyteQuantity(lrp.Spec.DiskMB),
 						},
 						Requests: corev1.ResourceList{
-							corev1.ResourceMemory: stset.NewMebibyteQuantity(101),
+							corev1.ResourceMemory: stset.MebibyteQuantity(101),
 							corev1.ResourceCPU:    *resource.NewScaledQuantity(int64(lrp.Spec.CPUWeight), resource.Milli),
 						},
 					},
@@ -326,11 +326,11 @@ var _ = Describe("LRP to StatefulSet Converter", func() {
 					Env:     []corev1.EnvVar{{Name: "FOO", Value: "BAZ"}},
 					Resources: corev1.ResourceRequirements{
 						Limits: corev1.ResourceList{
-							corev1.ResourceMemory:           stset.NewMebibyteQuantity(102),
-							corev1.ResourceEphemeralStorage: stset.NewMebibyteQuantity(lrp.Spec.DiskMB),
+							corev1.ResourceMemory:           stset.MebibyteQuantity(102),
+							corev1.ResourceEphemeralStorage: stset.MebibyteQuantity(lrp.Spec.DiskMB),
 						},
 						Requests: corev1.ResourceList{
-							corev1.ResourceMemory: stset.NewMebibyteQuantity(102),
+							corev1.ResourceMemory: stset.MebibyteQuantity(102),
 							corev1.ResourceCPU:    *resource.NewScaledQuantity(int64(lrp.Spec.CPUWeight), resource.Milli),
 						},
 					},
