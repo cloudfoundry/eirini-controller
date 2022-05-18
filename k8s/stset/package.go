@@ -5,26 +5,26 @@ package stset
 const (
 	AppSourceType = "APP"
 
-	AnnotationAppName              = "workloads.cloudfoundry.org/application-name"
-	AnnotationVersion              = "workloads.cloudfoundry.org/version"
-	AnnotationAppID                = "workloads.cloudfoundry.org/application-id"
-	AnnotationSpaceName            = "workloads.cloudfoundry.org/space-name"
-	AnnotationOrgName              = "workloads.cloudfoundry.org/org-name"
-	AnnotationOrgGUID              = "workloads.cloudfoundry.org/org-guid"
-	AnnotationSpaceGUID            = "workloads.cloudfoundry.org/space-guid"
-	AnnotationProcessGUID          = "workloads.cloudfoundry.org/process-guid"
-	AnnotationLastReportedAppCrash = "workloads.cloudfoundry.org/last-reported-app-crash"
-	AnnotationLastReportedLRPCrash = "workloads.cloudfoundry.org/last-reported-lrp-crash"
+	AnnotationAppName              = "korifi.cloudfoundry.org/application-name"
+	AnnotationVersion              = "korifi.cloudfoundry.org/version"
+	AnnotationAppID                = "korifi.cloudfoundry.org/application-id"
+	AnnotationSpaceName            = "korifi.cloudfoundry.org/space-name"
+	AnnotationOrgName              = "korifi.cloudfoundry.org/org-name"
+	AnnotationOrgGUID              = "korifi.cloudfoundry.org/org-guid"
+	AnnotationSpaceGUID            = "korifi.cloudfoundry.org/space-guid"
+	AnnotationProcessGUID          = "korifi.cloudfoundry.org/process-guid"
+	AnnotationLastReportedAppCrash = "korifi.cloudfoundry.org/last-reported-app-crash"
+	AnnotationLastReportedLRPCrash = "korifi.cloudfoundry.org/last-reported-lrp-crash"
 
-	LabelGUID        = "workloads.cloudfoundry.org/guid"
+	LabelGUID        = "korifi.cloudfoundry.org/guid"
 	LabelOrgGUID     = AnnotationOrgGUID
 	LabelOrgName     = AnnotationOrgName
 	LabelSpaceGUID   = AnnotationSpaceGUID
 	LabelSpaceName   = AnnotationSpaceName
-	LabelVersion     = "workloads.cloudfoundry.org/version"
-	LabelAppGUID     = "workloads.cloudfoundry.org/app-guid"
-	LabelProcessType = "workloads.cloudfoundry.org/process-type"
-	LabelSourceType  = "workloads.cloudfoundry.org/source-type"
+	LabelVersion     = "korifi.cloudfoundry.org/version"
+	LabelAppGUID     = "korifi.cloudfoundry.org/app-guid"
+	LabelProcessType = "korifi.cloudfoundry.org/process-type"
+	LabelSourceType  = "korifi.cloudfoundry.org/source-type"
 
 	ApplicationContainerName = "opi"
 

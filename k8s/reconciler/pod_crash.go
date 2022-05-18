@@ -20,7 +20,7 @@ import (
 const (
 	eiriniControllerSource = "eirini-controller"
 	crashEventType         = "Warning"
-	labelInstanceIndex     = "workloads.cloudfoundry.org/instance-index"
+	labelInstanceIndex     = "korifi.cloudfoundry.org/instance-index"
 	action                 = "crashing"
 	lrpKind                = "LRP"
 	statefulSetKind        = "StatefulSet"
