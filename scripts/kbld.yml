@@ -12,5 +12,3 @@ sources:
       file: docker/eirini-controller/Dockerfile
       rawOptions: ["--build-arg", "GIT_SHA=eirini-controller-dirty", "--tag", "eirini-controller"]
       buildkit: true
-destinations:
-- image: eirini/eirini-controller

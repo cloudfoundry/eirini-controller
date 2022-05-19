@@ -157,6 +157,8 @@ redeploy_eirini_controller() {
     -f "$EIRINI_CONTROLLER_DIR/deployment/helm/values-template.yaml" \
     >"$EIRINI_CONTROLLER_DIR/deployment/helm/values.yaml"
 
+  kind load docker-image --name $cluster_name eirini-controller:latest
+
   "$EIRINI_CONTROLLER_DIR/deployment/scripts/render-templates.sh" eirini-controller "$render_dir" \
     --values "$EIRINI_CONTROLLER_DIR/deployment/scripts/assets/value-overrides.yaml"
   for img in $(grep -oh "kbld:.*" "$EIRINI_CONTROLLER_DIR/deployment/helm/values.yaml"); do
