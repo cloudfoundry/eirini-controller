@@ -266,13 +266,12 @@ var _ = Describe("Desire", func() {
 					limits := container.Resources.Limits
 					requests := container.Resources.Requests
 
-					expectedMemory := resource.NewScaledQuantity(101, resource.Mega)
-					expectedDisk := resource.NewScaledQuantity(lrp.Spec.DiskMB, resource.Mega)
+					expectedDisk := stset.MebibyteQuantity(lrp.Spec.DiskMB)
 					expectedCPU := resource.NewScaledQuantity(int64(lrp.Spec.CPUWeight*10), resource.Milli)
 
-					assertEqualValues(limits.Memory(), expectedMemory)
-					assertEqualValues(limits.StorageEphemeral(), expectedDisk)
-					assertEqualValues(requests.Memory(), expectedMemory)
+					Expect(limits.Memory().String()).To(Equal("101Mi"))
+					Expect(limits.StorageEphemeral().String()).To(Equal(expectedDisk.String()))
+					Expect(requests.Memory().String()).To(Equal("101Mi"))
 					assertEqualValues(requests.Cpu(), expectedCPU)
 				}
 			}
