@@ -3,6 +3,10 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   name: eirini-x-mutating-hook
+  {{- if not .Values.webhooks.ca_bundle }}
+  annotations:
+    cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/webhook-cert
+  {{- end }}
 webhooks:
 - name: instance-index-env-injector.eirini.cloudfoundry.org
   objectSelector:
@@ -18,7 +22,9 @@ webhooks:
     service:
       namespace: {{ .Release.Namespace }}
       name: eirini-webhooks
+    {{- if .Values.webhooks.ca_bundle }}
     caBundle: {{ .Values.webhooks.ca_bundle }}
+    {{- end }}
   admissionReviewVersions: ["v1beta1"]
   sideEffects: None
   timeoutSeconds: 10

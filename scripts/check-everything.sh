@@ -101,9 +101,16 @@ run_eats() {
   echo "#########################################"
   echo
 
+  cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: eirini-controller
+EOF
+
   if [[ "$redeploy" == "true" ]]; then
-    regenerate_secrets
     redeploy_prometheus
+    redeploy_cert_manager
     redeploy_eirini_controller
   fi
 
@@ -131,10 +138,6 @@ run_eats() {
     /usr/src/app/scripts/run_eats_tests.sh "$@"
 }
 
-regenerate_secrets() {
-  "$EIRINI_CONTROLLER_DIR/deployment/scripts/generate-secrets.sh" "*.eirini-controller.svc"
-}
-
 redeploy_prometheus() {
   kapp -y delete -a prometheus
   helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
@@ -142,17 +145,20 @@ redeploy_prometheus() {
   helm -n eirini-controller template prometheus prometheus-community/prometheus | kapp -y deploy -a prometheus -f -
 }
 
+redeploy_cert_manager() {
+  kapp -y delete -a cert-mgr
+  kapp -y deploy -a cert-mgr -f https://github.com/cert-manager/cert-manager/releases/download/v1.8.0/cert-manager.yaml
+}
+
 redeploy_eirini_controller() {
   render_dir=$(mktemp -d)
   trap "rm -rf $render_dir" EXIT
-  webhooks_ca_bundle="$(kubectl get secret -n eirini-controller eirini-webhooks-certs -o jsonpath="{.data['tls\.ca']}")"
   kbld -f "$EIRINI_CONTROLLER_DIR/scripts/kbld.yml" \
     -f "$EIRINI_CONTROLLER_DIR/deployment/helm/values-template.yaml" \
     >"$EIRINI_CONTROLLER_DIR/deployment/helm/values.yaml"
 
   "$EIRINI_CONTROLLER_DIR/deployment/scripts/render-templates.sh" eirini-controller "$render_dir" \
-    --values "$EIRINI_CONTROLLER_DIR/deployment/scripts/assets/value-overrides.yaml" \
-    --set "webhooks.ca_bundle=$webhooks_ca_bundle"
+    --values "$EIRINI_CONTROLLER_DIR/deployment/scripts/assets/value-overrides.yaml"
   for img in $(grep -oh "kbld:.*" "$EIRINI_CONTROLLER_DIR/deployment/helm/values.yaml"); do
     kind load docker-image --name eats "$img"
   done

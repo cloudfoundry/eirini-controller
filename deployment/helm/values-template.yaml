@@ -35,6 +35,7 @@ webhooks:
   certs_secret_name: eirini-webhooks-certs
 
   # the CA of the webhooks certificate
+  # if empty, cert-manager injects the certificate instead
   #ca_bundle:
 
 images:
