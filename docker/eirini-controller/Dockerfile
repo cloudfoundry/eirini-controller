@@ -16,4 +16,4 @@ USER 1001
 ENTRYPOINT [ "/usr/local/bin/eirini-controller" ]
 ARG GIT_SHA
 LABEL org.opencontainers.image.revision=$GIT_SHA \
-      org.opencontainers.image.source=https://code.cloudfoundry.org/eirini
+      org.opencontainers.image.source=https://code.cloudfoundry.org/eirini-controller
