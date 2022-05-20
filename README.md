@@ -16,32 +16,32 @@ Processes (LRPs) and Tasks as custom Kubernetes resources.
 
 ### Prerequisites
 
-- A Kubernetes cluster ([kind](https://kind.sigs.k8s.io/docs/user/quick-start/#installation) works fine)
-- [kubectl](https://kubernetes.io/docs/tasks/tools/)
-- [helm](https://helm.sh/docs/intro/install/)
-- The eirini-controller system and workloads namespaces need to be created upfront
+-   A Kubernetes cluster ([kind](https://kind.sigs.k8s.io/docs/user/quick-start/#installation) works fine)
+-   [kubectl](https://kubernetes.io/docs/tasks/tools/)
+-   [helm](https://helm.sh/docs/intro/install/)
+-   The eirini-controller system and workloads namespaces need to be created upfront
 
 ```
 kubectl create ns eirini-controller
 kubectl create ns cf-workloads
 ```
 
-- Secrets containing certificates for the webhooks need to be created. We have
-  a script that does that for local dev and testing purposes
+-   Secrets containing certificates for the webhooks need to be created. We have
+    a script that does that for local dev and testing purposes
 
 ```
-curl https://raw.githubusercontent.com/cloudfoundry-incubator/eirini-controller/master/deployment/scripts/generate-secrets.sh | bash -s - "*.eirini-controller.svc"
+curl https://raw.githubusercontent.com/cloudfoundry/eirini-controller/master/deployment/scripts/generate-secrets.sh | bash -s - "*.eirini-controller.svc"
 ```
 
 ### Installing an eirini-controllers release
 
 In ordrer to install eirini-controller to your k8s cluster, run the command below,
-replacing `x.y.z` with a [valid release version](https://github.com/cloudfoundry-incubator/eirini-controller/releases)
+replacing `x.y.z` with a [valid release version](https://github.com/cloudfoundry/eirini-controller/releases)
 
 ```bash
 VERSION=x.y.z; \
 WEBHOOK_CA_BUNDLE="$(kubectl get secret -n eirini-controller eirini-webhooks-certs -o jsonpath="{.data['tls\.ca']}")"; \
-helm install eirini-controller https://github.com/cloudfoundry-incubator/eirini-controller/releases/download/v$VERSION/eirini-controller-$VERSION.tgz \
+helm install eirini-controller https://github.com/cloudfoundry/eirini-controller/releases/download/v$VERSION/eirini-controller-$VERSION.tgz \
   --namespace eirini-controller \
   --set "webhooks.ca_bundle=$WEBHOOK_CA_BUNDLE"
 ```
