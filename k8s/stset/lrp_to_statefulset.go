@@ -249,6 +249,7 @@ func getContainerResources(cpuWeight uint8, memoryMB, diskMB int64) corev1.Resou
 	memory := MebibyteQuantity(memoryMB)
 	cpu := toCPUMillicores(cpuWeight)
 	ephemeralStorage := MebibyteQuantity(diskMB)
+
 	return corev1.ResourceRequirements{
 		Limits: corev1.ResourceList{
 			corev1.ResourceMemory:           memory,
@@ -265,7 +266,9 @@ func MebibyteQuantity(miB int64) resource.Quantity {
 	memory := resource.Quantity{
 		Format: resource.BinarySI,
 	}
+	//nolint:gomnd
 	memory.Set(miB * 1024 * 1024)
+
 	return memory
 }
 
