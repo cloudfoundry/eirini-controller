@@ -153,7 +153,7 @@ redeploy_cert_manager() {
 redeploy_eirini_controller() {
   render_dir=$(mktemp -d)
   trap "rm -rf $render_dir" EXIT
-  kbld -f "$EIRINI_CONTROLLER_DIR/scripts/kbld-kind.yml" \
+  kbld -f "$EIRINI_CONTROLLER_DIR/deployment/scripts/assets/kbld-kind.yaml" \
     -f "$EIRINI_CONTROLLER_DIR/deployment/helm/values-template.yaml" \
     >"$EIRINI_CONTROLLER_DIR/deployment/helm/values.yaml"
 
