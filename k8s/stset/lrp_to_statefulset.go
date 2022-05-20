@@ -246,10 +246,9 @@ func getVolumeSpecs(lrpVolumeMounts []eiriniv1.VolumeMount) ([]corev1.Volume, []
 }
 
 func getContainerResources(cpuWeight uint8, memoryMB, diskMB int64) corev1.ResourceRequirements {
-	memory := *resource.NewScaledQuantity(memoryMB, resource.Mega)
+	memory := MebibyteQuantity(memoryMB)
 	cpu := toCPUMillicores(cpuWeight)
-	ephemeralStorage := *resource.NewScaledQuantity(diskMB, resource.Mega)
-
+	ephemeralStorage := MebibyteQuantity(diskMB)
 	return corev1.ResourceRequirements{
 		Limits: corev1.ResourceList{
 			corev1.ResourceMemory:           memory,
@@ -260,6 +259,14 @@ func getContainerResources(cpuWeight uint8, memoryMB, diskMB int64) corev1.Resou
 			corev1.ResourceCPU:    cpu,
 		},
 	}
+}
+
+func MebibyteQuantity(miB int64) resource.Quantity {
+	memory := resource.Quantity{
+		Format: resource.BinarySI,
+	}
+	memory.Set(miB * 1024 * 1024)
+	return memory
 }
 
 func toCPUMillicores(cpuPercentage uint8) resource.Quantity {
