@@ -13,7 +13,7 @@ import (
 	eiriniclient "code.cloudfoundry.org/eirini-controller/pkg/generated/clientset/versioned"
 	eirinischeme "code.cloudfoundry.org/eirini-controller/pkg/generated/clientset/versioned/scheme"
 	"github.com/hashicorp/go-multierror"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -87,7 +87,7 @@ func NewFixture(writer io.Writer) *Fixture {
 		EiriniClientset:   lrpclientset,
 		RuntimeClient:     runtimeClient,
 		Writer:            writer,
-		nextAvailablePort: basePortNumber + portRange*GinkgoParallelNode(),
+		nextAvailablePort: basePortNumber + portRange*GinkgoParallelProcess(),
 		portMux:           &sync.Mutex{},
 	}
 }
@@ -101,7 +101,7 @@ func (f *Fixture) NextAvailablePort() int {
 	defer f.portMux.Unlock()
 
 	if f.nextAvailablePort > f.maxPortNumber() {
-		Fail("Ginkgo node %d is not allowed to allocate more than %d ports", GinkgoParallelNode(), portRange)
+		Fail("Ginkgo node %d is not allowed to allocate more than %d ports", GinkgoParallelProcess(), portRange)
 	}
 
 	port := f.nextAvailablePort
@@ -111,7 +111,7 @@ func (f *Fixture) NextAvailablePort() int {
 }
 
 func (f Fixture) maxPortNumber() int {
-	return basePortNumber + portRange*GinkgoParallelNode() + portRange
+	return basePortNumber + portRange*GinkgoParallelProcess() + portRange
 }
 
 func (f *Fixture) TearDown() {

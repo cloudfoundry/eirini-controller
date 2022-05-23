@@ -20,7 +20,7 @@ import (
 	eiriniclient "code.cloudfoundry.org/eirini-controller/pkg/generated/clientset/versioned"
 	"code.cloudfoundry.org/eirini-controller/tests"
 	"code.cloudfoundry.org/tlsconfig"
-	"github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/ghttp"
 	"gopkg.in/yaml.v2"
@@ -135,9 +135,9 @@ func DefaultControllerConfig(namespace string) *eirinictrl.ControllerConfig {
 		ApplicationServiceAccount: tests.GetApplicationServiceAccount(),
 		RegistrySecretName:        "registry-secret",
 		WorkloadsNamespace:        namespace,
-		WebhookPort:               int32(8080 + ginkgo.GinkgoParallelNode()),
+		WebhookPort:               int32(8080 + ginkgo.GinkgoParallelProcess()),
 		TaskTTLSeconds:            5,
-		LeaderElectionID:          fmt.Sprintf("test-eirini-%d", ginkgo.GinkgoParallelNode()),
+		LeaderElectionID:          fmt.Sprintf("test-eirini-%d", ginkgo.GinkgoParallelProcess()),
 		LeaderElectionNamespace:   namespace,
 	}
 }

@@ -11,7 +11,7 @@ import (
 	eirinictrl "code.cloudfoundry.org/eirini-controller"
 	"code.cloudfoundry.org/eirini-controller/tests"
 	"github.com/gofrs/flock"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 	"gopkg.in/yaml.v2"

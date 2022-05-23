@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/eirini-controller/tests"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/client-go/dynamic"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"

@@ -5,9 +5,9 @@ import (
 	"code.cloudfoundry.org/eirini-controller/k8s/stset"
 	"code.cloudfoundry.org/eirini-controller/k8s/stset/stsetfakes"
 	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
+	"code.cloudfoundry.org/eirini-controller/tests"
 	"code.cloudfoundry.org/lager"
-	"code.cloudfoundry.org/lager/lagertest"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -27,7 +27,7 @@ var _ = Describe("Update", func() {
 	)
 
 	BeforeEach(func() {
-		logger = lagertest.NewTestLogger("handler-test")
+		logger = tests.NewTestLogger("handler-test")
 
 		client = new(k8sfakes.FakeClient)
 		pdbUpdater = new(stsetfakes.FakePodDisruptionBudgetUpdater)

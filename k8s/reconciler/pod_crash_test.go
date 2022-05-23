@@ -10,8 +10,8 @@ import (
 	"code.cloudfoundry.org/eirini-controller/k8s/reconciler"
 	"code.cloudfoundry.org/eirini-controller/k8s/reconciler/reconcilerfakes"
 	"code.cloudfoundry.org/eirini-controller/k8s/stset"
-	"code.cloudfoundry.org/lager/lagertest"
-	. "github.com/onsi/ginkgo"
+	"code.cloudfoundry.org/eirini-controller/tests"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -41,7 +41,7 @@ var _ = Describe("K8s/Reconciler/AppCrash", func() {
 		crashEventGenerator = new(reconcilerfakes.FakeCrashEventGenerator)
 		client = new(k8sfakes.FakeClient)
 		podCrashReconciler = reconciler.NewPodCrash(
-			lagertest.NewTestLogger("pod-crash-test"),
+			tests.NewTestLogger("pod-crash-test"),
 			client,
 			crashEventGenerator,
 		)

@@ -6,8 +6,8 @@ import (
 
 	"code.cloudfoundry.org/eirini-controller/k8s/jobs"
 	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
-	"code.cloudfoundry.org/lager/lagertest"
-	. "github.com/onsi/ginkgo"
+	"code.cloudfoundry.org/eirini-controller/tests"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	batchv1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -25,7 +25,7 @@ var _ = Describe("StatusGetter", func() {
 			Status: batchv1.JobStatus{},
 		}
 
-		statusGetter = jobs.NewStatusGetter(lagertest.NewTestLogger("status_getter_test"))
+		statusGetter = jobs.NewStatusGetter(tests.NewTestLogger("status_getter_test"))
 	})
 
 	JustBeforeEach(func() {

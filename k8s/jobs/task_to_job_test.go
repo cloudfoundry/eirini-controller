@@ -6,7 +6,7 @@ import (
 	eirinictrl "code.cloudfoundry.org/eirini-controller"
 	"code.cloudfoundry.org/eirini-controller/k8s/jobs"
 	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
 	batch "k8s.io/api/batch/v1"

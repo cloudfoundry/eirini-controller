@@ -8,8 +8,9 @@ import (
 	"code.cloudfoundry.org/eirini-controller/k8s/reconciler"
 	"code.cloudfoundry.org/eirini-controller/k8s/reconciler/reconcilerfakes"
 	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
-	"code.cloudfoundry.org/lager/lagertest"
-	. "github.com/onsi/ginkgo"
+	"code.cloudfoundry.org/eirini-controller/tests"
+	"code.cloudfoundry.org/lager"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -24,7 +25,7 @@ import (
 
 var _ = Describe("reconciler.LRP", func() {
 	var (
-		logger        *lagertest.TestLogger
+		logger        lager.Logger
 		client        *k8sfakes.FakeClient
 		statusWriter  *k8sfakes.FakeStatusWriter
 		desirer       *reconcilerfakes.FakeLRPDesirer
@@ -45,7 +46,7 @@ var _ = Describe("reconciler.LRP", func() {
 
 		desirer = new(reconcilerfakes.FakeLRPDesirer)
 		updater = new(reconcilerfakes.FakeLRPUpdater)
-		logger = lagertest.NewTestLogger("lrp-reconciler")
+		logger = tests.NewTestLogger("lrp-reconciler")
 		lrpreconciler = reconciler.NewLRP(logger, client, desirer, updater)
 
 		lrp = &eiriniv1.LRP{

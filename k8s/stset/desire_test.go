@@ -10,9 +10,9 @@ import (
 	"code.cloudfoundry.org/eirini-controller/k8s/stset/stsetfakes"
 	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
 	eirinischeme "code.cloudfoundry.org/eirini-controller/pkg/generated/clientset/versioned/scheme"
+	"code.cloudfoundry.org/eirini-controller/tests"
 	"code.cloudfoundry.org/lager"
-	"code.cloudfoundry.org/lager/lagertest"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -35,7 +35,7 @@ var _ = Describe("Desirer", func() {
 	)
 
 	BeforeEach(func() {
-		logger = lagertest.NewTestLogger("statefulset-desirer")
+		logger = tests.NewTestLogger("statefulset-desirer")
 		client = new(k8sfakes.FakeClient)
 		lrpToStatefulSetConverter = new(stsetfakes.FakeLRPToStatefulSetConverter)
 		lrpToStatefulSetConverter.ConvertStub = func(statefulSetName string, lrp *eiriniv1.LRP, _ *corev1.Secret) (*appsv1.StatefulSet, error) {

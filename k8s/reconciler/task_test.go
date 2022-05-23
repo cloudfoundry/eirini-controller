@@ -9,8 +9,8 @@ import (
 	"code.cloudfoundry.org/eirini-controller/k8s/reconciler"
 	"code.cloudfoundry.org/eirini-controller/k8s/reconciler/reconcilerfakes"
 	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
-	"code.cloudfoundry.org/lager/lagertest"
-	. "github.com/onsi/ginkgo"
+	"code.cloudfoundry.org/eirini-controller/tests"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
 	batchv1 "k8s.io/api/batch/v1"
@@ -78,7 +78,7 @@ var _ = Describe("Task", func() {
 			Name:      "my-name",
 		}
 
-		logger := lagertest.NewTestLogger("task-reconciler")
+		logger := tests.NewTestLogger("task-reconciler")
 		ttlSeconds = 30
 		taskReconciler = reconciler.NewTask(logger, k8sClient, desirer, statusGetter, ttlSeconds)
 		task = &eiriniv1.Task{

@@ -10,8 +10,8 @@ import (
 	"code.cloudfoundry.org/eirini-controller/k8s/k8sfakes"
 	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
 	eirinischeme "code.cloudfoundry.org/eirini-controller/pkg/generated/clientset/versioned/scheme"
-	"code.cloudfoundry.org/lager/lagertest"
-	. "github.com/onsi/ginkgo"
+	"code.cloudfoundry.org/eirini-controller/tests"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
 	batchv1 "k8s.io/api/batch/v1"
@@ -71,7 +71,7 @@ var _ = Describe("Desire", func() {
 		}
 
 		desirer = jobs.NewDesirer(
-			lagertest.NewTestLogger("desiretask"),
+			tests.NewTestLogger("desiretask"),
 			taskToJobConverter,
 			client,
 			eirinischeme.Scheme,

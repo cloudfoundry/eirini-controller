@@ -12,8 +12,7 @@ import (
 	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
 	eirinischeme "code.cloudfoundry.org/eirini-controller/pkg/generated/clientset/versioned/scheme"
 	"code.cloudfoundry.org/eirini-controller/tests"
-	"code.cloudfoundry.org/lager/lagertest"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -51,7 +50,7 @@ var _ = AfterSuite(func() {
 })
 
 func createDesirer(workloadsNamespace string, allowRunImageAsRoot bool) *stset.Desirer {
-	logger := lagertest.NewTestLogger("test-" + workloadsNamespace)
+	logger := tests.NewTestLogger("test-" + workloadsNamespace)
 
 	lrpToStatefulSetConverter := stset.NewLRPToStatefulSetConverter(
 		tests.GetApplicationServiceAccount(),

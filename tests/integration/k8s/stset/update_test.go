@@ -6,8 +6,8 @@ import (
 	"code.cloudfoundry.org/eirini-controller/k8s/pdb"
 	"code.cloudfoundry.org/eirini-controller/k8s/stset"
 	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
-	"code.cloudfoundry.org/lager/lagertest"
-	. "github.com/onsi/ginkgo"
+	"code.cloudfoundry.org/eirini-controller/tests"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
 	appsv1 "k8s.io/api/apps/v1"
@@ -133,7 +133,7 @@ var _ = Describe("Update", func() {
 })
 
 func createUpdater(workloadsNamespace string, allowRunImageAsRoot bool) *stset.Updater {
-	logger := lagertest.NewTestLogger("test-" + workloadsNamespace)
+	logger := tests.NewTestLogger("test-" + workloadsNamespace)
 
 	pdbUpdater := pdb.NewUpdater(fixture.RuntimeClient)
 
