@@ -11,6 +11,7 @@ import (
 	. "github.com/onsi/gomega/gstruct"
 	batch "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -142,6 +143,14 @@ var _ = Describe("TaskToJob", func() {
 			Expect(job.Spec.Template.Spec.ImagePullSecrets).To(ConsistOf(
 				corev1.LocalObjectReference{Name: "registry-secret"},
 			))
+		})
+
+		By("setting limits and request", func() {
+			resources := job.Spec.Template.Spec.Containers[0].Resources
+			Expect(resources.Limits.Memory().ScaledValue(resource.Mega)).To(BeNumerically("==", 1))
+			Expect(resources.Requests.Memory().ScaledValue(resource.Mega)).To(BeNumerically("==", 1))
+			Expect(resources.Limits.StorageEphemeral().ScaledValue(resource.Mega)).To(BeNumerically("==", 3))
+			Expect(resources.Requests.StorageEphemeral().ScaledValue(resource.Mega)).To(BeNumerically("==", 3))
 		})
 	})
 

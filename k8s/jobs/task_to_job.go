@@ -6,6 +6,7 @@ import (
 	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
 	batch "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 const (
@@ -49,6 +50,16 @@ func (m *Converter) Convert(task *eiriniv1.Task, privateRegistrySecret *corev1.S
 			ImagePullPolicy: corev1.PullAlways,
 			Env:             envs,
 			Command:         task.Spec.Command,
+			Resources: corev1.ResourceRequirements{
+				Limits: map[corev1.ResourceName]resource.Quantity{
+					corev1.ResourceMemory:           *resource.NewScaledQuantity(task.Spec.MemoryMB, resource.Mega),
+					corev1.ResourceEphemeralStorage: *resource.NewScaledQuantity(task.Spec.DiskMB, resource.Mega),
+				},
+				Requests: map[corev1.ResourceName]resource.Quantity{
+					corev1.ResourceMemory:           *resource.NewScaledQuantity(task.Spec.MemoryMB, resource.Mega),
+					corev1.ResourceEphemeralStorage: *resource.NewScaledQuantity(task.Spec.DiskMB, resource.Mega),
+				},
+			},
 		},
 	}
 
