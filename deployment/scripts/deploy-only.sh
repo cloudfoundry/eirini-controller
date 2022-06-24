@@ -23,13 +23,9 @@ source "$SCRIPT_DIR/helpers/print.sh"
 
 main() {
   print_disclaimer
-  generate_secrets
   install_prometheus
-  install_eirini_controller "$@"
-}
-
-generate_secrets() {
-  "$SCRIPT_DIR/generate-secrets.sh" "*.${SYSTEM_NAMESPACE}.svc"
+  install_cert_manager
+  install_eirini_controller
 }
 
 install_prometheus() {
@@ -37,21 +33,21 @@ install_prometheus() {
   helm repo update
   helm upgrade prometheus \
     --install prometheus-community/prometheus \
-    --namespace "$SYSTEM_NAMESPACE" \
+    --namespace prometheus \
+    --create-namespace \
     --wait
 }
 
-install_eirini_controller() {
-  local resource_validator_ca_bundle env_injector_ca_bundle
-  webhook_ca_bundle="$(kubectl get secret -n $SYSTEM_NAMESPACE eirini-webhooks-certs -o jsonpath="{.data['tls\.ca']}")"
-  helm upgrade eirini-controller \
-    --install "$ROOT_DIR/deployment/helm" \
-    --namespace "$SYSTEM_NAMESPACE" \
-    --values "$HELM_VALUES" \
-    --values "$SCRIPT_DIR/assets/value-overrides.yaml" \
-    --set "webhooks.ca_bundle=$webhook_ca_bundle" \
-    --wait \
-    "$@"
+install_cert_manager() {
+  kapp -y deploy -a cert-mgr -f https://github.com/cert-manager/cert-manager/releases/download/v1.8.2/cert-manager.yaml
 }
 
-main "$@"
+install_eirini_controller() {
+  helm template eirini-controller "$ROOT_DIR/deployment/helm" \
+    --namespace "$SYSTEM_NAMESPACE" \
+    --values "$HELM_VALUES" \
+    --values "$SCRIPT_DIR/assets/value-overrides.yaml" |
+    kapp -y deploy -a eirini-controller -f -
+}
+
+main

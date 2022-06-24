@@ -151,7 +151,7 @@ redeploy_prometheus() {
 
 redeploy_cert_manager() {
   kapp -y delete -a cert-mgr
-  kapp -y deploy -a cert-mgr -f https://github.com/cert-manager/cert-manager/releases/download/v1.8.0/cert-manager.yaml
+  kapp -y deploy -a cert-mgr -f https://github.com/cert-manager/cert-manager/releases/download/v1.8.2/cert-manager.yaml
 }
 
 redeploy_eirini_controller() {
