@@ -25,7 +25,7 @@ main() {
   print_disclaimer
   install_prometheus
   install_cert_manager
-  install_eirini_controller
+  install_eirini_controller "$@"
 }
 
 install_prometheus() {
@@ -46,8 +46,8 @@ install_eirini_controller() {
   helm template eirini-controller "$ROOT_DIR/deployment/helm" \
     --namespace "$SYSTEM_NAMESPACE" \
     --values "$HELM_VALUES" \
-    --values "$SCRIPT_DIR/assets/value-overrides.yaml" |
+    --values "$SCRIPT_DIR/assets/value-overrides.yaml" "$@" |
     kapp -y deploy -a eirini-controller -f -
 }
 
-main
+main "$@"
