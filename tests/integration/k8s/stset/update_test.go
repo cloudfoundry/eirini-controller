@@ -16,20 +16,18 @@ import (
 
 var _ = Describe("Update", func() {
 	var (
-		allowRunImageAsRoot bool
-		desirer             *stset.Desirer
-		updater             *stset.Updater
-		lrp                 *eiriniv1.LRP
+		desirer *stset.Desirer
+		updater *stset.Updater
+		lrp     *eiriniv1.LRP
 	)
 
 	BeforeEach(func() {
-		allowRunImageAsRoot = false
 		lrp = createLRP(fixture.Namespace, "odin")
 	})
 
 	JustBeforeEach(func() {
-		desirer = createDesirer(fixture.Namespace, allowRunImageAsRoot)
-		updater = createUpdater(fixture.Namespace, allowRunImageAsRoot)
+		desirer = createDesirer(fixture.Namespace)
+		updater = createUpdater(fixture.Namespace)
 	})
 
 	Describe("scaling", func() {
@@ -132,7 +130,7 @@ var _ = Describe("Update", func() {
 	})
 })
 
-func createUpdater(workloadsNamespace string, allowRunImageAsRoot bool) *stset.Updater {
+func createUpdater(workloadsNamespace string) *stset.Updater {
 	logger := tests.NewTestLogger("test-" + workloadsNamespace)
 
 	pdbUpdater := pdb.NewUpdater(fixture.RuntimeClient)

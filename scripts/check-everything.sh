@@ -91,6 +91,15 @@ run_integration_tests() {
     /usr/src/app/scripts/run_integration_tests.sh "$@"
 }
 
+ensure_namespace() {
+  cat <<EOF | kubectl apply -f-
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: "$1"
+EOF
+}
+
 run_eats() {
   local cluster_name="eats"
   export KUBECONFIG="$HOME/.kube/$cluster_name.yml"
@@ -100,13 +109,6 @@ run_eats() {
   echo "Running EATs against deployed eirini on $(kubectl config current-context)"
   echo "#########################################"
   echo
-
-  cat <<EOF | kubectl apply -f -
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: eirini-controller
-EOF
 
   if [[ "$redeploy" == "true" ]]; then
     redeploy_prometheus
@@ -140,9 +142,11 @@ EOF
 
 redeploy_prometheus() {
   kapp -y delete -a prometheus
+  ensure_namespace prometheus
   helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
   helm repo update
-  helm -n eirini-controller template prometheus prometheus-community/prometheus | kapp -y deploy -a prometheus -f -
+  helm template prometheus prometheus-community/prometheus --namespace prometheus |
+    kapp -y deploy -a prometheus -f -
 }
 
 redeploy_cert_manager() {

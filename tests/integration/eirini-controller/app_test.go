@@ -10,7 +10,6 @@ import (
 	"code.cloudfoundry.org/eirini-controller/tests/integration"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	. "github.com/onsi/gomega/gstruct"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -71,26 +70,6 @@ var _ = Describe("App", func() {
 			output, err := tests.RequestServiceFn(fixture.Namespace, serviceName, 8080, "/")()
 			Expect(err).NotTo(HaveOccurred())
 			Expect(output).To(ContainSubstring("Dora"))
-		})
-
-		It("sets the runAsNonRoot in the PodSecurityContext", func() {
-			stsets, err := fixture.Clientset.AppsV1().StatefulSets(fixture.Namespace).List(context.Background(), metav1.ListOptions{})
-			Expect(err).NotTo(HaveOccurred())
-			Expect(stsets.Items).To(HaveLen(1))
-			Expect(stsets.Items[0].Spec.Template.Spec.SecurityContext.RunAsNonRoot).To(PointTo(BeTrue()))
-		})
-
-		When("AllowRunImageAsRoot is true", func() {
-			BeforeEach(func() {
-				config.AllowRunImageAsRoot = true
-			})
-
-			It("doesn't set `runAsNonRoot` in the PodSecurityContext", func() {
-				stsets, err := fixture.Clientset.AppsV1().StatefulSets(fixture.Namespace).List(context.Background(), metav1.ListOptions{})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(stsets.Items).To(HaveLen(1))
-				Expect(stsets.Items[0].Spec.Template.Spec.SecurityContext.RunAsNonRoot).To(BeNil())
-			})
 		})
 
 		When("DiskMB is zero", func() {

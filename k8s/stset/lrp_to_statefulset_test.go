@@ -17,7 +17,6 @@ import (
 var _ = Describe("LRP to StatefulSet Converter", func() {
 	var (
 		allowAutomountServiceAccountToken bool
-		allowRunImageAsRoot               bool
 		livenessProbeCreator              *stsetfakes.FakeProbeCreator
 		readinessProbeCreator             *stsetfakes.FakeProbeCreator
 		lrp                               *eiriniv1.LRP
@@ -29,7 +28,6 @@ var _ = Describe("LRP to StatefulSet Converter", func() {
 
 	BeforeEach(func() {
 		allowAutomountServiceAccountToken = false
-		allowRunImageAsRoot = false
 		livenessProbeCreator = new(stsetfakes.FakeProbeCreator)
 		readinessProbeCreator = new(stsetfakes.FakeProbeCreator)
 		lrp = createLRP("the-namespace", "Baldur")
@@ -43,7 +41,7 @@ var _ = Describe("LRP to StatefulSet Converter", func() {
 	})
 
 	JustBeforeEach(func() {
-		converter := stset.NewLRPToStatefulSetConverter("eirini", "secret-name", allowAutomountServiceAccountToken, allowRunImageAsRoot, livenessProbeCreator.Spy, readinessProbeCreator.Spy)
+		converter := stset.NewLRPToStatefulSetConverter("eirini", "secret-name", allowAutomountServiceAccountToken, livenessProbeCreator.Spy, readinessProbeCreator.Spy)
 
 		var err error
 		statefulSet, err = converter.Convert("Baldur", lrp, privateRegistrySecret)
@@ -86,10 +84,6 @@ var _ = Describe("LRP to StatefulSet Converter", func() {
 		Entry("OrgGUID", stset.AnnotationOrgGUID, "org-guid"),
 	)
 
-	It("should set seccomp pod annotation", func() {
-		Expect(statefulSet.Spec.Template.Annotations[corev1.SeccompPodAnnotationKey]).To(Equal(corev1.SeccompProfileRuntimeDefault))
-	})
-
 	It("should set podManagementPolicy to parallel", func() {
 		Expect(string(statefulSet.Spec.PodManagementPolicy)).To(Equal("Parallel"))
 	})
@@ -98,10 +92,6 @@ var _ = Describe("LRP to StatefulSet Converter", func() {
 		Expect(statefulSet.Spec.Template.Spec.ImagePullSecrets).To(HaveLen(1))
 		secret := statefulSet.Spec.Template.Spec.ImagePullSecrets[0]
 		Expect(secret.Name).To(Equal("secret-name"))
-	})
-
-	It("should deny privilegeEscalation", func() {
-		Expect(*statefulSet.Spec.Template.Spec.Containers[0].SecurityContext.AllowPrivilegeEscalation).To(Equal(false))
 	})
 
 	It("should set the liveness probe", func() {
@@ -194,10 +184,6 @@ var _ = Describe("LRP to StatefulSet Converter", func() {
 		Expect(statefulSet.Spec.Template.Annotations["prometheus.io/scrape"]).To(Equal("secret-value"))
 	})
 
-	It("should run it with non-root user", func() {
-		Expect(statefulSet.Spec.Template.Spec.SecurityContext.RunAsNonRoot).To(PointTo(Equal(true)))
-	})
-
 	It("should set soft inter-pod anti-affinity", func() {
 		podAntiAffinity := statefulSet.Spec.Template.Spec.Affinity.PodAntiAffinity
 		Expect(podAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution).To(BeEmpty())
@@ -238,6 +224,22 @@ var _ = Describe("LRP to StatefulSet Converter", func() {
 			corev1.EnvVar{Name: eirinictrl.EnvCFInstanceInternalIP, ValueFrom: expectedValFrom("status.podIP")},
 			corev1.EnvVar{Name: eirinictrl.EnvCFInstanceIP, ValueFrom: expectedValFrom("status.hostIP")},
 		))
+	})
+
+	It("sets the restricted pod security context", func() {
+		Expect(statefulSet.Spec.Template.Spec.Containers).To(HaveLen(1))
+		securityContext := statefulSet.Spec.Template.Spec.Containers[0].SecurityContext
+		Expect(securityContext).NotTo(BeNil())
+
+		Expect(securityContext.AllowPrivilegeEscalation).To(PointTo(BeFalse()))
+		Expect(securityContext.RunAsNonRoot).To(PointTo(BeTrue()))
+
+		Expect(securityContext.Capabilities).NotTo(BeNil())
+		Expect(securityContext.Capabilities.Drop).To(ConsistOf(corev1.Capability("ALL")))
+		Expect(securityContext.Capabilities.Add).To(BeEmpty())
+
+		Expect(securityContext.SeccompProfile).NotTo(BeNil())
+		Expect(securityContext.SeccompProfile.Type).To(Equal(corev1.SeccompProfileTypeRuntimeDefault))
 	})
 
 	When("the app has environment set", func() {
@@ -345,16 +347,6 @@ var _ = Describe("LRP to StatefulSet Converter", func() {
 
 		It("does not set automountServiceAccountToken", func() {
 			Expect(statefulSet.Spec.Template.Spec.AutomountServiceAccountToken).To(BeNil())
-		})
-	})
-
-	When("application should run as root", func() {
-		BeforeEach(func() {
-			allowRunImageAsRoot = true
-		})
-
-		It("does not set privileged context", func() {
-			Expect(statefulSet.Spec.Template.Spec.SecurityContext).To(BeNil())
 		})
 	})
 

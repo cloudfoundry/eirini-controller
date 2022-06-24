@@ -43,6 +43,14 @@ spec:
           mountPath: /etc/eirini/config
         - name: certs
           mountPath: /etc/eirini/certs
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
       volumes:
         - name: config-map
           configMap:

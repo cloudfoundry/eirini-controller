@@ -49,14 +49,13 @@ var _ = AfterSuite(func() {
 	fixture.Destroy()
 })
 
-func createDesirer(workloadsNamespace string, allowRunImageAsRoot bool) *stset.Desirer {
+func createDesirer(workloadsNamespace string) *stset.Desirer {
 	logger := tests.NewTestLogger("test-" + workloadsNamespace)
 
 	lrpToStatefulSetConverter := stset.NewLRPToStatefulSetConverter(
 		tests.GetApplicationServiceAccount(),
 		"registry-secret",
 		false,
-		allowRunImageAsRoot,
 		k8s.CreateLivenessProbe,
 		k8s.CreateReadinessProbe,
 	)

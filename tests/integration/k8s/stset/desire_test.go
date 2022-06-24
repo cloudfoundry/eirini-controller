@@ -17,19 +17,17 @@ import (
 
 var _ = Describe("Desire", func() {
 	var (
-		allowRunImageAsRoot bool
-		desirer             *stset.Desirer
-		lrp                 *eiriniv1.LRP
-		desireErr           error
+		desirer   *stset.Desirer
+		lrp       *eiriniv1.LRP
+		desireErr error
 	)
 
 	BeforeEach(func() {
-		allowRunImageAsRoot = false
 		lrp = createLRP(fixture.Namespace, "odin")
 	})
 
 	JustBeforeEach(func() {
-		desirer = createDesirer(fixture.Namespace, allowRunImageAsRoot)
+		desirer = createDesirer(fixture.Namespace)
 		desireErr = desirer.Desire(ctx, lrp)
 	})
 
@@ -51,7 +49,6 @@ var _ = Describe("Desire", func() {
 		))
 
 		Expect(statefulset.Spec.Replicas).To(Equal(int32ptr(lrp.Spec.Instances)))
-		Expect(statefulset.Spec.Template.Spec.SecurityContext.RunAsNonRoot).To(PointTo(BeTrue()))
 		Expect(statefulset.Spec.Template.Spec.Containers[0].Command).To(Equal(lrp.Spec.Command))
 		Expect(statefulset.Spec.Template.Spec.Containers[0].Image).To(Equal(lrp.Spec.Image))
 		Expect(statefulset.Spec.Template.Spec.Containers[0].Env).To(ContainElement(corev1.EnvVar{Name: "FOO", Value: "BAR"}))
@@ -188,38 +185,6 @@ var _ = Describe("Desire", func() {
 		It("should not error", func() {
 			err := desirer.Desire(ctx, lrp)
 			Expect(err).NotTo(HaveOccurred())
-		})
-	})
-
-	When("using a docker image that needs root access", func() {
-		BeforeEach(func() {
-			allowRunImageAsRoot = true
-
-			lrp.Spec.Image = "eirini/nginx-integration"
-			lrp.Spec.Command = nil
-			lrp.Spec.Health.Type = "http"
-			lrp.Spec.Health.Port = 8080
-		})
-
-		It("should start all the pods", func() {
-			var podNames []string
-
-			Eventually(func() []string {
-				podNames = podNamesFromPods(listPods(lrp))
-
-				return podNames
-			}).Should(HaveLen(lrp.Spec.Instances))
-
-			for i := 0; i < lrp.Spec.Instances; i++ {
-				podIndex := i
-				Eventually(func() string {
-					return getPodPhase(podIndex, lrp)
-				}).Should(Equal("Ready"))
-			}
-
-			Eventually(func() int32 {
-				return getStatefulSetForLRP(lrp).Status.ReadyReplicas
-			}).Should(BeNumerically("==", lrp.Spec.Instances))
 		})
 	})
 

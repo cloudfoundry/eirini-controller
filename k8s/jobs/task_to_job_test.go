@@ -32,9 +32,8 @@ var _ = Describe("TaskToJob", func() {
 
 	assertGeneralSpec := func(job *batch.Job) {
 		automountServiceAccountToken := false
-		Expect(job.Spec.Template.Spec.RestartPolicy).To(Equal(corev1.RestartPolicyNever))
-		Expect(job.Spec.Template.Spec.AutomountServiceAccountToken).To(Equal(&automountServiceAccountToken))
-		Expect(job.Spec.Template.Spec.SecurityContext.RunAsNonRoot).To(PointTo(Equal(true)))
+		ExpectWithOffset(1, job.Spec.Template.Spec.RestartPolicy).To(Equal(corev1.RestartPolicyNever))
+		ExpectWithOffset(1, job.Spec.Template.Spec.AutomountServiceAccountToken).To(Equal(&automountServiceAccountToken))
 	}
 
 	assertContainer := func(container corev1.Container, name string) {
@@ -104,7 +103,6 @@ var _ = Describe("TaskToJob", func() {
 				HaveKeyWithValue(jobs.AnnotationOrgGUID, "org-id"),
 				HaveKeyWithValue(jobs.AnnotationSpaceName, "my-space"),
 				HaveKeyWithValue(jobs.AnnotationSpaceGUID, "space-id"),
-				HaveKeyWithValue(corev1.SeccompPodAnnotationKey, corev1.SeccompProfileRuntimeDefault),
 			))
 		})
 
@@ -127,7 +125,6 @@ var _ = Describe("TaskToJob", func() {
 				HaveKeyWithValue(jobs.AnnotationSpaceGUID, "space-id"),
 				HaveKeyWithValue(jobs.AnnotationTaskContainerName, "opi-task"),
 				HaveKeyWithValue(jobs.AnnotationGUID, "task-123"),
-				HaveKeyWithValue(corev1.SeccompPodAnnotationKey, corev1.SeccompProfileRuntimeDefault),
 			))
 		})
 
@@ -151,6 +148,21 @@ var _ = Describe("TaskToJob", func() {
 			Expect(resources.Requests.Memory().ScaledValue(resource.Mega)).To(BeNumerically("==", 1))
 			Expect(resources.Limits.StorageEphemeral().ScaledValue(resource.Mega)).To(BeNumerically("==", 3))
 			Expect(resources.Requests.StorageEphemeral().ScaledValue(resource.Mega)).To(BeNumerically("==", 3))
+		})
+
+		By("configuring pod security context", func() {
+			securityContext := containers[0].SecurityContext
+			Expect(securityContext).NotTo(BeNil())
+
+			Expect(securityContext.AllowPrivilegeEscalation).To(PointTo(BeFalse()))
+			Expect(securityContext.RunAsNonRoot).To(PointTo(BeTrue()))
+
+			Expect(securityContext.Capabilities).NotTo(BeNil())
+			Expect(securityContext.Capabilities.Drop).To(ConsistOf(corev1.Capability("ALL")))
+			Expect(securityContext.Capabilities.Add).To(BeEmpty())
+
+			Expect(securityContext.SeccompProfile).NotTo(BeNil())
+			Expect(securityContext.SeccompProfile.Type).To(Equal(corev1.SeccompProfileTypeRuntimeDefault))
 		})
 	})
 

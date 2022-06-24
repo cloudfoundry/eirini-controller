@@ -26,7 +26,7 @@ func NewEATSFixture(baseFixture Fixture, dynamicClientset dynamic.Interface) *EA
 
 func (f *EATSFixture) SetUp() {
 	f.Fixture.SetUp()
-	CopyRolesAndBindings(f.Namespace, f.Fixture.Clientset)
+	CopyRolesAndBindings(f.Namespace, f.Clientset)
 }
 
 func (f *EATSFixture) TearDown() {

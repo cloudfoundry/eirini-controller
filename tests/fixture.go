@@ -12,7 +12,6 @@ import (
 
 	eiriniclient "code.cloudfoundry.org/eirini-controller/pkg/generated/clientset/versioned"
 	eirinischeme "code.cloudfoundry.org/eirini-controller/pkg/generated/clientset/versioned/scheme"
-	"github.com/hashicorp/go-multierror"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
@@ -34,7 +33,6 @@ type Fixture struct {
 	EiriniClientset   eiriniclient.Interface
 	RuntimeClient     runtimeclient.Client
 	Namespace         string
-	PspName           string
 	KubeConfigPath    string
 	Writer            io.Writer
 	nextAvailablePort int
@@ -136,17 +134,13 @@ func (f *Fixture) CreateExtraNamespace() string {
 
 func (f *Fixture) configureNewNamespace() string {
 	namespace := CreateRandomNamespace(f.Clientset)
-	Expect(CreatePodCreationPSP(namespace, getPspName(namespace), GetApplicationServiceAccount(), f.Clientset)).To(Succeed(), "failed to create pod creation PSP")
+	Expect(ConfigureWorkloadsNamespace(namespace, GetApplicationServiceAccount(), f.Clientset)).To(Succeed(), "failed to configure workloads namespace")
 
 	return namespace
 }
 
 func (f *Fixture) deleteNamespace(namespace string) error {
-	var errs *multierror.Error
-	errs = multierror.Append(errs, DeleteNamespace(namespace, f.Clientset))
-	errs = multierror.Append(errs, DeletePSP(getPspName(namespace), f.Clientset))
-
-	return errs.ErrorOrNil()
+	return DeleteNamespace(namespace, f.Clientset)
 }
 
 func (f *Fixture) printDebugInfo() {
@@ -208,8 +202,4 @@ func consumeRequest(request rest.ResponseWrapper, out io.Writer) error {
 			return nil
 		}
 	}
-}
-
-func getPspName(namespace string) string {
-	return fmt.Sprintf("%s-psp", namespace)
 }

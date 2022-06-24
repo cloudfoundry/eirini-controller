@@ -47,7 +47,6 @@ func createLRPReconciler(
 		cfg.ApplicationServiceAccount,
 		cfg.RegistrySecretName,
 		cfg.UnsafeAllowAutomountServiceAccountToken,
-		cfg.AllowRunImageAsRoot,
 		k8s.CreateLivenessProbe,
 		k8s.CreateReadinessProbe,
 	)

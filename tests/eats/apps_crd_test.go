@@ -77,7 +77,7 @@ var _ = Describe("Apps CRDs [needs-logs-for: eirini-controller]", func() {
 
 		var connErr error
 		prometheusClient, connErr = api.NewClient(api.Config{
-			Address: fmt.Sprintf("http://prometheus-server.%s.svc.cluster.local:80", tests.GetEiriniSystemNamespace()),
+			Address: "http://prometheus-server.prometheus.svc.cluster.local:80",
 		})
 		Expect(connErr).NotTo(HaveOccurred())
 		prometheusAPI = prometheusv1.NewAPI(prometheusClient)

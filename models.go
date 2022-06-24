@@ -27,7 +27,6 @@ type ControllerConfig struct {
 
 	ApplicationServiceAccount               string `yaml:"application_service_account"`
 	RegistrySecretName                      string `yaml:"registry_secret_name"`
-	AllowRunImageAsRoot                     bool   `yaml:"allow_run_image_as_root"`
 	UnsafeAllowAutomountServiceAccountToken bool   `yaml:"unsafe_allow_automount_service_account_token"`
 	DefaultMinAvailableInstances            string `yaml:"default_min_available_instances"`
 

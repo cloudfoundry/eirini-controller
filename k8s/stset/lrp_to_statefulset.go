@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	eirinictrl "code.cloudfoundry.org/eirini-controller"
+	"code.cloudfoundry.org/eirini-controller/k8s"
 	"code.cloudfoundry.org/eirini-controller/k8s/utils"
 	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -22,7 +23,6 @@ type LRPToStatefulSet struct {
 	applicationServiceAccount         string
 	registrySecretName                string
 	allowAutomountServiceAccountToken bool
-	allowRunImageAsRoot               bool
 	livenessProbeCreator              ProbeCreator
 	readinessProbeCreator             ProbeCreator
 }
@@ -31,7 +31,6 @@ func NewLRPToStatefulSetConverter(
 	applicationServiceAccount string,
 	registrySecretName string,
 	allowAutomountServiceAccountToken bool,
-	allowRunImageAsRoot bool,
 	livenessProbeCreator ProbeCreator,
 	readinessProbeCreator ProbeCreator,
 ) *LRPToStatefulSet {
@@ -39,7 +38,6 @@ func NewLRPToStatefulSetConverter(
 		applicationServiceAccount:         applicationServiceAccount,
 		registrySecretName:                registrySecretName,
 		allowAutomountServiceAccountToken: allowAutomountServiceAccountToken,
-		allowRunImageAsRoot:               allowRunImageAsRoot,
 		livenessProbeCreator:              livenessProbeCreator,
 		readinessProbeCreator:             readinessProbeCreator,
 	}
@@ -94,7 +92,6 @@ func (c *LRPToStatefulSet) Convert(statefulSetName string, lrp *eiriniv1.LRP, pr
 	readinessProbe := c.readinessProbeCreator(lrp)
 
 	volumes, volumeMounts := getVolumeSpecs(lrp.Spec.VolumeMounts)
-	allowPrivilegeEscalation := false
 	imagePullSecrets := c.calculateImagePullSecrets(privateRegistrySecret)
 
 	containers := []corev1.Container{
@@ -105,13 +102,11 @@ func (c *LRPToStatefulSet) Convert(statefulSetName string, lrp *eiriniv1.LRP, pr
 			Command:         lrp.Spec.Command,
 			Env:             envs,
 			Ports:           ports,
-			SecurityContext: &corev1.SecurityContext{
-				AllowPrivilegeEscalation: &allowPrivilegeEscalation,
-			},
-			Resources:      getContainerResources(lrp.Spec.CPUWeight, lrp.Spec.MemoryMB, lrp.Spec.DiskMB),
-			LivenessProbe:  livenessProbe,
-			ReadinessProbe: readinessProbe,
-			VolumeMounts:   volumeMounts,
+			SecurityContext: k8s.ContainerSecurityContext(),
+			Resources:       getContainerResources(lrp.Spec.CPUWeight, lrp.Spec.MemoryMB, lrp.Spec.DiskMB),
+			LivenessProbe:   livenessProbe,
+			ReadinessProbe:  readinessProbe,
+			VolumeMounts:    volumeMounts,
 		},
 	}
 
@@ -128,7 +123,6 @@ func (c *LRPToStatefulSet) Convert(statefulSetName string, lrp *eiriniv1.LRP, pr
 				Spec: corev1.PodSpec{
 					Containers:         containers,
 					ImagePullSecrets:   imagePullSecrets,
-					SecurityContext:    c.getGetSecurityContext(),
 					ServiceAccountName: c.applicationServiceAccount,
 					Volumes:            volumes,
 				},
@@ -191,7 +185,6 @@ func (c *LRPToStatefulSet) Convert(statefulSetName string, lrp *eiriniv1.LRP, pr
 
 	statefulSet.Annotations = annotations
 	statefulSet.Spec.Template.Annotations = annotations
-	statefulSet.Spec.Template.Annotations[corev1.SeccompPodAnnotationKey] = corev1.SeccompProfileRuntimeDefault
 
 	return statefulSet, nil
 }
@@ -208,18 +201,6 @@ func (c *LRPToStatefulSet) calculateImagePullSecrets(privateRegistrySecret *core
 	}
 
 	return imagePullSecrets
-}
-
-func (c *LRPToStatefulSet) getGetSecurityContext() *corev1.PodSecurityContext {
-	if c.allowRunImageAsRoot {
-		return nil
-	}
-
-	runAsNonRoot := true
-
-	return &corev1.PodSecurityContext{
-		RunAsNonRoot: &runAsNonRoot,
-	}
 }
 
 func getVolumeSpecs(lrpVolumeMounts []eiriniv1.VolumeMount) ([]corev1.Volume, []corev1.VolumeMount) {

@@ -2,6 +2,7 @@ package jobs
 
 import (
 	eirinictrl "code.cloudfoundry.org/eirini-controller"
+	"code.cloudfoundry.org/eirini-controller/k8s"
 	"code.cloudfoundry.org/eirini-controller/k8s/utils"
 	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
 	batch "k8s.io/api/batch/v1"
@@ -60,6 +61,7 @@ func (m *Converter) Convert(task *eiriniv1.Task, privateRegistrySecret *corev1.S
 					corev1.ResourceEphemeralStorage: *resource.NewScaledQuantity(task.Spec.DiskMB, resource.Mega),
 				},
 			},
+			SecurityContext: k8s.ContainerSecurityContext(),
 		},
 	}
 
@@ -80,8 +82,6 @@ func (m *Converter) Convert(task *eiriniv1.Task, privateRegistrySecret *corev1.S
 }
 
 func (m *Converter) toJob(task *eiriniv1.Task) *batch.Job {
-	runAsNonRoot := true
-
 	job := &batch.Job{
 		Spec: batch.JobSpec{
 			Parallelism:  int32ptr(parallelism),
@@ -90,9 +90,6 @@ func (m *Converter) toJob(task *eiriniv1.Task) *batch.Job {
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
 					RestartPolicy: corev1.RestartPolicyNever,
-					SecurityContext: &corev1.PodSecurityContext{
-						RunAsNonRoot: &runAsNonRoot,
-					},
 				},
 			},
 		},
@@ -111,13 +108,12 @@ func (m *Converter) toJob(task *eiriniv1.Task) *batch.Job {
 	}
 
 	job.Annotations = map[string]string{
-		AnnotationAppName:              task.Spec.AppName,
-		AnnotationAppID:                task.Spec.AppGUID,
-		AnnotationOrgName:              task.Spec.OrgName,
-		AnnotationOrgGUID:              task.Spec.OrgGUID,
-		AnnotationSpaceName:            task.Spec.SpaceName,
-		AnnotationSpaceGUID:            task.Spec.SpaceGUID,
-		corev1.SeccompPodAnnotationKey: corev1.SeccompProfileRuntimeDefault,
+		AnnotationAppName:   task.Spec.AppName,
+		AnnotationAppID:     task.Spec.AppGUID,
+		AnnotationOrgName:   task.Spec.OrgName,
+		AnnotationOrgGUID:   task.Spec.OrgGUID,
+		AnnotationSpaceName: task.Spec.SpaceName,
+		AnnotationSpaceGUID: task.Spec.SpaceGUID,
 	}
 
 	job.Spec.Template.Labels = job.Labels

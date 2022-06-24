@@ -4,6 +4,7 @@ import (
 	"context"
 
 	eirinictrl "code.cloudfoundry.org/eirini-controller"
+	"code.cloudfoundry.org/eirini-controller/k8s"
 	"code.cloudfoundry.org/eirini-controller/k8s/stset"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -25,12 +26,14 @@ var _ = Describe("InstanceIndexInjector", func() {
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{
 					{
-						Name:  stset.ApplicationContainerName,
-						Image: "eirini/dorini",
+						Name:            stset.ApplicationContainerName,
+						Image:           "eirini/dorini",
+						SecurityContext: k8s.ContainerSecurityContext(),
 					},
 					{
-						Name:  "not-application",
-						Image: "eirini/dorini",
+						Name:            "not-application",
+						Image:           "eirini/dorini",
+						SecurityContext: k8s.ContainerSecurityContext(),
 					},
 				},
 			},
