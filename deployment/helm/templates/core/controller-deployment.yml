@@ -21,8 +21,6 @@ spec:
     spec:
       dnsPolicy: ClusterFirst
       serviceAccountName: eirini-controller
-      securityContext:
-        runAsNonRoot: true
       containers:
       - name: eirini-controller
         image: {{ .Values.images.eirini_controller }}
