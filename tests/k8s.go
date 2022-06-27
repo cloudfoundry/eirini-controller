@@ -14,6 +14,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/pod-security-admission/api"
 )
 
 const DefaultApplicationServiceAccount = "eirini"
@@ -39,8 +40,8 @@ func createNamespace(namespace string, clientset kubernetes.Interface) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: namespace,
 			Labels: map[string]string{
-				"pod-security.kubernetes.io/audit":   "restricted",
-				"pod-security.kubernetes.io/enforce": "restricted",
+				api.AuditLevelLabel:   string(api.LevelRestricted),
+				api.EnforceLevelLabel: string(api.LevelRestricted),
 			},
 		},
 	}

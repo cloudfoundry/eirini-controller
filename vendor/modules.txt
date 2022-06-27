@@ -656,6 +656,7 @@ k8s.io/code-generator/third_party/forked/golang/reflect
 ## explicit; go 1.16
 k8s.io/component-base/config
 k8s.io/component-base/config/v1alpha1
+k8s.io/component-base/version
 # k8s.io/gengo v0.0.0-20211129171323-c02415ce4185
 ## explicit; go 1.13
 k8s.io/gengo/args
@@ -691,6 +692,9 @@ k8s.io/kube-openapi/pkg/spec3
 k8s.io/kube-openapi/pkg/util/proto
 k8s.io/kube-openapi/pkg/util/sets
 k8s.io/kube-openapi/pkg/validation/spec
+# k8s.io/pod-security-admission v0.24.2
+## explicit; go 1.16
+k8s.io/pod-security-admission/api
 # k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9
 ## explicit; go 1.12
 k8s.io/utils/buffer
