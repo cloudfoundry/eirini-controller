@@ -3,9 +3,7 @@ run:
   timeout: 20m
   # which dirs to skip: they won't be analyzed;
   skip-dirs:
-    - vendor
     - pkg
-  modules-download-mode: vendor
 
 linters-settings:
   govet:
