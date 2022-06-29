@@ -20,7 +20,7 @@ main() {
 
   pushd "$BASEDIR"/tests/integration >/dev/null || exit 1
   {
-    go run github.com/onsi/ginkgo/v2/ginkgo "$nodes" -r --keep-going --tags=integration --randomize-all --randomize-suites --timeout=20m --slow-spec-threshold=25s "$@"
+    go run github.com/onsi/ginkgo/v2/ginkgo $nodes -r --keep-going --tags=integration --randomize-all --randomize-suites --timeout=20m --slow-spec-threshold=25s "$@"
   }
   popd >/dev/null || exit 1
 }
