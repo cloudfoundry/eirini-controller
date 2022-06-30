@@ -58,7 +58,7 @@ var _ = Describe("Tasks", func() {
 		})
 
 		It("runs the task", func() {
-			Expect(tests.RequestServiceFn(fixture.Namespace, serviceName, 8080, "/")()).To(ContainSubstring("not Dora"))
+			Eventually(tests.RequestServiceFn(fixture.Namespace, serviceName, 8080, "/")).Should(ContainSubstring("not Dora"))
 		})
 	})
 
