@@ -49,6 +49,7 @@ var _ = Describe("Tasks", func() {
 			Tasks(fixture.Namespace).
 			Create(context.Background(), task, metav1.CreateOptions{})
 		Expect(err).NotTo(HaveOccurred())
+		Eventually(integration.EnsureStatusConditionTrue(fixture.EiriniClientset, fixture.Namespace, taskName, eiriniv1.TaskStartedConditionType)).Should(Succeed())
 	})
 
 	Describe("task creation", func() {
