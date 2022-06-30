@@ -9,7 +9,7 @@ import (
 	"code.cloudfoundry.org/lager"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	batch "k8s.io/api/batch/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -24,11 +24,11 @@ import (
 //counterfeiter:generate . SecretsClient
 
 type TaskToJobConverter interface {
-	Convert(*eiriniv1.Task, *corev1.Secret) *batch.Job
+	Convert(*eiriniv1.Task, *corev1.Secret) *batchv1.Job
 }
 
 type JobCreator interface {
-	Create(ctx context.Context, namespace string, job *batch.Job) (*batch.Job, error)
+	Create(ctx context.Context, namespace string, job *batchv1.Job) (*batchv1.Job, error)
 }
 
 type SecretsClient interface {
@@ -58,7 +58,7 @@ func NewDesirer(
 	}
 }
 
-func (d *Desirer) Desire(ctx context.Context, task *eiriniv1.Task) error {
+func (d *Desirer) Desire(ctx context.Context, task *eiriniv1.Task) (*batchv1.Job, error) {
 	logger := d.logger.Session("desire-task", lager.Data{"guid": task.Spec.GUID, "name": task.Name, "namespace": task.Namespace})
 
 	var (
@@ -69,7 +69,7 @@ func (d *Desirer) Desire(ctx context.Context, task *eiriniv1.Task) error {
 	if imageInPrivateRegistry(task) {
 		privateRegistrySecret, err = d.createPrivateRegistrySecret(ctx, task.Namespace, task)
 		if err != nil {
-			return errors.Wrap(err, "failed to create task secret")
+			return nil, errors.Wrap(err, "failed to create task secret")
 		}
 	}
 
@@ -78,29 +78,29 @@ func (d *Desirer) Desire(ctx context.Context, task *eiriniv1.Task) error {
 	job.Namespace = task.Namespace
 
 	if err = ctrl.SetControllerReference(task, job, d.scheme); err != nil {
-		return errors.Wrap(err, "failed to set controller reference")
+		return nil, errors.Wrap(err, "failed to set controller reference")
 	}
 
 	err = d.client.Create(ctx, job)
 	if err != nil {
 		logger.Error("failed-to-create-job", err)
 
-		return d.cleanupAndError(ctx, err, privateRegistrySecret)
+		return nil, d.cleanupAndError(ctx, err, privateRegistrySecret)
 	}
 
 	if privateRegistrySecret != nil {
 		originalSecret := privateRegistrySecret.DeepCopy()
 
 		if err := controllerutil.SetOwnerReference(job, privateRegistrySecret, scheme.Scheme); err != nil {
-			return errors.Wrap(err, "secret-client-set-owner-ref-failed")
+			return nil, errors.Wrap(err, "secret-client-set-owner-ref-failed")
 		}
 
 		if err := d.client.Patch(ctx, privateRegistrySecret, client.MergeFrom(originalSecret)); err != nil {
-			return errors.Wrap(err, "failed-to-set-secret-ownership")
+			return nil, errors.Wrap(err, "failed-to-set-secret-ownership")
 		}
 	}
 
-	return nil
+	return job, nil
 }
 
 func imageInPrivateRegistry(task *eiriniv1.Task) bool {

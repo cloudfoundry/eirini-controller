@@ -6,38 +6,38 @@ import (
 	"sync"
 
 	"code.cloudfoundry.org/eirini-controller/k8s/reconciler"
-	v1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
 	v1a "k8s.io/api/batch/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type FakeTaskStatusGetter struct {
-	GetStatusStub        func(context.Context, *v1a.Job) v1.TaskStatus
-	getStatusMutex       sync.RWMutex
-	getStatusArgsForCall []struct {
+	GetStatusConditionsStub        func(context.Context, *v1a.Job) []v1.Condition
+	getStatusConditionsMutex       sync.RWMutex
+	getStatusConditionsArgsForCall []struct {
 		arg1 context.Context
 		arg2 *v1a.Job
 	}
-	getStatusReturns struct {
-		result1 v1.TaskStatus
+	getStatusConditionsReturns struct {
+		result1 []v1.Condition
 	}
-	getStatusReturnsOnCall map[int]struct {
-		result1 v1.TaskStatus
+	getStatusConditionsReturnsOnCall map[int]struct {
+		result1 []v1.Condition
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeTaskStatusGetter) GetStatus(arg1 context.Context, arg2 *v1a.Job) v1.TaskStatus {
-	fake.getStatusMutex.Lock()
-	ret, specificReturn := fake.getStatusReturnsOnCall[len(fake.getStatusArgsForCall)]
-	fake.getStatusArgsForCall = append(fake.getStatusArgsForCall, struct {
+func (fake *FakeTaskStatusGetter) GetStatusConditions(arg1 context.Context, arg2 *v1a.Job) []v1.Condition {
+	fake.getStatusConditionsMutex.Lock()
+	ret, specificReturn := fake.getStatusConditionsReturnsOnCall[len(fake.getStatusConditionsArgsForCall)]
+	fake.getStatusConditionsArgsForCall = append(fake.getStatusConditionsArgsForCall, struct {
 		arg1 context.Context
 		arg2 *v1a.Job
 	}{arg1, arg2})
-	stub := fake.GetStatusStub
-	fakeReturns := fake.getStatusReturns
-	fake.recordInvocation("GetStatus", []interface{}{arg1, arg2})
-	fake.getStatusMutex.Unlock()
+	stub := fake.GetStatusConditionsStub
+	fakeReturns := fake.getStatusConditionsReturns
+	fake.recordInvocation("GetStatusConditions", []interface{}{arg1, arg2})
+	fake.getStatusConditionsMutex.Unlock()
 	if stub != nil {
 		return stub(arg1, arg2)
 	}
@@ -47,53 +47,53 @@ func (fake *FakeTaskStatusGetter) GetStatus(arg1 context.Context, arg2 *v1a.Job)
 	return fakeReturns.result1
 }
 
-func (fake *FakeTaskStatusGetter) GetStatusCallCount() int {
-	fake.getStatusMutex.RLock()
-	defer fake.getStatusMutex.RUnlock()
-	return len(fake.getStatusArgsForCall)
+func (fake *FakeTaskStatusGetter) GetStatusConditionsCallCount() int {
+	fake.getStatusConditionsMutex.RLock()
+	defer fake.getStatusConditionsMutex.RUnlock()
+	return len(fake.getStatusConditionsArgsForCall)
 }
 
-func (fake *FakeTaskStatusGetter) GetStatusCalls(stub func(context.Context, *v1a.Job) v1.TaskStatus) {
-	fake.getStatusMutex.Lock()
-	defer fake.getStatusMutex.Unlock()
-	fake.GetStatusStub = stub
+func (fake *FakeTaskStatusGetter) GetStatusConditionsCalls(stub func(context.Context, *v1a.Job) []v1.Condition) {
+	fake.getStatusConditionsMutex.Lock()
+	defer fake.getStatusConditionsMutex.Unlock()
+	fake.GetStatusConditionsStub = stub
 }
 
-func (fake *FakeTaskStatusGetter) GetStatusArgsForCall(i int) (context.Context, *v1a.Job) {
-	fake.getStatusMutex.RLock()
-	defer fake.getStatusMutex.RUnlock()
-	argsForCall := fake.getStatusArgsForCall[i]
+func (fake *FakeTaskStatusGetter) GetStatusConditionsArgsForCall(i int) (context.Context, *v1a.Job) {
+	fake.getStatusConditionsMutex.RLock()
+	defer fake.getStatusConditionsMutex.RUnlock()
+	argsForCall := fake.getStatusConditionsArgsForCall[i]
 	return argsForCall.arg1, argsForCall.arg2
 }
 
-func (fake *FakeTaskStatusGetter) GetStatusReturns(result1 v1.TaskStatus) {
-	fake.getStatusMutex.Lock()
-	defer fake.getStatusMutex.Unlock()
-	fake.GetStatusStub = nil
-	fake.getStatusReturns = struct {
-		result1 v1.TaskStatus
+func (fake *FakeTaskStatusGetter) GetStatusConditionsReturns(result1 []v1.Condition) {
+	fake.getStatusConditionsMutex.Lock()
+	defer fake.getStatusConditionsMutex.Unlock()
+	fake.GetStatusConditionsStub = nil
+	fake.getStatusConditionsReturns = struct {
+		result1 []v1.Condition
 	}{result1}
 }
 
-func (fake *FakeTaskStatusGetter) GetStatusReturnsOnCall(i int, result1 v1.TaskStatus) {
-	fake.getStatusMutex.Lock()
-	defer fake.getStatusMutex.Unlock()
-	fake.GetStatusStub = nil
-	if fake.getStatusReturnsOnCall == nil {
-		fake.getStatusReturnsOnCall = make(map[int]struct {
-			result1 v1.TaskStatus
+func (fake *FakeTaskStatusGetter) GetStatusConditionsReturnsOnCall(i int, result1 []v1.Condition) {
+	fake.getStatusConditionsMutex.Lock()
+	defer fake.getStatusConditionsMutex.Unlock()
+	fake.GetStatusConditionsStub = nil
+	if fake.getStatusConditionsReturnsOnCall == nil {
+		fake.getStatusConditionsReturnsOnCall = make(map[int]struct {
+			result1 []v1.Condition
 		})
 	}
-	fake.getStatusReturnsOnCall[i] = struct {
-		result1 v1.TaskStatus
+	fake.getStatusConditionsReturnsOnCall[i] = struct {
+		result1 []v1.Condition
 	}{result1}
 }
 
 func (fake *FakeTaskStatusGetter) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.getStatusMutex.RLock()
-	defer fake.getStatusMutex.RUnlock()
+	fake.getStatusConditionsMutex.RLock()
+	defer fake.getStatusConditionsMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

@@ -21,6 +21,7 @@ import (
 	"code.cloudfoundry.org/eirini-controller/tests"
 	"code.cloudfoundry.org/tlsconfig"
 	"github.com/onsi/ginkgo/v2"
+	"github.com/onsi/gomega"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/ghttp"
 	"gopkg.in/yaml.v2"
@@ -28,6 +29,7 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1beta1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -238,14 +240,13 @@ func GetLRP(clientset eiriniclient.Interface, namespace, lrpName string) *eirini
 	return l
 }
 
-func GetTaskExecutionStatus(clientset eiriniclient.Interface, namespace, taskName string) func() eiriniv1.ExecutionStatus {
-	return func() eiriniv1.ExecutionStatus {
+func EnsureStatusConditionTrue(clientset eiriniclient.Interface, namespace, taskName, conditionType string) func(g gomega.Gomega) {
+	return func(g gomega.Gomega) {
 		task, err := clientset.
 			EiriniV1().
 			Tasks(namespace).
 			Get(context.Background(), taskName, metav1.GetOptions{})
-		Expect(err).NotTo(HaveOccurred())
-
-		return task.Status.ExecutionStatus
+		g.ExpectWithOffset(1, err).NotTo(HaveOccurred())
+		g.ExpectWithOffset(1, meta.IsStatusConditionTrue(task.Status.Conditions, conditionType)).To(BeTrue())
 	}
 }

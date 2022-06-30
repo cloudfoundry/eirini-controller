@@ -6,32 +6,35 @@ import (
 	"sync"
 
 	"code.cloudfoundry.org/eirini-controller/k8s/reconciler"
-	v1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
+	v1a "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
+	v1 "k8s.io/api/batch/v1"
 )
 
 type FakeTaskDesirer struct {
-	DesireStub        func(context.Context, *v1.Task) error
+	DesireStub        func(context.Context, *v1a.Task) (*v1.Job, error)
 	desireMutex       sync.RWMutex
 	desireArgsForCall []struct {
 		arg1 context.Context
-		arg2 *v1.Task
+		arg2 *v1a.Task
 	}
 	desireReturns struct {
-		result1 error
+		result1 *v1.Job
+		result2 error
 	}
 	desireReturnsOnCall map[int]struct {
-		result1 error
+		result1 *v1.Job
+		result2 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeTaskDesirer) Desire(arg1 context.Context, arg2 *v1.Task) error {
+func (fake *FakeTaskDesirer) Desire(arg1 context.Context, arg2 *v1a.Task) (*v1.Job, error) {
 	fake.desireMutex.Lock()
 	ret, specificReturn := fake.desireReturnsOnCall[len(fake.desireArgsForCall)]
 	fake.desireArgsForCall = append(fake.desireArgsForCall, struct {
 		arg1 context.Context
-		arg2 *v1.Task
+		arg2 *v1a.Task
 	}{arg1, arg2})
 	stub := fake.DesireStub
 	fakeReturns := fake.desireReturns
@@ -41,9 +44,9 @@ func (fake *FakeTaskDesirer) Desire(arg1 context.Context, arg2 *v1.Task) error {
 		return stub(arg1, arg2)
 	}
 	if specificReturn {
-		return ret.result1
+		return ret.result1, ret.result2
 	}
-	return fakeReturns.result1
+	return fakeReturns.result1, fakeReturns.result2
 }
 
 func (fake *FakeTaskDesirer) DesireCallCount() int {
@@ -52,40 +55,43 @@ func (fake *FakeTaskDesirer) DesireCallCount() int {
 	return len(fake.desireArgsForCall)
 }
 
-func (fake *FakeTaskDesirer) DesireCalls(stub func(context.Context, *v1.Task) error) {
+func (fake *FakeTaskDesirer) DesireCalls(stub func(context.Context, *v1a.Task) (*v1.Job, error)) {
 	fake.desireMutex.Lock()
 	defer fake.desireMutex.Unlock()
 	fake.DesireStub = stub
 }
 
-func (fake *FakeTaskDesirer) DesireArgsForCall(i int) (context.Context, *v1.Task) {
+func (fake *FakeTaskDesirer) DesireArgsForCall(i int) (context.Context, *v1a.Task) {
 	fake.desireMutex.RLock()
 	defer fake.desireMutex.RUnlock()
 	argsForCall := fake.desireArgsForCall[i]
 	return argsForCall.arg1, argsForCall.arg2
 }
 
-func (fake *FakeTaskDesirer) DesireReturns(result1 error) {
+func (fake *FakeTaskDesirer) DesireReturns(result1 *v1.Job, result2 error) {
 	fake.desireMutex.Lock()
 	defer fake.desireMutex.Unlock()
 	fake.DesireStub = nil
 	fake.desireReturns = struct {
-		result1 error
-	}{result1}
+		result1 *v1.Job
+		result2 error
+	}{result1, result2}
 }
 
-func (fake *FakeTaskDesirer) DesireReturnsOnCall(i int, result1 error) {
+func (fake *FakeTaskDesirer) DesireReturnsOnCall(i int, result1 *v1.Job, result2 error) {
 	fake.desireMutex.Lock()
 	defer fake.desireMutex.Unlock()
 	fake.DesireStub = nil
 	if fake.desireReturnsOnCall == nil {
 		fake.desireReturnsOnCall = make(map[int]struct {
-			result1 error
+			result1 *v1.Job
+			result2 error
 		})
 	}
 	fake.desireReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
+		result1 *v1.Job
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *FakeTaskDesirer) Invocations() map[string][][]interface{} {

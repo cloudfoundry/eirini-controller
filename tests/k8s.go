@@ -138,3 +138,10 @@ func RequestServiceFn(namespace, serviceName string, port int32, requestPath str
 		return string(content), nil
 	}
 }
+
+func RequestService(namespace, serviceName string, port int32, requestPath string) string {
+	resp, err := RequestServiceFn(namespace, serviceName, port, requestPath)()
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+
+	return resp
+}

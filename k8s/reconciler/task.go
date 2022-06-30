@@ -11,6 +11,7 @@ import (
 	exterrors "github.com/pkg/errors"
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -27,20 +28,21 @@ type Task struct {
 //counterfeiter:generate . TaskDesirer
 
 type TaskDesirer interface {
-	Desire(ctx context.Context, task *eiriniv1.Task) error
+	Desire(ctx context.Context, task *eiriniv1.Task) (*batchv1.Job, error)
 }
 
 //counterfeiter:generate . TaskStatusGetter
 
 type TaskStatusGetter interface {
-	GetStatus(ctx context.Context, job *batchv1.Job) eiriniv1.TaskStatus
+	GetStatusConditions(ctx context.Context, job *batchv1.Job) []metav1.Condition
 }
 
 func NewTask(logger lager.Logger,
 	client client.Client,
 	desirer TaskDesirer,
 	statusGetter TaskStatusGetter,
-	ttlSeconds int) *Task {
+	ttlSeconds int,
+) *Task {
 	return &Task{
 		logger:       logger,
 		client:       client,
@@ -70,6 +72,8 @@ func (t *Task) Reconcile(ctx context.Context, request reconcile.Request) (reconc
 	}
 
 	if taskHasCompleted(task) {
+		logger.Debug("handling-task-completion")
+
 		return t.handleExpiredTask(ctx, logger, task)
 	}
 
@@ -77,21 +81,44 @@ func (t *Task) Reconcile(ctx context.Context, request reconcile.Request) (reconc
 
 	err = t.client.Get(ctx, client.ObjectKey{Namespace: task.Namespace, Name: utils.GetJobName(task)}, job)
 	if errors.IsNotFound(err) {
-		desireErr := t.desirer.Desire(ctx, task)
+		logger.Debug("desiring-task")
 
-		return reconcile.Result{}, exterrors.Wrap(desireErr, "failed to desire task")
+		return t.desireTask(ctx, logger, task)
 	}
 
 	if err != nil {
+		logger.Error("get-job-failed", err)
+
 		return reconcile.Result{}, exterrors.Wrap(err, "failed to get job")
 	}
 
 	if err := t.updateTaskStatus(ctx, task, job); err != nil {
+		logger.Error("update-task-status-failed", err)
+
 		return reconcile.Result{}, exterrors.Wrap(err, "failed to update task status")
 	}
 
 	if taskHasCompleted(task) {
+		logger.Debug("queueing-deletion")
+
 		return reconcile.Result{RequeueAfter: time.Duration(t.ttlSeconds) * time.Second}, nil
+	}
+
+	return reconcile.Result{}, nil
+}
+
+func (t *Task) desireTask(ctx context.Context, logger lager.Logger, task *eiriniv1.Task) (reconcile.Result, error) {
+	job, err := t.desirer.Desire(ctx, task)
+	if err != nil {
+		logger.Error("desire-task-failed", err)
+
+		return reconcile.Result{}, exterrors.Wrap(err, "failed to desire task")
+	}
+
+	if err := t.updateTaskStatus(ctx, task, job); err != nil {
+		logger.Error("update-task-status-failed", err)
+
+		return reconcile.Result{}, exterrors.Wrap(err, "failed to update task status")
 	}
 
 	return reconcile.Result{}, nil
@@ -100,8 +127,9 @@ func (t *Task) Reconcile(ctx context.Context, request reconcile.Request) (reconc
 func (t *Task) updateTaskStatus(ctx context.Context, task *eiriniv1.Task, job *batchv1.Job) error {
 	originalTask := task.DeepCopy()
 
-	status := t.statusGetter.GetStatus(ctx, job)
-	task.Status = status
+	for _, condition := range t.statusGetter.GetStatusConditions(ctx, job) {
+		meta.SetStatusCondition(&task.Status.Conditions, condition)
+	}
 
 	return t.client.Status().Patch(ctx, task, client.MergeFrom(originalTask))
 }
@@ -122,13 +150,22 @@ func (t *Task) handleExpiredTask(ctx context.Context, logger lager.Logger, task 
 }
 
 func taskHasCompleted(task *eiriniv1.Task) bool {
-	return task.Status.EndTime != nil &&
-		(task.Status.ExecutionStatus == eiriniv1.TaskFailed ||
-			task.Status.ExecutionStatus == eiriniv1.TaskSucceeded)
+	return meta.IsStatusConditionTrue(task.Status.Conditions, eiriniv1.TaskSucceededConditionType) ||
+		meta.IsStatusConditionTrue(task.Status.Conditions, eiriniv1.TaskFailedConditionType)
 }
 
 func (t *Task) taskHasExpired(task *eiriniv1.Task) bool {
 	ttlExpire := metav1.NewTime(time.Now().Add(-time.Duration(t.ttlSeconds) * time.Second))
 
-	return task.Status.EndTime.Before(&ttlExpire)
+	condition := meta.FindStatusCondition(task.Status.Conditions, eiriniv1.TaskSucceededConditionType)
+	if condition != nil {
+		return condition.LastTransitionTime.Before(&ttlExpire)
+	}
+
+	condition = meta.FindStatusCondition(task.Status.Conditions, eiriniv1.TaskFailedConditionType)
+	if condition != nil {
+		return condition.LastTransitionTime.Before(&ttlExpire)
+	}
+
+	return false
 }

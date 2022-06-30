@@ -19,34 +19,50 @@ func NewStatusGetter(logger lager.Logger) *StatusGetter {
 	}
 }
 
-func (s *StatusGetter) GetStatus(ctx context.Context, job *batchv1.Job) eiriniv1.TaskStatus {
-	if job.Status.StartTime == nil {
-		return eiriniv1.TaskStatus{
-			ExecutionStatus: eiriniv1.TaskStarting,
-		}
+func (s *StatusGetter) GetStatusConditions(ctx context.Context, job *batchv1.Job) []metav1.Condition {
+	conditions := []metav1.Condition{
+		{
+			Type:    eiriniv1.TaskInitializedConditionType,
+			Status:  metav1.ConditionTrue,
+			Reason:  "job_created",
+			Message: "Job created",
+		},
 	}
 
+	if job.Status.StartTime == nil {
+		return conditions
+	}
+
+	conditions = append(conditions, metav1.Condition{
+		Type:               eiriniv1.TaskStartedConditionType,
+		Status:             metav1.ConditionTrue,
+		LastTransitionTime: *job.Status.StartTime,
+		Reason:             "job_started",
+		Message:            "Job started",
+	})
+
 	if job.Status.Succeeded > 0 && job.Status.CompletionTime != nil {
-		return eiriniv1.TaskStatus{
-			ExecutionStatus: eiriniv1.TaskSucceeded,
-			StartTime:       job.Status.StartTime,
-			EndTime:         job.Status.CompletionTime,
-		}
+		conditions = append(conditions, metav1.Condition{
+			Type:               eiriniv1.TaskSucceededConditionType,
+			Status:             metav1.ConditionTrue,
+			LastTransitionTime: *job.Status.CompletionTime,
+			Reason:             "job_succeeded",
+			Message:            "Job succeeded",
+		})
 	}
 
 	lastFailureTimestamp := getLastFailureTimestamp(job.Status)
 	if job.Status.Failed > 0 && lastFailureTimestamp != nil {
-		return eiriniv1.TaskStatus{
-			ExecutionStatus: eiriniv1.TaskFailed,
-			StartTime:       job.Status.StartTime,
-			EndTime:         lastFailureTimestamp,
-		}
+		conditions = append(conditions, metav1.Condition{
+			Type:               eiriniv1.TaskFailedConditionType,
+			Status:             metav1.ConditionTrue,
+			LastTransitionTime: *lastFailureTimestamp,
+			Reason:             "job_failed",
+			Message:            "Job failed",
+		})
 	}
 
-	return eiriniv1.TaskStatus{
-		ExecutionStatus: eiriniv1.TaskRunning,
-		StartTime:       job.Status.StartTime,
-	}
+	return conditions
 }
 
 func getLastFailureTimestamp(jobStatus batchv1.JobStatus) *metav1.Time {

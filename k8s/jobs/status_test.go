@@ -10,6 +10,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	batchv1 "k8s.io/api/batch/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -17,7 +18,7 @@ var _ = Describe("StatusGetter", func() {
 	var (
 		statusGetter *jobs.StatusGetter
 		job          *batchv1.Job
-		status       eiriniv1.TaskStatus
+		conditions   []metav1.Condition
 	)
 
 	BeforeEach(func() {
@@ -29,11 +30,11 @@ var _ = Describe("StatusGetter", func() {
 	})
 
 	JustBeforeEach(func() {
-		status = statusGetter.GetStatus(context.Background(), job)
+		conditions = statusGetter.GetStatusConditions(context.Background(), job)
 	})
 
-	It("gets the task status", func() {
-		Expect(status).To(Equal(eiriniv1.TaskStatus{ExecutionStatus: eiriniv1.TaskStarting}))
+	It("returns an initialized condition", func() {
+		Expect(meta.IsStatusConditionTrue(conditions, eiriniv1.TaskInitializedConditionType)).To(BeTrue())
 	})
 
 	When("the job is running", func() {
@@ -48,11 +49,9 @@ var _ = Describe("StatusGetter", func() {
 			}
 		})
 
-		It("returns a running status", func() {
-			Expect(status).To(Equal(eiriniv1.TaskStatus{
-				ExecutionStatus: eiriniv1.TaskRunning,
-				StartTime:       &now,
-			}))
+		It("contains a started condition with a matching timestamp", func() {
+			Expect(meta.IsStatusConditionTrue(conditions, eiriniv1.TaskStartedConditionType)).To(BeTrue())
+			Expect(meta.FindStatusCondition(conditions, eiriniv1.TaskStartedConditionType).LastTransitionTime).To(Equal(now))
 		})
 	})
 
@@ -74,12 +73,9 @@ var _ = Describe("StatusGetter", func() {
 			}
 		})
 
-		It("returns a succeeded status", func() {
-			Expect(status).To(Equal(eiriniv1.TaskStatus{
-				ExecutionStatus: eiriniv1.TaskSucceeded,
-				StartTime:       &now,
-				EndTime:         &later,
-			}))
+		It("contains a succeeded condition", func() {
+			Expect(meta.IsStatusConditionTrue(conditions, eiriniv1.TaskSucceededConditionType)).To(BeTrue())
+			Expect(meta.FindStatusCondition(conditions, eiriniv1.TaskSucceededConditionType).LastTransitionTime).To(Equal(later))
 		})
 	})
 
@@ -115,11 +111,8 @@ var _ = Describe("StatusGetter", func() {
 		})
 
 		It("returns a failed status", func() {
-			Expect(status).To(Equal(eiriniv1.TaskStatus{
-				ExecutionStatus: eiriniv1.TaskFailed,
-				StartTime:       &now,
-				EndTime:         &later,
-			}))
+			Expect(meta.IsStatusConditionTrue(conditions, eiriniv1.TaskFailedConditionType)).To(BeTrue())
+			Expect(meta.FindStatusCondition(conditions, eiriniv1.TaskFailedConditionType).LastTransitionTime).To(Equal(later))
 		})
 	})
 })

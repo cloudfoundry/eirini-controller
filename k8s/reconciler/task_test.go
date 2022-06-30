@@ -103,8 +103,11 @@ var _ = Describe("Task", func() {
 				CPUWeight: 13,
 			},
 		}
-		statusGetter.GetStatusReturns(eiriniv1.TaskStatus{
-			ExecutionStatus: eiriniv1.TaskStarting,
+		statusGetter.GetStatusConditionsReturns([]metav1.Condition{
+			{
+				Type:   eiriniv1.TaskInitializedConditionType,
+				Status: metav1.ConditionTrue,
+			},
 		})
 	})
 
@@ -118,7 +121,7 @@ var _ = Describe("Task", func() {
 		By("invoking the task desirer", func() {
 			Expect(desirer.DesireCallCount()).To(Equal(1))
 			_, actualTask := desirer.DesireArgsForCall(0)
-			Expect(actualTask).To(Equal(task))
+			Expect(actualTask.Spec).To(Equal(task.Spec))
 		})
 	})
 
@@ -155,9 +158,44 @@ var _ = Describe("Task", func() {
 			getJobErr = k8serrors.NewNotFound(schema.GroupResource{}, "foo")
 		})
 
-		It("neither requeues nor returns an error", func() {
-			Expect(reconcileResult.Requeue).To(BeFalse())
-			Expect(reconcileErr).ToNot(HaveOccurred())
+		It("desires the job", func() {
+			Expect(desirer.DesireCallCount()).To(Equal(1))
+			_, actualTask := desirer.DesireArgsForCall(0)
+			Expect(actualTask.Name).To(Equal(task.Name))
+			Expect(actualTask.Namespace).To(Equal(task.Namespace))
+			Expect(actualTask.Spec).To(Equal(task.Spec))
+		})
+
+		It("updates the task execution status (to initialized)", func() {
+			Expect(statusGetter.GetStatusConditionsCallCount()).To(Equal(1))
+
+			Expect(statusWriter.PatchCallCount()).To(Equal(1))
+			_, obj, _, _ := statusWriter.PatchArgsForCall(0)
+			Expect(obj).To(BeAssignableToTypeOf(&eiriniv1.Task{}))
+		})
+
+		When("updating the task status returns an error", func() {
+			BeforeEach(func() {
+				statusWriter.PatchReturns(errors.New("crumpets"))
+			})
+
+			It("returns an error", func() {
+				Expect(reconcileErr).To(MatchError(ContainSubstring("crumpets")))
+			})
+		})
+
+		When("desiring the job fails", func() {
+			BeforeEach(func() {
+				desirer.DesireReturns(nil, errors.New("boom"))
+			})
+
+			It("doesn't update the status", func() {
+				Expect(statusWriter.PatchCallCount()).To(Equal(0))
+			})
+
+			It("returns an error", func() {
+				Expect(reconcileErr).To(MatchError(ContainSubstring("boom")))
+			})
 		})
 	})
 
@@ -169,15 +207,21 @@ var _ = Describe("Task", func() {
 		It("returns an error", func() {
 			Expect(reconcileErr).To(MatchError(ContainSubstring("some problem")))
 		})
+
+		It("doesn't update the status", func() {
+			Expect(statusWriter.PatchCallCount()).To(Equal(0))
+		})
 	})
 
 	When("the task has previously completed successfully", func() {
 		BeforeEach(func() {
-			now := metav1.Now()
 			task = &eiriniv1.Task{
 				Status: eiriniv1.TaskStatus{
-					ExecutionStatus: eiriniv1.TaskSucceeded,
-					EndTime:         &now,
+					Conditions: []metav1.Condition{{
+						Type:               eiriniv1.TaskSucceededConditionType,
+						Status:             metav1.ConditionTrue,
+						LastTransitionTime: metav1.Now(),
+					}},
 				},
 			}
 		})
@@ -188,11 +232,13 @@ var _ = Describe("Task", func() {
 
 		When("the task has exceeded the ttl", func() {
 			BeforeEach(func() {
-				earlier := metav1.NewTime(time.Now().Add(-time.Minute))
 				task = &eiriniv1.Task{
 					Status: eiriniv1.TaskStatus{
-						ExecutionStatus: eiriniv1.TaskSucceeded,
-						EndTime:         &earlier,
+						Conditions: []metav1.Condition{{
+							Type:               eiriniv1.TaskSucceededConditionType,
+							Status:             metav1.ConditionTrue,
+							LastTransitionTime: metav1.NewTime(time.Now().Add(-time.Minute)),
+						}},
 					},
 				}
 			})
@@ -214,14 +260,14 @@ var _ = Describe("Task", func() {
 	})
 
 	When("the task has previously failed", func() {
-		var now metav1.Time
-
 		BeforeEach(func() {
-			now = metav1.Now()
 			task = &eiriniv1.Task{
 				Status: eiriniv1.TaskStatus{
-					ExecutionStatus: eiriniv1.TaskFailed,
-					EndTime:         &now,
+					Conditions: []metav1.Condition{{
+						Type:               eiriniv1.TaskFailedConditionType,
+						Status:             metav1.ConditionTrue,
+						LastTransitionTime: metav1.Now(),
+					}},
 				},
 			}
 		})
@@ -232,11 +278,13 @@ var _ = Describe("Task", func() {
 
 		When("the task has exceeded the ttl", func() {
 			BeforeEach(func() {
-				earlier := metav1.NewTime(time.Now().Add(-time.Minute))
 				task = &eiriniv1.Task{
 					Status: eiriniv1.TaskStatus{
-						ExecutionStatus: eiriniv1.TaskFailed,
-						EndTime:         &earlier,
+						Conditions: []metav1.Condition{{
+							Type:               eiriniv1.TaskFailedConditionType,
+							Status:             metav1.ConditionTrue,
+							LastTransitionTime: metav1.NewTime(time.Now().Add(-time.Minute)),
+						}},
 					},
 				}
 			})
@@ -265,40 +313,26 @@ var _ = Describe("Task", func() {
 		})
 	})
 
-	When("desiring the task returns an error", func() {
-		BeforeEach(func() {
-			getJobErr = k8serrors.NewNotFound(schema.GroupResource{}, "not found")
-			desirer.DesireReturns(errors.New("some error"))
-		})
-
-		It("returns an error", func() {
-			Expect(reconcileErr).To(MatchError(ContainSubstring("some error")))
-			Expect(statusWriter.PatchCallCount()).To(Equal(0))
-		})
-	})
-
 	When("the job has already been desired", func() {
 		BeforeEach(func() {
 			getJobErr = nil
 		})
 
 		It("updates the task execution status", func() {
-			Expect(statusGetter.GetStatusCallCount()).To(Equal(1))
+			Expect(statusGetter.GetStatusConditionsCallCount()).To(Equal(1))
 
 			Expect(statusWriter.PatchCallCount()).To(Equal(1))
 			_, obj, _, _ := statusWriter.PatchArgsForCall(0)
 			Expect(obj).To(BeAssignableToTypeOf(&eiriniv1.Task{}))
-			actualTask := obj.(*eiriniv1.Task)
-
-			Expect(actualTask.Status.ExecutionStatus).To(Equal(eiriniv1.TaskStarting))
 		})
 
 		When("the task has failed", func() {
 			BeforeEach(func() {
-				now := metav1.Now()
-				statusGetter.GetStatusReturns(eiriniv1.TaskStatus{
-					ExecutionStatus: eiriniv1.TaskFailed,
-					EndTime:         &now,
+				statusGetter.GetStatusConditionsReturns([]metav1.Condition{
+					{
+						Type:   eiriniv1.TaskFailedConditionType,
+						Status: metav1.ConditionTrue,
+					},
 				})
 			})
 
@@ -309,10 +343,11 @@ var _ = Describe("Task", func() {
 
 		When("the task has completed successfully", func() {
 			BeforeEach(func() {
-				now := metav1.Now()
-				statusGetter.GetStatusReturns(eiriniv1.TaskStatus{
-					ExecutionStatus: eiriniv1.TaskSucceeded,
-					EndTime:         &now,
+				statusGetter.GetStatusConditionsReturns([]metav1.Condition{
+					{
+						Type:   eiriniv1.TaskSucceededConditionType,
+						Status: metav1.ConditionTrue,
+					},
 				})
 			})
 

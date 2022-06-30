@@ -21,10 +21,11 @@ import (
 
 var _ = Describe("Task Desirer", func() {
 	var (
-		desirer   *jobs.Desirer
-		task      *eiriniv1.Task
-		taskGUID  string
-		desireErr error
+		desirer    *jobs.Desirer
+		task       *eiriniv1.Task
+		desiredJob *batchv1.Job
+		taskGUID   string
+		desireErr  error
 	)
 
 	BeforeEach(func() {
@@ -59,7 +60,7 @@ var _ = Describe("Task Desirer", func() {
 
 	JustBeforeEach(func() {
 		desirer = createTaskDesirer()
-		desireErr = desirer.Desire(context.Background(), task)
+		desiredJob, desireErr = desirer.Desire(context.Background(), task)
 	})
 
 	It("succeeds", func() {
@@ -69,6 +70,11 @@ var _ = Describe("Task Desirer", func() {
 	It("creates a corresponding job in the same namespace", func() {
 		allJobs := integration.ListJobs(fixture.Clientset, fixture.Namespace, taskGUID)()
 		job := allJobs[0]
+
+		Expect(desiredJob.Spec).To(Equal(job.Spec))
+		Expect(desiredJob.Name).To(Equal(job.Name))
+		Expect(desiredJob.Namespace).To(Equal(fixture.Namespace))
+
 		Expect(job.Name).To(Equal(fmt.Sprintf("app-name-s-%s", task.Spec.Name)))
 		Expect(job.Labels).To(SatisfyAll(
 			HaveKeyWithValue(jobs.LabelGUID, task.Spec.GUID),

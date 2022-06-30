@@ -7,8 +7,8 @@ import (
 	"code.cloudfoundry.org/eirini-controller/tests"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	. "github.com/onsi/gomega/gstruct"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -98,12 +98,29 @@ var _ = Describe("Tasks CRD [needs-logs-for: eirini-controller]", func() {
 			taskServiceName = tests.ExposeAsService(fixture.Clientset, fixture.Namespace, taskGUID, port)
 		})
 
+		It("initializes the task", func() {
+			Eventually(func(g Gomega) {
+				status, err := getTaskStatus()
+				g.Expect(err).NotTo(HaveOccurred())
+
+				g.Expect(meta.IsStatusConditionTrue(status.Conditions, eiriniv1.TaskInitializedConditionType)).Should(BeTrue())
+			}).Should(Succeed())
+
+			jobs, err := fixture.Clientset.BatchV1().Jobs(fixture.Namespace).List(ctx, metav1.ListOptions{})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(jobs.Items).To(HaveLen(1))
+		})
+
 		It("runs the task", func() {
+			Eventually(func(g Gomega) {
+				status, err := getTaskStatus()
+				g.Expect(err).NotTo(HaveOccurred())
+
+				g.Expect(meta.IsStatusConditionTrue(status.Conditions, eiriniv1.TaskStartedConditionType)).Should(BeTrue())
+				g.Expect(meta.FindStatusCondition(status.Conditions, eiriniv1.TaskStartedConditionType).LastTransitionTime).NotTo(BeZero())
+			}).Should(Succeed())
+
 			Eventually(tests.RequestServiceFn(fixture.Namespace, taskServiceName, port, "/")).Should(ContainSubstring("Dora!"))
-			Eventually(getTaskStatus).Should(MatchFields(IgnoreExtras, Fields{
-				"ExecutionStatus": Equal(eiriniv1.TaskRunning),
-				"StartTime":       Not(BeZero()),
-			}))
 		})
 
 		It("gets the env var via the secret", func() {
@@ -131,12 +148,14 @@ var _ = Describe("Tasks CRD [needs-logs-for: eirini-controller]", func() {
 				task.Spec.Command = []string{"echo", "hello"}
 			})
 
-			It("marks the Task as succeeded", func() {
-				Eventually(getTaskStatus).Should(MatchFields(IgnoreExtras, Fields{
-					"ExecutionStatus": Equal(eiriniv1.TaskSucceeded),
-					"StartTime":       Not(BeZero()),
-					"EndTime":         Not(BeZero()),
-				}))
+			It("sets the succeeded condition", func() {
+				Eventually(func(g Gomega) {
+					status, err := getTaskStatus()
+					g.Expect(err).NotTo(HaveOccurred())
+
+					g.Expect(meta.IsStatusConditionTrue(status.Conditions, eiriniv1.TaskSucceededConditionType)).Should(BeTrue())
+					g.Expect(meta.FindStatusCondition(status.Conditions, eiriniv1.TaskSucceededConditionType).LastTransitionTime).NotTo(BeZero())
+				}).Should(Succeed())
 			})
 		})
 
@@ -146,12 +165,14 @@ var _ = Describe("Tasks CRD [needs-logs-for: eirini-controller]", func() {
 				task.Spec.Command = []string{"false"}
 			})
 
-			It("marks the Task as failed", func() {
-				Eventually(getTaskStatus).Should(MatchFields(IgnoreExtras, Fields{
-					"ExecutionStatus": Equal(eiriniv1.TaskFailed),
-					"StartTime":       Not(BeZero()),
-					"EndTime":         Not(BeZero()),
-				}))
+			It("sets the failed condition", func() {
+				Eventually(func(g Gomega) {
+					status, err := getTaskStatus()
+					g.Expect(err).NotTo(HaveOccurred())
+
+					g.Expect(meta.IsStatusConditionTrue(status.Conditions, eiriniv1.TaskFailedConditionType)).Should(BeTrue())
+					g.Expect(meta.FindStatusCondition(status.Conditions, eiriniv1.TaskFailedConditionType).LastTransitionTime).NotTo(BeZero())
+				}).Should(Succeed())
 			})
 		})
 	})

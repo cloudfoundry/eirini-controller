@@ -2,7 +2,7 @@ package v1
 
 import (
 	corev1 "k8s.io/api/core/v1"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // +genclient
@@ -14,8 +14,8 @@ import (
 
 // Task describes a short-lived job running alongside an LRP
 type Task struct {
-	meta_v1.TypeMeta   `json:",inline"`
-	meta_v1.ObjectMeta `json:"metadata,omitempty"`
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec   TaskSpec   `json:"spec"`
 	Status TaskStatus `json:"status"`
@@ -48,25 +48,19 @@ type TaskSpec struct {
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 type TaskList struct {
-	meta_v1.TypeMeta `json:",inline"`
-	meta_v1.ListMeta `json:"metadata"`
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata"`
 
 	Items []Task `json:"items"`
 }
 
-type ExecutionStatus string
-
 const (
-	TaskStarting  ExecutionStatus = "starting"
-	TaskRunning   ExecutionStatus = "running"
-	TaskSucceeded ExecutionStatus = "succeeded"
-	TaskFailed    ExecutionStatus = "failed"
+	TaskInitializedConditionType = "Initialized"
+	TaskStartedConditionType     = "Started"
+	TaskSucceededConditionType   = "Succeeded"
+	TaskFailedConditionType      = "Failed"
 )
 
 type TaskStatus struct {
-	StartTime *meta_v1.Time `json:"start_time"`
-	EndTime   *meta_v1.Time `json:"end_time"`
-	// +kubebuilder:validation:Enum=starting;running;succeeded;failed
-	// +kubebuilder:default=starting
-	ExecutionStatus ExecutionStatus `json:"execution_status"`
+	Conditions []metav1.Condition `json:"conditions"`
 }

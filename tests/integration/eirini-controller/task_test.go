@@ -68,10 +68,7 @@ var _ = Describe("Tasks", func() {
 		})
 
 		It("deletes the job after the ttl has expired", func() {
-			Eventually(integration.GetTaskExecutionStatus(fixture.EiriniClientset,
-				fixture.Namespace,
-				taskName,
-			)).Should(Equal(eiriniv1.TaskSucceeded))
+			Eventually(integration.EnsureStatusConditionTrue(fixture.EiriniClientset, fixture.Namespace, taskName, eiriniv1.TaskSucceededConditionType)).Should(Succeed())
 
 			Eventually(integration.ListJobs(fixture.Clientset,
 				fixture.Namespace,

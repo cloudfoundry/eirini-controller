@@ -30,9 +30,10 @@ var _ = Describe("Desire", func() {
 		taskToJobConverter *jobsfakes.FakeTaskToJobConverter
 		client             *k8sfakes.FakeClient
 
-		job       *batchv1.Job
-		task      *eiriniv1.Task
-		desireErr error
+		job        *batchv1.Job
+		createdJob *batchv1.Job
+		task       *eiriniv1.Task
+		desireErr  error
 
 		desirer *jobs.Desirer
 	)
@@ -79,10 +80,11 @@ var _ = Describe("Desire", func() {
 	})
 
 	JustBeforeEach(func() {
-		desireErr = desirer.Desire(ctx, task)
+		createdJob, desireErr = desirer.Desire(ctx, task)
 	})
 
 	It("succeeds", func() {
+		Expect(createdJob).To(Equal(job))
 		Expect(desireErr).NotTo(HaveOccurred())
 	})
 
