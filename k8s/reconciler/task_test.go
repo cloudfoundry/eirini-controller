@@ -108,7 +108,7 @@ var _ = Describe("Task", func() {
 				Type:   eiriniv1.TaskInitializedConditionType,
 				Status: metav1.ConditionTrue,
 			},
-		})
+		}, nil)
 	})
 
 	JustBeforeEach(func() {
@@ -130,6 +130,17 @@ var _ = Describe("Task", func() {
 		_, namespacedName, _ := k8sClient.GetArgsForCall(0)
 		Expect(namespacedName.Namespace).To(Equal("my-namespace"))
 		Expect(namespacedName.Name).To(Equal("my-name"))
+	})
+
+	When("getting status condition fails", func() {
+		BeforeEach(func() {
+			statusGetter.GetStatusConditionsReturns(nil, errors.New("boom"))
+			getJobErr = nil
+		})
+
+		It("returns an error", func() {
+			Expect(reconcileErr).To(MatchError(ContainSubstring("boom")))
+		})
 	})
 
 	When("the task cannot be found", func() {
@@ -333,7 +344,7 @@ var _ = Describe("Task", func() {
 						Type:   eiriniv1.TaskFailedConditionType,
 						Status: metav1.ConditionTrue,
 					},
-				})
+				}, nil)
 			})
 
 			It("requeues the event after the ttl", func() {
@@ -348,7 +359,7 @@ var _ = Describe("Task", func() {
 						Type:   eiriniv1.TaskSucceededConditionType,
 						Status: metav1.ConditionTrue,
 					},
-				})
+				}, nil)
 			})
 
 			It("requeues the event after the ttl", func() {

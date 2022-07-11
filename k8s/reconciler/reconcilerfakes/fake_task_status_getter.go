@@ -11,7 +11,7 @@ import (
 )
 
 type FakeTaskStatusGetter struct {
-	GetStatusConditionsStub        func(context.Context, *v1a.Job) []v1.Condition
+	GetStatusConditionsStub        func(context.Context, *v1a.Job) ([]v1.Condition, error)
 	getStatusConditionsMutex       sync.RWMutex
 	getStatusConditionsArgsForCall []struct {
 		arg1 context.Context
@@ -19,15 +19,17 @@ type FakeTaskStatusGetter struct {
 	}
 	getStatusConditionsReturns struct {
 		result1 []v1.Condition
+		result2 error
 	}
 	getStatusConditionsReturnsOnCall map[int]struct {
 		result1 []v1.Condition
+		result2 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeTaskStatusGetter) GetStatusConditions(arg1 context.Context, arg2 *v1a.Job) []v1.Condition {
+func (fake *FakeTaskStatusGetter) GetStatusConditions(arg1 context.Context, arg2 *v1a.Job) ([]v1.Condition, error) {
 	fake.getStatusConditionsMutex.Lock()
 	ret, specificReturn := fake.getStatusConditionsReturnsOnCall[len(fake.getStatusConditionsArgsForCall)]
 	fake.getStatusConditionsArgsForCall = append(fake.getStatusConditionsArgsForCall, struct {
@@ -42,9 +44,9 @@ func (fake *FakeTaskStatusGetter) GetStatusConditions(arg1 context.Context, arg2
 		return stub(arg1, arg2)
 	}
 	if specificReturn {
-		return ret.result1
+		return ret.result1, ret.result2
 	}
-	return fakeReturns.result1
+	return fakeReturns.result1, fakeReturns.result2
 }
 
 func (fake *FakeTaskStatusGetter) GetStatusConditionsCallCount() int {
@@ -53,7 +55,7 @@ func (fake *FakeTaskStatusGetter) GetStatusConditionsCallCount() int {
 	return len(fake.getStatusConditionsArgsForCall)
 }
 
-func (fake *FakeTaskStatusGetter) GetStatusConditionsCalls(stub func(context.Context, *v1a.Job) []v1.Condition) {
+func (fake *FakeTaskStatusGetter) GetStatusConditionsCalls(stub func(context.Context, *v1a.Job) ([]v1.Condition, error)) {
 	fake.getStatusConditionsMutex.Lock()
 	defer fake.getStatusConditionsMutex.Unlock()
 	fake.GetStatusConditionsStub = stub
@@ -66,27 +68,30 @@ func (fake *FakeTaskStatusGetter) GetStatusConditionsArgsForCall(i int) (context
 	return argsForCall.arg1, argsForCall.arg2
 }
 
-func (fake *FakeTaskStatusGetter) GetStatusConditionsReturns(result1 []v1.Condition) {
+func (fake *FakeTaskStatusGetter) GetStatusConditionsReturns(result1 []v1.Condition, result2 error) {
 	fake.getStatusConditionsMutex.Lock()
 	defer fake.getStatusConditionsMutex.Unlock()
 	fake.GetStatusConditionsStub = nil
 	fake.getStatusConditionsReturns = struct {
 		result1 []v1.Condition
-	}{result1}
+		result2 error
+	}{result1, result2}
 }
 
-func (fake *FakeTaskStatusGetter) GetStatusConditionsReturnsOnCall(i int, result1 []v1.Condition) {
+func (fake *FakeTaskStatusGetter) GetStatusConditionsReturnsOnCall(i int, result1 []v1.Condition, result2 error) {
 	fake.getStatusConditionsMutex.Lock()
 	defer fake.getStatusConditionsMutex.Unlock()
 	fake.GetStatusConditionsStub = nil
 	if fake.getStatusConditionsReturnsOnCall == nil {
 		fake.getStatusConditionsReturnsOnCall = make(map[int]struct {
 			result1 []v1.Condition
+			result2 error
 		})
 	}
 	fake.getStatusConditionsReturnsOnCall[i] = struct {
 		result1 []v1.Condition
-	}{result1}
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *FakeTaskStatusGetter) Invocations() map[string][][]interface{} {

@@ -34,7 +34,7 @@ type TaskDesirer interface {
 //counterfeiter:generate . TaskStatusGetter
 
 type TaskStatusGetter interface {
-	GetStatusConditions(ctx context.Context, job *batchv1.Job) []metav1.Condition
+	GetStatusConditions(ctx context.Context, job *batchv1.Job) ([]metav1.Condition, error)
 }
 
 func NewTask(logger lager.Logger,
@@ -127,7 +127,12 @@ func (t *Task) desireTask(ctx context.Context, logger lager.Logger, task *eirini
 func (t *Task) updateTaskStatus(ctx context.Context, task *eiriniv1.Task, job *batchv1.Job) error {
 	originalTask := task.DeepCopy()
 
-	for _, condition := range t.statusGetter.GetStatusConditions(ctx, job) {
+	conditions, err := t.statusGetter.GetStatusConditions(ctx, job)
+	if err != nil {
+		return fmt.Errorf("failed to get status conditions for job %s:%s: %w", job.Namespace, job.Name, err)
+	}
+
+	for _, condition := range conditions {
 		meta.SetStatusCondition(&task.Status.Conditions, condition)
 	}
 

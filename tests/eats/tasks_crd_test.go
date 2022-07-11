@@ -171,7 +171,10 @@ var _ = Describe("Tasks CRD [needs-logs-for: eirini-controller]", func() {
 					g.Expect(err).NotTo(HaveOccurred())
 
 					g.Expect(meta.IsStatusConditionTrue(status.Conditions, eiriniv1.TaskFailedConditionType)).Should(BeTrue())
-					g.Expect(meta.FindStatusCondition(status.Conditions, eiriniv1.TaskFailedConditionType).LastTransitionTime).NotTo(BeZero())
+					cond := meta.FindStatusCondition(status.Conditions, eiriniv1.TaskFailedConditionType)
+					g.Expect(cond.LastTransitionTime).NotTo(BeZero())
+					g.Expect(cond.Reason).To(Equal("Error"))
+					g.Expect(cond.Message).To(Equal("Failed with exit code: 1"))
 				}).Should(Succeed())
 			})
 		})

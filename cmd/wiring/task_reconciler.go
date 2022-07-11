@@ -41,7 +41,7 @@ func createTaskReconciler(
 	)
 
 	desirer := jobs.NewDesirer(logger, taskToJobConverter, controllerClient, scheme)
-	statusGetter := jobs.NewStatusGetter(logger)
+	statusGetter := jobs.NewStatusGetter(logger, controllerClient)
 
 	return reconciler.NewTask(logger, controllerClient, desirer, statusGetter, cfg.TaskTTLSeconds)
 }
