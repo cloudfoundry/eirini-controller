@@ -42,7 +42,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	fixture = tests.NewFixture(GinkgoWriter)
 
-	SetDefaultEventuallyTimeout(30 * time.Second)
+	SetDefaultEventuallyTimeout(60 * time.Second)
 })
 
 var _ = SynchronizedAfterSuite(func() {
