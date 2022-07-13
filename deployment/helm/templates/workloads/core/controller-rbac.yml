@@ -68,6 +68,8 @@ kind: RoleBinding
 metadata:
   name: eirini-controller-workload-rolebinding
   namespace: {{ . }}
+  annotations:
+    cloudfoundry.org/propagate-cf-role : "true"
 roleRef:
   kind: ClusterRole
   name: eirini-controller-workload-runner
