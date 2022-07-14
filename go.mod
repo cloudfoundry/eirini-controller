@@ -2,6 +2,8 @@ module code.cloudfoundry.org/eirini-controller
 
 go 1.18
 
+replace github.com/square/certstrap => github.com/square/certstrap v1.2.0
+
 require (
 	code.cloudfoundry.org/lager v2.0.0+incompatible
 	code.cloudfoundry.org/tlsconfig v0.0.0-20220621140725-0e6fbd869921
