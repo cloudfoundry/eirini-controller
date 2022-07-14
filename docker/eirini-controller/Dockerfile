@@ -2,7 +2,7 @@
 
 ARG baseimage=scratch
 
-FROM golang:1.18.3 as builder
+FROM golang:1.18.4 as builder
 
 WORKDIR /eirini/
 COPY go.mod go.sum .
