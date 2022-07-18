@@ -12,7 +12,7 @@ trap cleanup EXIT
 
 rm -rf "$EIRINI_CONTROLLER_ROOT/pkg/generated"
 
-go run sigs.k8s.io/controller-tools/cmd/controller-gen \
+go run sigs.k8s.io/controller-tools/cmd/controller-gen@v0.9.2 \
   object \
   object:headerFile="$EIRINI_CONTROLLER_ROOT/hack/boilerplate.go.txt" \
   paths="$EIRINI_CONTROLLER_ROOT/pkg/apis/eirini/v1"
@@ -32,7 +32,7 @@ cp -R "$EIRINI_CONTROLLER_ROOT"/code.cloudfoundry.org/eirini-controller/pkg/* "$
 
 EIRINI_TMP_CRD="$EIRINI_CONTROLLER_ROOT/code.cloudfoundry.org/crds"
 mkdir -p "$EIRINI_TMP_CRD"
-go run sigs.k8s.io/controller-tools/cmd/controller-gen \
+go run sigs.k8s.io/controller-tools/cmd/controller-gen@v0.9.2 \
   crd \
   output:dir="$EIRINI_TMP_CRD" \
   paths="$EIRINI_CONTROLLER_ROOT"/pkg/apis/...
