@@ -21,7 +21,6 @@ import (
 	"code.cloudfoundry.org/eirini-controller/tests"
 	"code.cloudfoundry.org/tlsconfig"
 	"github.com/onsi/ginkgo/v2"
-	"github.com/onsi/gomega"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/ghttp"
 	"gopkg.in/yaml.v2"
@@ -240,8 +239,8 @@ func GetLRP(clientset eiriniclient.Interface, namespace, lrpName string) *eirini
 	return l
 }
 
-func EnsureStatusConditionTrue(clientset eiriniclient.Interface, namespace, taskName, conditionType string) func(g gomega.Gomega) {
-	return func(g gomega.Gomega) {
+func EnsureStatusConditionTrue(clientset eiriniclient.Interface, namespace, taskName, conditionType string) func(g Gomega) {
+	return func(g Gomega) {
 		task, err := clientset.
 			EiriniV1().
 			Tasks(namespace).
