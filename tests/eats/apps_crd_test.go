@@ -90,7 +90,7 @@ var _ = Describe("Apps CRDs [needs-logs-for: eirini-controller]", func() {
 			}, metav1.CreateOptions{})
 		Expect(err).NotTo(HaveOccurred())
 
-		false_pointer := false
+		falsePointer := false
 		lrp = &eiriniv1.LRP{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: lrpName,
@@ -113,7 +113,7 @@ var _ = Describe("Apps CRDs [needs-logs-for: eirini-controller]", func() {
 									Name: envSecret.Name,
 								},
 								Key:      "password",
-								Optional: &false_pointer,
+								Optional: &falsePointer,
 							},
 						},
 					},

@@ -145,6 +145,7 @@ linters:
       we do not construct urls in the production code
 
   enable:
+    - asasalint
     - asciicheck
     - bidichk
     - bodyclose
@@ -193,6 +194,7 @@ linters:
     - nilerr
     - nilnil
     - nlreturn
+    - nosnakecase
     - prealloc
     - predeclared
     - promlinter

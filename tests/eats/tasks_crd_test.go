@@ -37,7 +37,7 @@ var _ = Describe("Tasks CRD [needs-logs-for: eirini-controller]", func() {
 			}, metav1.CreateOptions{})
 		Expect(err).NotTo(HaveOccurred())
 
-		false_pointer := false
+		falsePointer := false
 		task = &eiriniv1.Task{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: taskName,
@@ -61,7 +61,7 @@ var _ = Describe("Tasks CRD [needs-logs-for: eirini-controller]", func() {
 									Name: envSecret.Name,
 								},
 								Key:      "password",
-								Optional: &false_pointer,
+								Optional: &falsePointer,
 							},
 						},
 					},

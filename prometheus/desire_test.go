@@ -13,7 +13,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
-	prometheus_api "github.com/prometheus/client_golang/prometheus"
+	prometheusapi "github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	clock "k8s.io/utils/clock/testing"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
@@ -35,7 +35,7 @@ var _ = Describe("LRP Desirer Prometheus Decorator", func() {
 		ctx = context.Background()
 		desirer = new(prometheusfakes.FakeLRPDesirer)
 		lrp = &eiriniv1.LRP{}
-		registry = prometheus_api.NewRegistry()
+		registry = prometheusapi.NewRegistry()
 
 		t0 = time.Now()
 		fakeClock = clock.NewFakePassiveClock(t0)
@@ -115,7 +115,7 @@ var _ = Describe("LRP Desirer Prometheus Decorator", func() {
 })
 
 func HaveMetric(name string, promText string) types.GomegaMatcher {
-	return WithTransform(func(registry prometheus_api.Gatherer) error {
+	return WithTransform(func(registry prometheusapi.Gatherer) error {
 		return testutil.GatherAndCompare(registry, strings.NewReader(promText), name)
 	}, Succeed())
 }

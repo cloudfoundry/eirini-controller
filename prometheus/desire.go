@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	eiriniv1 "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
-	prometheus_api "github.com/prometheus/client_golang/prometheus"
+	prometheusapi "github.com/prometheus/client_golang/prometheus"
 	"k8s.io/utils/clock"
 )
 
@@ -24,14 +24,14 @@ type LRPDesirer interface {
 
 type LRPDesirerDecorator struct {
 	LRPDesirer
-	creations         prometheus_api.Counter
-	creationDurations prometheus_api.Histogram
+	creations         prometheusapi.Counter
+	creationDurations prometheusapi.Histogram
 	clock             clock.PassiveClock
 }
 
 func NewLRPDesirerDecorator(
 	desirer LRPDesirer,
-	registry prometheus_api.Registerer,
+	registry prometheusapi.Registerer,
 	clck clock.PassiveClock,
 ) (*LRPDesirerDecorator, error) {
 	creations, err := registerCounter(registry, LRPCreations, "The total number of created lrps")
@@ -64,8 +64,8 @@ func (d *LRPDesirerDecorator) Desire(ctx context.Context, lrp *eiriniv1.LRP) err
 	return err
 }
 
-func registerCounter(registry prometheus_api.Registerer, name, help string) (prometheus_api.Counter, error) {
-	c := prometheus_api.NewCounter(prometheus_api.CounterOpts{
+func registerCounter(registry prometheusapi.Registerer, name, help string) (prometheusapi.Counter, error) {
+	c := prometheusapi.NewCounter(prometheusapi.CounterOpts{
 		Name: name,
 		Help: help,
 	})
@@ -75,16 +75,16 @@ func registerCounter(registry prometheus_api.Registerer, name, help string) (pro
 		return c, nil
 	}
 
-	var are prometheus_api.AlreadyRegisteredError
+	var are prometheusapi.AlreadyRegisteredError
 	if errors.As(err, &are) {
-		return are.ExistingCollector.(prometheus_api.Counter), nil //nolint:forcetypeassert
+		return are.ExistingCollector.(prometheusapi.Counter), nil //nolint:forcetypeassert
 	}
 
 	return nil, err
 }
 
-func registerHistogram(registry prometheus_api.Registerer, name, help string) (prometheus_api.Histogram, error) {
-	h := prometheus_api.NewHistogram(prometheus_api.HistogramOpts{
+func registerHistogram(registry prometheusapi.Registerer, name, help string) (prometheusapi.Histogram, error) {
+	h := prometheusapi.NewHistogram(prometheusapi.HistogramOpts{
 		Name: name,
 		Help: help,
 	})
@@ -94,9 +94,9 @@ func registerHistogram(registry prometheus_api.Registerer, name, help string) (p
 		return h, nil
 	}
 
-	var are prometheus_api.AlreadyRegisteredError
+	var are prometheusapi.AlreadyRegisteredError
 	if errors.As(err, &are) {
-		return are.ExistingCollector.(prometheus_api.Histogram), nil //nolint:forcetypeassert
+		return are.ExistingCollector.(prometheusapi.Histogram), nil //nolint:forcetypeassert
 	}
 
 	return nil, err
