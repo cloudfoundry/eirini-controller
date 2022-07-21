@@ -73,7 +73,7 @@ var _ = Describe("TaskToJob", func() {
 					"my-env-var": "env",
 				},
 				MemoryMB:  1,
-				CPUWeight: 2,
+				CPUMillis: 2,
 				DiskMB:    3,
 			},
 		}
@@ -144,10 +144,11 @@ var _ = Describe("TaskToJob", func() {
 
 		By("setting limits and request", func() {
 			resources := job.Spec.Template.Spec.Containers[0].Resources
-			Expect(resources.Limits.Memory().ScaledValue(resource.Mega)).To(BeNumerically("==", 1))
-			Expect(resources.Requests.Memory().ScaledValue(resource.Mega)).To(BeNumerically("==", 1))
-			Expect(resources.Limits.StorageEphemeral().ScaledValue(resource.Mega)).To(BeNumerically("==", 3))
-			Expect(resources.Requests.StorageEphemeral().ScaledValue(resource.Mega)).To(BeNumerically("==", 3))
+			Expect(resources.Limits.Memory().ScaledValue(resource.Mega)).To(BeEquivalentTo(1))
+			Expect(resources.Requests.Memory().ScaledValue(resource.Mega)).To(BeEquivalentTo(1))
+			Expect(resources.Limits.StorageEphemeral().ScaledValue(resource.Mega)).To(BeEquivalentTo(3))
+			Expect(resources.Requests.StorageEphemeral().ScaledValue(resource.Mega)).To(BeEquivalentTo(3))
+			Expect(resources.Requests.Cpu().ScaledValue(resource.Milli)).To(BeEquivalentTo(2))
 		})
 
 		By("configuring pod security context", func() {

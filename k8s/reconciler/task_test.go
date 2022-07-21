@@ -100,7 +100,7 @@ var _ = Describe("Task", func() {
 				SpaceGUID: "spacid",
 				MemoryMB:  768,
 				DiskMB:    512,
-				CPUWeight: 13,
+				CPUMillis: 13,
 			},
 		}
 		statusGetter.GetStatusConditionsReturns([]metav1.Condition{

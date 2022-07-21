@@ -41,8 +41,7 @@ type TaskSpec struct {
 	SpaceGUID string   `json:"spaceGUID"`
 	MemoryMB  int64    `json:"memoryMB"`
 	DiskMB    int64    `json:"diskMB"`
-	// +kubebuilder:validation:Format:=uint8
-	CPUWeight uint8 `json:"cpuWeight"`
+	CPUMillis int64    `json:"cpuMillis"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

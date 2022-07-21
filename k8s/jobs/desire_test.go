@@ -66,7 +66,7 @@ var _ = Describe("Desire", func() {
 				OrgGUID:   "org-id",
 				GUID:      taskGUID,
 				MemoryMB:  1,
-				CPUWeight: 2,
+				CPUMillis: 2,
 				DiskMB:    3,
 			},
 		}

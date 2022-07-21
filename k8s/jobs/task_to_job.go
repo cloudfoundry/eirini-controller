@@ -59,6 +59,7 @@ func (m *Converter) Convert(task *eiriniv1.Task, privateRegistrySecret *corev1.S
 				Requests: map[corev1.ResourceName]resource.Quantity{
 					corev1.ResourceMemory:           *resource.NewScaledQuantity(task.Spec.MemoryMB, resource.Mega),
 					corev1.ResourceEphemeralStorage: *resource.NewScaledQuantity(task.Spec.DiskMB, resource.Mega),
+					corev1.ResourceCPU:              *resource.NewScaledQuantity(task.Spec.CPUMillis, resource.Milli),
 				},
 			},
 			SecurityContext: k8s.ContainerSecurityContext(),
