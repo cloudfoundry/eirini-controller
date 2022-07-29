@@ -26,8 +26,8 @@ type TaskSpec struct {
 	GUID string `json:"GUID"`
 	Name string `json:"name"`
 	// +kubebuilder:validation:Required
-	Image           string           `json:"image"`
-	PrivateRegistry *PrivateRegistry `json:"privateRegistry,omitempty"`
+	Image            string                        `json:"image"`
+	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 	// deprecated: Env is deprecated. Use Environment instead
 	Env         map[string]string `json:"env,omitempty"`
 	Environment []corev1.EnvVar   `json:"environment,omitempty"`

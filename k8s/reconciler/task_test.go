@@ -306,24 +306,6 @@ var _ = Describe("Task", func() {
 		})
 	})
 
-	When("there is a private registry set", func() {
-		BeforeEach(func() {
-			getJobErr = k8serrors.NewNotFound(schema.GroupResource{}, "not found")
-			task.Spec.PrivateRegistry = &eiriniv1.PrivateRegistry{
-				Username: "admin",
-				Password: "p4ssw0rd",
-			}
-		})
-
-		It("passes the private registry details to the desirer", func() {
-			Expect(desirer.DesireCallCount()).To(Equal(1))
-			_, actualTask := desirer.DesireArgsForCall(0)
-			Expect(actualTask.Spec.PrivateRegistry).ToNot(BeNil())
-			Expect(actualTask.Spec.PrivateRegistry.Username).To(Equal("admin"))
-			Expect(actualTask.Spec.PrivateRegistry.Password).To(Equal("p4ssw0rd"))
-		})
-	})
-
 	When("the job has already been desired", func() {
 		BeforeEach(func() {
 			getJobErr = nil

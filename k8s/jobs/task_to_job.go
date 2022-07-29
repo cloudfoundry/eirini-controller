@@ -34,7 +34,7 @@ func NewTaskToJobConverter(
 	}
 }
 
-func (m *Converter) Convert(task *eiriniv1.Task, privateRegistrySecret *corev1.Secret) *batch.Job {
+func (m *Converter) Convert(task *eiriniv1.Task) *batch.Job {
 	job := m.toJob(task)
 	job.Spec.Template.Spec.ServiceAccountName = m.serviceAccountName
 	job.Labels[LabelSourceType] = TaskSourceType
@@ -66,16 +66,8 @@ func (m *Converter) Convert(task *eiriniv1.Task, privateRegistrySecret *corev1.S
 		},
 	}
 
-	job.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{
-		{
-			Name: m.registrySecretName,
-		},
-	}
-
-	if privateRegistrySecret != nil {
-		job.Spec.Template.Spec.ImagePullSecrets = append(job.Spec.Template.Spec.ImagePullSecrets,
-			corev1.LocalObjectReference{Name: privateRegistrySecret.Name})
-	}
+	job.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: m.registrySecretName}}
+	job.Spec.Template.Spec.ImagePullSecrets = append(job.Spec.Template.Spec.ImagePullSecrets, task.Spec.ImagePullSecrets...)
 
 	job.Spec.Template.Spec.Containers = containers
 

@@ -12,7 +12,6 @@ import (
 	batch "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var _ = Describe("TaskToJob", func() {
@@ -25,7 +24,6 @@ var _ = Describe("TaskToJob", func() {
 
 	var (
 		job                               *batch.Job
-		privateRegistrySecret             *corev1.Secret
 		task                              *eiriniv1.Task
 		allowAutomountServiceAccountToken bool
 	)
@@ -55,7 +53,6 @@ var _ = Describe("TaskToJob", func() {
 
 	BeforeEach(func() {
 		allowAutomountServiceAccountToken = false
-		privateRegistrySecret = nil
 
 		task = &eiriniv1.Task{
 			Spec: eiriniv1.TaskSpec{
@@ -80,7 +77,7 @@ var _ = Describe("TaskToJob", func() {
 	})
 
 	JustBeforeEach(func() {
-		job = jobs.NewTaskToJobConverter(serviceAccount, registrySecret, allowAutomountServiceAccountToken).Convert(task, privateRegistrySecret)
+		job = jobs.NewTaskToJobConverter(serviceAccount, registrySecret, allowAutomountServiceAccountToken).Convert(task)
 	})
 
 	It("returns a job for the task with the correct attributes", func() {
@@ -230,19 +227,15 @@ var _ = Describe("TaskToJob", func() {
 		})
 	})
 
-	When("the task uses a private registry", func() {
+	When("the task supplies an addition registry secret", func() {
 		BeforeEach(func() {
-			privateRegistrySecret = &corev1.Secret{
-				ObjectMeta: v1.ObjectMeta{
-					Name: "the-private-registry-secret",
-				},
-			}
+			task.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: "my-registry-secret"}}
 		})
 
-		It("creates a secret reference with the private registry credentials", func() {
+		It("appends the extra image pull secret on the pod spec", func() {
 			Expect(job.Spec.Template.Spec.ImagePullSecrets).To(ConsistOf(
 				corev1.LocalObjectReference{Name: "registry-secret"},
-				corev1.LocalObjectReference{Name: "the-private-registry-secret"},
+				corev1.LocalObjectReference{Name: "my-registry-secret"},
 			))
 		})
 	})

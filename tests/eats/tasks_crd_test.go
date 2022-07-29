@@ -130,10 +130,8 @@ var _ = Describe("Tasks CRD [needs-logs-for: eirini-controller]", func() {
 		When("the task image lives in a private registry", func() {
 			BeforeEach(func() {
 				task.Spec.Image = "eiriniuser/notdora:latest"
-				task.Spec.PrivateRegistry = &eiriniv1.PrivateRegistry{
-					Username: "eiriniuser",
-					Password: tests.GetEiriniDockerHubPassword(),
-				}
+				secret := tests.CreateRegistrySecret(ctx, fixture.Clientset, "private-registry-secret", fixture.Namespace, "eiriniuser", tests.GetEiriniDockerHubPassword(), task.Spec.Image)
+				task.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: secret.Name}}
 				port = 8888
 			})
 

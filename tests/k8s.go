@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/eirini-controller/k8s/stset"
+	"code.cloudfoundry.org/eirini-controller/k8s/utils/dockerutils"
+	"code.cloudfoundry.org/eirini-controller/util"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
@@ -144,4 +146,24 @@ func RequestService(namespace, serviceName string, port int32, requestPath strin
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
 	return resp
+}
+
+func CreateRegistrySecret(ctx context.Context, clientset kubernetes.Interface, name, namespace, username, password, forImage string) *corev1.Secret {
+	dockerConfig := dockerutils.NewDockerConfig(util.ParseImageRegistryHost(forImage), "eiriniuser", GetEiriniDockerHubPassword())
+	dockerConfigJson, err := dockerConfig.JSON()
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "private-registry-secret",
+		},
+		StringData: map[string]string{
+			dockerutils.DockerConfigKey: dockerConfigJson,
+		},
+		Type: corev1.SecretTypeDockerConfigJson,
+	}
+	secret, err = clientset.CoreV1().Secrets(namespace).Create(ctx, secret, metav1.CreateOptions{})
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+
+	return secret
 }

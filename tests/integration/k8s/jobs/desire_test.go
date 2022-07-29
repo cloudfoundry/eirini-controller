@@ -99,12 +99,10 @@ var _ = Describe("Task Desirer", func() {
 
 	When("the task image lives in a private registry", func() {
 		BeforeEach(func() {
+			secret := tests.CreateRegistrySecret(ctx, fixture.Clientset, "private-registry-secret", fixture.Namespace, "eiriniuser", tests.GetEiriniDockerHubPassword(), task.Spec.Image)
+			task.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: secret.Name}}
 			task.Spec.Image = "eiriniuser/notdora:latest"
 			task.Spec.Command = []string{"/bin/echo", "hello"}
-			task.Spec.PrivateRegistry = &eiriniv1.PrivateRegistry{
-				Username: "eiriniuser",
-				Password: tests.GetEiriniDockerHubPassword(),
-			}
 		})
 
 		It("runs and completes the job", func() {
@@ -120,47 +118,6 @@ var _ = Describe("Task Desirer", func() {
 					"Status": Equal(corev1.ConditionTrue),
 				})),
 			)
-		})
-
-		It("creates a ImagePullSecret with the credentials", func() {
-			registrySecretName := integration.GetRegistrySecretName(fixture.Clientset, fixture.Namespace, taskGUID, jobs.PrivateRegistrySecretGenerateName)
-
-			getSecret := func() (*corev1.Secret, error) {
-				return fixture.Clientset.
-					CoreV1().
-					Secrets(fixture.Namespace).
-					Get(context.Background(), registrySecretName, metav1.GetOptions{})
-			}
-
-			secret, err := getSecret()
-
-			Expect(err).NotTo(HaveOccurred())
-
-			By("creating the secret", func() {
-				Expect(secret.Name).To(ContainSubstring(jobs.PrivateRegistrySecretGenerateName))
-				Expect(secret.Type).To(Equal(corev1.SecretTypeDockerConfigJson))
-				Expect(secret.Data).To(HaveKey(".dockerconfigjson"))
-			})
-
-			By("setting the owner reference on the secret", func() {
-				allJobs := integration.ListJobs(fixture.Clientset, fixture.Namespace, taskGUID)()
-				job := allJobs[0]
-
-				var ownerRefs []metav1.OwnerReference
-				Eventually(func() []metav1.OwnerReference {
-					s, err := getSecret()
-					if err != nil {
-						return nil
-					}
-
-					ownerRefs = s.OwnerReferences
-
-					return ownerRefs
-				}).Should(HaveLen(1))
-
-				Expect(ownerRefs[0].Name).To(Equal(job.Name))
-				Expect(ownerRefs[0].UID).To(Equal(job.UID))
-			})
 		})
 	})
 })

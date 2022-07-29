@@ -7,15 +7,13 @@ import (
 	"code.cloudfoundry.org/eirini-controller/k8s/jobs"
 	v1a "code.cloudfoundry.org/eirini-controller/pkg/apis/eirini/v1"
 	v1 "k8s.io/api/batch/v1"
-	v1b "k8s.io/api/core/v1"
 )
 
 type FakeTaskToJobConverter struct {
-	ConvertStub        func(*v1a.Task, *v1b.Secret) *v1.Job
+	ConvertStub        func(*v1a.Task) *v1.Job
 	convertMutex       sync.RWMutex
 	convertArgsForCall []struct {
 		arg1 *v1a.Task
-		arg2 *v1b.Secret
 	}
 	convertReturns struct {
 		result1 *v1.Job
@@ -27,19 +25,18 @@ type FakeTaskToJobConverter struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeTaskToJobConverter) Convert(arg1 *v1a.Task, arg2 *v1b.Secret) *v1.Job {
+func (fake *FakeTaskToJobConverter) Convert(arg1 *v1a.Task) *v1.Job {
 	fake.convertMutex.Lock()
 	ret, specificReturn := fake.convertReturnsOnCall[len(fake.convertArgsForCall)]
 	fake.convertArgsForCall = append(fake.convertArgsForCall, struct {
 		arg1 *v1a.Task
-		arg2 *v1b.Secret
-	}{arg1, arg2})
+	}{arg1})
 	stub := fake.ConvertStub
 	fakeReturns := fake.convertReturns
-	fake.recordInvocation("Convert", []interface{}{arg1, arg2})
+	fake.recordInvocation("Convert", []interface{}{arg1})
 	fake.convertMutex.Unlock()
 	if stub != nil {
-		return stub(arg1, arg2)
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1
@@ -53,17 +50,17 @@ func (fake *FakeTaskToJobConverter) ConvertCallCount() int {
 	return len(fake.convertArgsForCall)
 }
 
-func (fake *FakeTaskToJobConverter) ConvertCalls(stub func(*v1a.Task, *v1b.Secret) *v1.Job) {
+func (fake *FakeTaskToJobConverter) ConvertCalls(stub func(*v1a.Task) *v1.Job) {
 	fake.convertMutex.Lock()
 	defer fake.convertMutex.Unlock()
 	fake.ConvertStub = stub
 }
 
-func (fake *FakeTaskToJobConverter) ConvertArgsForCall(i int) (*v1a.Task, *v1b.Secret) {
+func (fake *FakeTaskToJobConverter) ConvertArgsForCall(i int) *v1a.Task {
 	fake.convertMutex.RLock()
 	defer fake.convertMutex.RUnlock()
 	argsForCall := fake.convertArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2
+	return argsForCall.arg1
 }
 
 func (fake *FakeTaskToJobConverter) ConvertReturns(result1 *v1.Job) {
